@@ -1,0 +1,3 @@
+# ninja log v5
+0	59	1570873372	CMakeFiles/gl2jni.dir/gl_code.c.o	533a6bb544671931
+59	72	1570873372	/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/cmake/debug/obj/x86/libgl2jni.so	d01d58a2bddaf7df

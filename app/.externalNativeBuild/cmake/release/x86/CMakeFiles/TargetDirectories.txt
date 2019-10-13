@@ -1,0 +1,3 @@
+/home/swordfish/workspaces/misc/hello-gl2/app/.externalNativeBuild/cmake/release/x86/CMakeFiles/rebuild_cache.dir
+/home/swordfish/workspaces/misc/hello-gl2/app/.externalNativeBuild/cmake/release/x86/CMakeFiles/edit_cache.dir
+/home/swordfish/workspaces/misc/hello-gl2/app/.externalNativeBuild/cmake/release/x86/CMakeFiles/gl2jni.dir

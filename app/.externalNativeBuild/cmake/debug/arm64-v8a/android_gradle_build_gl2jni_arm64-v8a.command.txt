@@ -1,0 +1,8 @@
+Executable : /home/swordfish/Android/Sdk/cmake/3.10.2.4988404/bin/cmake
+arguments : 
+--build
+/home/swordfish/workspaces/misc/hello-gl2/app/.externalNativeBuild/cmake/debug/arm64-v8a
+--target
+gl2jni
+jvmArgs : 
+

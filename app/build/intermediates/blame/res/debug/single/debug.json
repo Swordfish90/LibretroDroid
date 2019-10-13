@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/res/merged/debug/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "/home/swordfish/workspaces/misc/hello-gl2/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/res/merged/debug/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "/home/swordfish/workspaces/misc/hello-gl2/app/src/main/res/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/res/merged/debug/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "/home/swordfish/workspaces/misc/hello-gl2/app/src/main/res/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/res/merged/debug/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/home/swordfish/workspaces/misc/hello-gl2/app/src/main/res/mipmap-xxhdpi/ic_launcher.png"
+    }
+]

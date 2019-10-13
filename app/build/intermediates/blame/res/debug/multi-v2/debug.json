@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/res/merged/debug/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "/home/swordfish/workspaces/misc/hello-gl2/app/src/main/res/values/strings.xml",
+                    "from": {
+                        "startLines": "25",
+                        "startColumns": "4",
+                        "startOffsets": "859",
+                        "endColumns": "50",
+                        "endOffsets": "905"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "50",
+                        "endOffsets": "101"
+                    }
+                }
+            ]
+        }
+    ]
+}
