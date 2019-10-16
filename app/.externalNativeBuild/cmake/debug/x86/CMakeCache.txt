@@ -204,8 +204,8 @@ CMAKE_SYSTEM_NAME:UNINITIALIZED=Android
 //No help, variable specified on the command line.
 CMAKE_SYSTEM_VERSION:UNINITIALIZED=16
 
-//No help, variable specified on the command line.
-CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=/home/swordfish/Android/Sdk/ndk-bundle/build/cmake/android.toolchain.cmake
+//The CMake toolchain file
+CMAKE_TOOLCHAIN_FILE:FILEPATH=/home/swordfish/Android/Sdk/ndk-bundle/build/cmake/android.toolchain.cmake
 
 //If this value is on, makefiles will be generated without the
 // .SILENT directive, and all commands will be echoed to the console
@@ -220,7 +220,7 @@ Project_BINARY_DIR:STATIC=/home/swordfish/workspaces/misc/hello-gl2/app/.externa
 Project_SOURCE_DIR:STATIC=/home/swordfish/workspaces/misc/hello-gl2/app/src/main/cpp
 
 //Dependencies for the target
-gl2jni_LIB_DEPENDS:STATIC=general;android;general;log;general;EGL;general;GLESv2;
+gl2jni_LIB_DEPENDS:STATIC=general;android;general;log;general;EGL;general;GLESv3;
 
 
 ########################

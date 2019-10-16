@@ -220,7 +220,7 @@ Project_BINARY_DIR:STATIC=/home/swordfish/workspaces/misc/hello-gl2/app/.externa
 Project_SOURCE_DIR:STATIC=/home/swordfish/workspaces/misc/hello-gl2/app/src/main/cpp
 
 //Dependencies for the target
-gl2jni_LIB_DEPENDS:STATIC=general;android;general;log;general;EGL;general;GLESv2;
+gl2jni_LIB_DEPENDS:STATIC=general;android;general;log;general;EGL;general;GLESv3;
 
 
 ########################

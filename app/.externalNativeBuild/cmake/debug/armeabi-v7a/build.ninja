@@ -79,7 +79,7 @@ build CMakeFiles/gl2jni.dir/utils.c.o: C_COMPILER__gl2jni /home/swordfish/worksp
 build /home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libgl2jni.so: C_SHARED_LIBRARY_LINKER__gl2jni CMakeFiles/gl2jni.dir/gl_code.c.o CMakeFiles/gl2jni.dir/utils.c.o
   LANGUAGE_COMPILE_FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -march=armv7-a -mthumb -Wa,--noexecstack -Wformat -Werror=format-security  -O0 -fno-limit-debug-info
   LINK_FLAGS = -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -static-libstdc++ -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--exclude-libs,libunwind.a -Wl,--no-undefined -Qunused-arguments -Wl,-z,noexecstack
-  LINK_LIBRARIES = -landroid -llog -lEGL -lGLESv2 -latomic -lm
+  LINK_LIBRARIES = -landroid -llog -lEGL -lGLESv3 -latomic -lm
   OBJECT_DIR = CMakeFiles/gl2jni.dir
   POST_BUILD = :
   PRE_LINK = :

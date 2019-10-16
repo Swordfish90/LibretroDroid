@@ -1,4 +1,4 @@
-#Sun Oct 13 18:48:21 CEST 2019
+#Wed Oct 16 08:38:16 CEST 2019
 base.0=/home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/dex/debug/mergeDexDebug/out
 path.0=classes.dex
 renamed.0=classes.dex

@@ -19,8 +19,8 @@
 #include <jni.h>
 #include <android/log.h>
 
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+#include <GLES3/gl3.h>
+#include <GLES3/gl3ext.h>
 #include <EGL/egl.h>
 
 #include <stdio.h>
@@ -35,6 +35,7 @@
 #include "libretro.h"
 
 #define  LOG_TAG    "libgl2jni"
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
@@ -46,7 +47,7 @@ static void printGLString(const char *name, GLenum s) {
 static void checkGlError(const char* op) {
     for (GLint error = glGetError(); error; error
             = glGetError()) {
-        LOGI("after %s() glError (0x%x)\n", op, error);
+        LOGE("after %s() glError (0x%x)\n", op, error);
     }
 }
 
@@ -137,16 +138,40 @@ GLuint gProgram;
 GLuint gvPositionHandle;
 GLuint gvCoordinateHandle;
 
+int width = 0;
+int height = 0;
+
 GLuint textureHandle;
 GLuint tex;
 
-bool setupGraphics(int w, int h) {
+GLfloat gTriangleVertices[] = {
+        -1.0f, -1.0f,
+        -1.0f,1.0f,
+        1.0f, -1.0f,
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f
+};
+
+const GLfloat gTriangleCoords[] = {
+        0.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f
+};
+
+bool setupGraphics(int screenWidth, int screenHeight, int gameWidth, int gameHeight) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
-    LOGI("setupGraphics(%d, %d)", w, h);
+    width = screenWidth;
+    height = screenHeight;
+
+    LOGI("setupGraphics(%d, %d)", screenWidth, screenHeight);
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
         LOGE("Could not create program.");
@@ -168,90 +193,55 @@ bool setupGraphics(int w, int h) {
     checkGlError("glGetAttribLocation");
     LOGI("glGetUniformLocation(\"texture\") = %d\n", textureHandle);
 
-    unsigned char texDat[64];
-    for (int i = 0; i < 64; ++i)
-        texDat[i] = ((i + (i / 8)) % 2) * 128 + 127;
-
-    glGenTextures(1, &tex);
-    checkGlError("glGenTextures");
-    glBindTexture(GL_TEXTURE_2D, tex);
-    checkGlError("glBindTexture");
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    checkGlError("glTexParameteri");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 8, 8, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texDat);
-    checkGlError("glTexImage2D");
-    glBindTexture(GL_TEXTURE_2D, 0);
-    checkGlError("glBindTexture");
-
-
-    ///
-
-
-    glViewport(0, 0, w, h);
+    glViewport(0, 0, screenWidth, screenHeight);
     checkGlError("glViewport");
     return true;
 }
 
-const GLfloat gTriangleVertices[] = {
-        -1.0f, -1.0f,
-        -1.0f,1.0f,
-        1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, 1.0f
-};
-
-const GLfloat gTriangleCoords[] = {
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f
-};
-
 unsigned current_framebuffer = 0;
+unsigned current_framebuffer_texture = 0;
 
 void renderFrame() {
-    static float grey;
-    grey += 0.01f;
-    if (grey > 1.0f) {
-        grey = 0.0f;
-    }
-    glClearColor(grey, grey, grey, 1.0f);
-    checkGlError("glClearColor");
-    glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    checkGlError("glClear");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glViewport(0, 0, width, height);
+
+    /*glDisable(GL_DEPTH_TEST);*/
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(gProgram);
     checkGlError("glUseProgram");
+
+    glDisable(GL_DEPTH_TEST);
 
     glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle);
     checkGlError("glEnableVertexAttribArray");
 
-
     glVertexAttribPointer(gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvCoordinateHandle);
     checkGlError("glEnableVertexAttribArray");
 
-
-    glBindTexture(GL_TEXTURE_2D, tex);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, current_framebuffer_texture);
     glUniform1i(textureHandle, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     checkGlError("glDrawArrays");
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    checkGlError("glEnableVertexAttribArray");
+    checkGlError("glBindTexture");
+
+    glUseProgram(0);
 }
 
 void* get_symbol(void* handle, const char* symbol) {
     void* result = dlsym(handle, symbol);
     if (!result) {
+        LOGE("Cannot get symbol %s... Quitting", symbol);
         exit(1);
     }
     return result;
@@ -259,46 +249,45 @@ void* get_symbol(void* handle, const char* symbol) {
 
 // Retrograde callbacks
 
-unsigned hw_initialize_framebuffer() {
-    unsigned fbo;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+unsigned hw_initialize_framebuffer(unsigned width, unsigned height) {
+    bool depth = true;
+    bool stencil = false;
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glGenFramebuffers(1, &current_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer);
 
-    // TODO FILIPPO. This have to come from somewhere else.
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
+    glGenTextures(1, &current_framebuffer_texture);
+    glBindTexture(GL_TEXTURE_2D, current_framebuffer_texture);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, current_framebuffer_texture, 0);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-//    // Attach depth and stencil buffer
-//    glTexImage2D(
-//            GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 800, 600, 0,
-//            GL_DEPTH_COMPONENT, GL_DEPTH_ATTACHMENT, NULL
-//    );
-//
-//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
+    if (depth) {
+        unsigned int depth_buffer;
+        glGenRenderbuffers(1, &depth_buffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, stencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT16, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, stencil? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+    }
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         LOGE("Error while create framebuffer. Leaving!");
         exit(2);
     }
 
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    current_framebuffer = fbo;
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
     va_start(argptr, fmt);
 
-    if (level < RETRO_LOG_ERROR) {
+    if (level < RETRO_LOG_DEBUG) {
+        LOGD(fmt, argptr);
+    } else if (level < RETRO_LOG_ERROR) {
         LOGI(fmt, argptr);
     } else {
         LOGE(fmt, argptr);
@@ -308,13 +297,17 @@ void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
 }
 
 void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
-    LOGI("hw video refresh callback called");
+    LOGI("hw video refresh callback called %i %i", width, height);
+    if (data == RETRO_HW_FRAME_BUFFER_VALID) {
+        //renderFrame();
+        //renderFrame();
+    }
 }
 
 struct retro_variable* variables = NULL;
 
-retro_hw_context_reset_t hw_context_reset;
-retro_hw_context_reset_t hw_context_destroy;
+retro_hw_context_reset_t hw_context_reset = NULL;
+retro_hw_context_reset_t hw_context_destroy = NULL;
 
 bool environment_handle_set_variables(const struct retro_variable* received) {
     unsigned count = 0;
@@ -326,17 +319,40 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
     // TODO FILIPPO... Rember to free this memory when no longer needed!
     size_t variables_size = sizeof(struct retro_variable) * (count + 1);
     variables = malloc(variables_size);
-    memcpy(variables, received, variables_size);
+
+    for (int i = 0; i < count; i++) {
+        char* key = malloc(sizeof(char) * strlen(received[i].key));
+        strcpy(key, received[i].key);
+
+        char* start = NULL;
+        char* end = NULL;
+        start = strchr(received[i].value, ';') + 2;
+        end = strchr(received[i].value, '|');
+
+        char* value;
+        if (start != NULL && end != NULL) {
+            value = calloc(sizeof(char), (end - start + 1));
+            memcpy(value, start, end - start);
+        } else {
+            value = malloc(sizeof(char) * strlen(received[i].value));
+            strcpy(key, received[i].value);
+        }
+
+        struct retro_variable variable = { key, value };
+
+        LOGI("Adding parsed variable: %s %s", key, value);
+
+        variables[i] = variable;
+    }
+
+    struct retro_variable variable = { NULL, NULL };
+    variables[count] = variable;
+
     return true;
 }
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGI("%s", requested->key);
-
-    if (strcmp(requested->key, "mupen64plus-MaxTxCacheSize") == 0) {
-        requested->value = "8000";
-        return true;
-    }
 
     const struct retro_variable* current = variables;
     while (current->key != NULL) {
@@ -351,10 +367,12 @@ bool environment_handle_get_variable(struct retro_variable* requested) {
 }
 
 uintptr_t hw_get_current_framebuffer() {
+    LOGI("FILIPPO... Calling hw_get_current_framebuffer %u", current_framebuffer);
     return current_framebuffer;
 }
 
 bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
+    LOGI("FILIPPO... Calling environment_handle_set_hw_render");
     hw_context_destroy = hw_render_callback->context_destroy;
     hw_context_reset = hw_render_callback->context_reset;
     hw_render_callback->get_current_framebuffer = &hw_get_current_framebuffer;
@@ -375,7 +393,7 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
             LOGI("Called SET_PIXEL_FORMAT");
-            return false;
+            return true;
 
         case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
             LOGI("Callsed SET_INPUT_DESCRIPTORS");
@@ -415,6 +433,10 @@ bool callback_environment(unsigned cmd, void *data) {
             LOGI("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
             return false;
 
+        case RETRO_ENVIRONMENT_SET_GEOMETRY:
+            LOGI("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
+            return false;
+
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
             LOGI("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
             return false;
@@ -425,11 +447,11 @@ bool callback_environment(unsigned cmd, void *data) {
 }
 
 void callback_audio_sample(int16_t left, int16_t right) {
-    LOGI("callback audio sample has been called");
+    //LOGI("callback audio sample has been called");
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    LOGI("callback audio sample has been called");
+    //LOGI("callback audio sample has been called");
     return frames;
 }
 
@@ -466,9 +488,10 @@ void (*w_retro_set_input_state)(retro_input_state_t);
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
-    setupGraphics(width, height);
+    //void* handle = dlopen("pcsx_rearmed_libretro_android.so", RTLD_LOCAL);
+    void* handle = dlopen("mupen64plus_next_gles3_libretro_android.so", RTLD_LOCAL);
+    //void* handle = dlopen("libretro-test-gl.so", RTLD_LOCAL);
 
-    void* handle = dlopen("libretro.so", RTLD_LOCAL);
     if (!handle) {
         LOGE("Cannot dlopen library, closing");
         exit(1);
@@ -515,36 +538,42 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
     struct retro_game_info* game_info = (struct retro_game_info*) malloc(sizeof(struct retro_game_info));
     if (system_info->need_fullpath) {
         game_info->path = "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64";
+        //game_info->path = "/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp";
         game_info->data = NULL;
         game_info->size = 0;
     } else {
         struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
+        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp");
         game_info->data = file.data;
         game_info->size = file.size;
     }
 
     bool result = w_retro_load_game(game_info);
-    if (result) {
-        LOGI("Yeeeeeeeeee");
-    } else {
-        LOGI("Nooooooo");
+    if (!result) {
+        LOGI("Cannot load game. Leaving.");
+        exit(1);
     }
 
-    //if (hw_context_reset != NULL) {
-    //    hw_context_reset();
-    //}
+    struct retro_system_av_info* system_av_info = malloc(sizeof(struct retro_system_av_info));
+    w_retro_get_system_av_info(system_av_info);
 
-    //hw_initialize_framebuffer();
+    setupGraphics(width, height, system_av_info->geometry.base_width, system_av_info->geometry.base_width);
+    hw_initialize_framebuffer(system_av_info->geometry.base_width, system_av_info->geometry.base_height);
+
+    if (hw_context_reset != NULL) {
+        hw_context_reset();
+    }
 }
 
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj)
 {
     //time_t begin = clock();
-    //w_retro_run();
-    //time_t end = clock();
+    LOGI("Begin of retro_run");
+    w_retro_run();
     renderFrame();
-    //LOGI("Rendered frame %f", 1000 * ((double) end - (double) begin) / CLOCKS_PER_SEC);
+    LOGI("End of retro_run");
+    //LOGI("Rendered frame %f", 1000 * ((double) current - (double) last_frame) / CLOCKS_PER_SEC);
 }
 
 
