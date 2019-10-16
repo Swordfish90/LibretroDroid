@@ -1,2 +1,0 @@
-[1/2] Building C object CMakeFiles/gl2jni.dir/gl_code.c.o
-[2/2] Linking C shared library /home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/cmake/debug/obj/x86_64/libgl2jni.so

@@ -1,6 +1,0 @@
-[1/2] Building C object CMakeFiles/gl2jni.dir/gl_code.c.o
-/home/swordfish/workspaces/misc/hello-gl2/app/src/main/cpp/gl_code.c:282:1: warning: control may reach end of non-void function [-Wreturn-type]
-}
-^
-1 warning generated.
-[2/2] Linking C shared library /home/swordfish/workspaces/misc/hello-gl2/app/build/intermediates/cmake/debug/obj/arm64-v8a/libgl2jni.so
