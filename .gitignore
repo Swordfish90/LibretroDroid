@@ -1,2 +1,5 @@
 app/.externalNativeBuild
 app/build
+.google
+.gradle
+.idea
