@@ -31,8 +31,12 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <vector>
+
+extern "C" {
 #include "utils.h"
 #include "libretro.h"
+}
 
 #define  LOG_TAG    "libgl2jni"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
@@ -73,7 +77,7 @@ const char* gFragmentShader =
 GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
     if (shader) {
-        glShaderSource(shader, 1, &pSource, NULL);
+        glShaderSource(shader, 1, &pSource, nullptr);
         glCompileShader(shader);
         GLint compiled = 0;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
@@ -83,7 +87,7 @@ GLuint loadShader(GLenum shaderType, const char* pSource) {
             if (infoLen) {
                 char* buf = (char*) malloc(infoLen);
                 if (buf) {
-                    glGetShaderInfoLog(shader, infoLen, NULL, buf);
+                    glGetShaderInfoLog(shader, infoLen, nullptr, buf);
                     LOGE("Could not compile shader %d:\n%s\n",
                             shaderType, buf);
                     free(buf);
@@ -122,7 +126,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
             if (bufLength) {
                 char* buf = (char*) malloc(bufLength);
                 if (buf) {
-                    glGetProgramInfoLog(program, bufLength, NULL, buf);
+                    glGetProgramInfoLog(program, bufLength, nullptr, buf);
                     LOGE("Could not link program:\n%s\n", buf);
                     free(buf);
                 }
@@ -249,7 +253,7 @@ void* get_symbol(void* handle, const char* symbol) {
 
 // Retrograde callbacks
 
-unsigned hw_initialize_framebuffer(unsigned width, unsigned height) {
+void hw_initialize_framebuffer(unsigned width, unsigned height) {
     bool depth = true;
     bool stencil = false;
 
@@ -304,37 +308,35 @@ void callback_hw_video_refresh(const void *data, unsigned width, unsigned height
     }
 }
 
-struct retro_variable* variables = NULL;
+std::vector<struct retro_variable> variables;
 
-retro_hw_context_reset_t hw_context_reset = NULL;
-retro_hw_context_reset_t hw_context_destroy = NULL;
+retro_hw_context_reset_t hw_context_reset = nullptr;
+retro_hw_context_reset_t hw_context_destroy = nullptr;
 
 bool environment_handle_set_variables(const struct retro_variable* received) {
     unsigned count = 0;
-    while (received[count].key != NULL) {
+    while (received[count].key != nullptr) {
         LOGI("%s: %s", received[count].key, received[count].value);
         count++;
     }
 
-    // TODO FILIPPO... Rember to free this memory when no longer needed!
-    size_t variables_size = sizeof(struct retro_variable) * (count + 1);
-    variables = malloc(variables_size);
+    variables.clear();
 
     for (int i = 0; i < count; i++) {
-        char* key = malloc(sizeof(char) * strlen(received[i].key));
+        char* key = (char*) malloc(sizeof(char) * strlen(received[i].key));
         strcpy(key, received[i].key);
 
-        char* start = NULL;
-        char* end = NULL;
-        start = strchr(received[i].value, ';') + 2;
-        end = strchr(received[i].value, '|');
+        char* start = nullptr;
+        char* end = nullptr;
+        start = (char*) strchr(received[i].value, ';') + 2;
+        end = (char*) strchr(received[i].value, '|');
 
         char* value;
-        if (start != NULL && end != NULL) {
-            value = calloc(sizeof(char), (end - start + 1));
+        if (start != nullptr && end != nullptr) {
+            value = (char*) calloc(sizeof(char), (end - start + 1));
             memcpy(value, start, end - start);
         } else {
-            value = malloc(sizeof(char) * strlen(received[i].value));
+            value = (char*) malloc(sizeof(char) * strlen(received[i].value));
             strcpy(key, received[i].value);
         }
 
@@ -342,11 +344,8 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 
         LOGI("Adding parsed variable: %s %s", key, value);
 
-        variables[i] = variable;
+        variables.push_back(variable);
     }
-
-    struct retro_variable variable = { NULL, NULL };
-    variables[count] = variable;
 
     return true;
 }
@@ -354,13 +353,11 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGI("%s", requested->key);
 
-    const struct retro_variable* current = variables;
-    while (current->key != NULL) {
-        if (strcmp(current->key, requested->key) == 0) {
-            requested->value = current->value;
+    for (int i = 0; i < variables.size(); i++) {
+        if (strcmp(variables[i].key, requested->key) == 0) {
+            requested->value = variables[i].value;
             return true;
         }
-        current++;
     }
 
     return false;
@@ -401,11 +398,11 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_GET_VARIABLE:
             LOGI("Called RETRO_ENVIRONMENT_GET_VARIABLE");
-            return environment_handle_get_variable(data);
+            return environment_handle_get_variable(static_cast<struct retro_variable*>(data));
 
         case RETRO_ENVIRONMENT_SET_VARIABLES:
             LOGI("Called RETRO_ENVIRONMENT_SET_VARIABLES");
-            return environment_handle_set_variables(data);
+            return environment_handle_set_variables(static_cast<const struct retro_variable*>(data));
 
         case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
             LOGI("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
@@ -413,7 +410,7 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_SET_HW_RENDER:
             LOGI("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
-            return environment_handle_set_hw_render(data);
+            return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
 
         case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
             LOGI("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
@@ -486,6 +483,12 @@ void (*w_retro_set_audio_sample_batch)(retro_audio_sample_batch_t);
 void (*w_retro_set_input_poll)(retro_input_poll_t);
 void (*w_retro_set_input_state)(retro_input_state_t);
 
+
+extern "C" {
+    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
+    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj);
+};
+
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
     //void* handle = dlopen("pcsx_rearmed_libretro_android.so", RTLD_LOCAL);
@@ -499,19 +502,19 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
 
     // ATTACH RETRO API
 
-    w_retro_init = (void (*)(void)) get_symbol(handle, "retro_init");
-    w_retro_deinit = (void (*)(void)) get_symbol(handle, "retro_deinit");
-    w_retro_api_version = (unsigned (*)(void)) get_symbol(handle, "retro_api_version");
+    w_retro_init = (void (*)()) get_symbol(handle, "retro_init");
+    w_retro_deinit = (void (*)()) get_symbol(handle, "retro_deinit");
+    w_retro_api_version = (unsigned (*)()) get_symbol(handle, "retro_api_version");
     w_retro_get_system_info = (void (*)(struct retro_system_info*)) get_symbol(handle, "retro_get_system_info");
     w_retro_get_system_av_info = (void (*)(struct retro_system_av_info*)) get_symbol(handle, "retro_get_system_av_info");
     w_retro_set_controller_port_device = (void (*)(unsigned, unsigned)) get_symbol(handle, "retro_set_controller_port_device");
-    w_retro_reset = (void (*)(void)) get_symbol(handle, "retro_reset");
-    w_retro_run = (void (*)(void)) get_symbol(handle, "retro_run");
-    w_retro_serialize_size = (size_t (*)(void)) get_symbol(handle, "retro_serialize_size");
+    w_retro_reset = (void (*)()) get_symbol(handle, "retro_reset");
+    w_retro_run = (void (*)()) get_symbol(handle, "retro_run");
+    w_retro_serialize_size = (size_t (*)()) get_symbol(handle, "retro_serialize_size");
     w_retro_serialize = (bool (*)(void*, size_t)) get_symbol(handle, "retro_serialize");
     w_retro_unserialize = (bool (*)(const void*, size_t)) get_symbol(handle, "retro_unserialize");
     w_retro_load_game = (bool (*)(const struct retro_game_info*)) get_symbol(handle, "retro_load_game");
-    w_retro_unload_game = (void (*)(void)) get_symbol(handle, "retro_unload_game");
+    w_retro_unload_game = (void (*)()) get_symbol(handle, "retro_unload_game");
 
     // CALLBACK MANAGEMENT
 
@@ -532,35 +535,35 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
 
     w_retro_init();
 
-    struct retro_system_info* system_info = malloc(sizeof(struct retro_system_info));
-    w_retro_get_system_info(system_info);
+    struct retro_system_info system_info;
+    w_retro_get_system_info(&system_info);
 
-    struct retro_game_info* game_info = (struct retro_game_info*) malloc(sizeof(struct retro_game_info));
-    if (system_info->need_fullpath) {
-        game_info->path = "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64";
+    struct retro_game_info game_info;
+    if (system_info.need_fullpath) {
+        game_info.path = "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64";
         //game_info->path = "/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp";
-        game_info->data = NULL;
-        game_info->size = 0;
+        game_info.data = nullptr;
+        game_info.size = 0;
     } else {
         struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
         //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp");
-        game_info->data = file.data;
-        game_info->size = file.size;
+        game_info.data = file.data;
+        game_info.size = file.size;
     }
 
-    bool result = w_retro_load_game(game_info);
+    bool result = w_retro_load_game(&game_info);
     if (!result) {
         LOGI("Cannot load game. Leaving.");
         exit(1);
     }
 
-    struct retro_system_av_info* system_av_info = malloc(sizeof(struct retro_system_av_info));
-    w_retro_get_system_av_info(system_av_info);
+    struct retro_system_av_info system_av_info;
+    w_retro_get_system_av_info(&system_av_info);
 
-    setupGraphics(width, height, system_av_info->geometry.base_width, system_av_info->geometry.base_width);
-    hw_initialize_framebuffer(system_av_info->geometry.base_width, system_av_info->geometry.base_height);
+    setupGraphics(width, height, system_av_info.geometry.base_width, system_av_info.geometry.base_width);
+    hw_initialize_framebuffer(system_av_info.geometry.base_width, system_av_info.geometry.base_height);
 
-    if (hw_context_reset != NULL) {
+    if (hw_context_reset != nullptr) {
         hw_context_reset();
     }
 }
