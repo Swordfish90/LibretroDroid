@@ -32,6 +32,9 @@
 #include <unistd.h>
 
 #include <vector>
+#include <cmath>
+
+#include <oboe/Oboe.h>
 
 extern "C" {
 #include "utils.h"
@@ -165,6 +168,23 @@ const GLfloat gTriangleCoords[] = {
         0.0f, 1.0f,
         1.0f, 1.0f
 };
+
+oboe::AudioStream* stream = nullptr;
+
+void initializeAudio(int32_t sampleRate) {
+    oboe::AudioStreamBuilder builder;
+    builder.setChannelCount(2);
+    builder.setSampleRate(sampleRate);
+    builder.setDirection(oboe::Direction::Output);
+    builder.setFormat(oboe::AudioFormat::I16);
+
+    oboe::Result result = builder.openStream(&stream);
+    if (result != oboe::Result::OK) {
+        LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
+    }
+
+    stream->requestStart();
+}
 
 bool setupGraphics(int screenWidth, int screenHeight, int gameWidth, int gameHeight) {
     printGLString("Version", GL_VERSION);
@@ -448,6 +468,9 @@ void callback_audio_sample(int16_t left, int16_t right) {
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
+    if (stream != nullptr) {
+        stream->write(data, frames, 0);
+    }
     //LOGI("callback audio sample has been called");
     return frames;
 }
@@ -559,6 +582,8 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
 
     struct retro_system_av_info system_av_info;
     w_retro_get_system_av_info(&system_av_info);
+
+    initializeAudio(std::lround(system_av_info.timing.sample_rate));
 
     setupGraphics(width, height, system_av_info.geometry.base_width, system_av_info.geometry.base_width);
     hw_initialize_framebuffer(system_av_info.geometry.base_width, system_av_info.geometry.base_height);
