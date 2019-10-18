@@ -13,6 +13,8 @@ add_library(gl2jni SHARED
         log.h
         core.h
         core.cpp
+        video.h
+        video.cpp
         audio.h
         audio.cpp
         utils.c

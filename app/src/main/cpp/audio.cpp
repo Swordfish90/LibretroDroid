@@ -7,6 +7,8 @@
 #include "audio.h"
 
 void LibretroDroid::Audio::initializeAudio(int32_t sampleRate) {
+    LOGI("Audio initialization has been called with sample rate %d", sampleRate);
+
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
     builder.setSampleRate(sampleRate);
@@ -24,7 +26,6 @@ LibretroDroid::Audio::Audio(int32_t sampleRate) {
 }
 
 LibretroDroid::Audio::~Audio() {
-    stream->requestStop();
     stream->close();
 }
 
