@@ -9,10 +9,15 @@ add_subdirectory (${OBOE_DIR} ./oboe)
 include_directories (${OBOE_DIR}/include)
 
 add_library(gl2jni SHARED
-        gl_code.cpp
+        libretrodroid.cpp
+        log.h
+        core.h
+        core.cpp
+        audio.h
+        audio.cpp
         utils.c
         utils.h
-        libretro.h)
+        libretro/libretro.h)
 
 # add lib dependencies
 target_link_libraries(gl2jni

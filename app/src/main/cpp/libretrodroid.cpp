@@ -17,7 +17,6 @@
 // OpenGL ES 2.0 code
 
 #include <jni.h>
-#include <android/log.h>
 
 #include <GLES3/gl3.h>
 #include <GLES3/gl3ext.h>
@@ -34,17 +33,14 @@
 #include <vector>
 #include <cmath>
 
-#include <oboe/Oboe.h>
+#include "log.h"
+#include "core.h"
+#include "audio.h"
 
 extern "C" {
 #include "utils.h"
-#include "libretro.h"
+#include "libretro/libretro.h"
 }
-
-#define  LOG_TAG    "libgl2jni"
-#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 static void printGLString(const char *name, GLenum s) {
     const char *v = (const char *) glGetString(s);
@@ -169,23 +165,6 @@ const GLfloat gTriangleCoords[] = {
         1.0f, 1.0f
 };
 
-oboe::AudioStream* stream = nullptr;
-
-void initializeAudio(int32_t sampleRate) {
-    oboe::AudioStreamBuilder builder;
-    builder.setChannelCount(2);
-    builder.setSampleRate(sampleRate);
-    builder.setDirection(oboe::Direction::Output);
-    builder.setFormat(oboe::AudioFormat::I16);
-
-    oboe::Result result = builder.openStream(&stream);
-    if (result != oboe::Result::OK) {
-        LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
-    }
-
-    stream->requestStart();
-}
-
 bool setupGraphics(int screenWidth, int screenHeight, int gameWidth, int gameHeight) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
@@ -230,8 +209,7 @@ void renderFrame() {
 
     glViewport(0, 0, width, height);
 
-    /*glDisable(GL_DEPTH_TEST);*/
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(gProgram);
@@ -260,15 +238,6 @@ void renderFrame() {
     checkGlError("glBindTexture");
 
     glUseProgram(0);
-}
-
-void* get_symbol(void* handle, const char* symbol) {
-    void* result = dlsym(handle, symbol);
-    if (!result) {
-        LOGE("Cannot get symbol %s... Quitting", symbol);
-        exit(1);
-    }
-    return result;
 }
 
 // Retrograde callbacks
@@ -398,6 +367,9 @@ bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render
     return true;
 }
 
+LibretroDroid::Core* core = nullptr;
+LibretroDroid::Audio* audio = nullptr;
+
 bool callback_environment(unsigned cmd, void *data) {
     switch (cmd) {
         case RETRO_ENVIRONMENT_GET_CAN_DUPE:
@@ -468,10 +440,9 @@ void callback_audio_sample(int16_t left, int16_t right) {
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    if (stream != nullptr) {
-        stream->write(data, frames, 0);
+    if (audio != nullptr) {
+        audio->write(data, frames);
     }
-    //LOGI("callback audio sample has been called");
     return frames;
 }
 
@@ -486,80 +457,29 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 
 // INITIALIZATION
 
-void (*w_retro_init)(void);
-void (*w_retro_deinit)(void);
-unsigned (*w_retro_api_version)(void);
-void (*w_retro_get_system_info)(struct retro_system_info *info);
-void (*w_retro_get_system_av_info)(struct retro_system_av_info *info);
-void (*w_retro_set_controller_port_device)(unsigned port, unsigned device);
-void (*w_retro_reset)(void);
-void (*w_retro_run)(void);
-size_t (*w_retro_serialize_size)(void);
-bool (*w_retro_serialize)(void *data, size_t size);
-bool (*w_retro_unserialize)(const void *data, size_t size);
-bool (*w_retro_load_game)(const struct retro_game_info *game);
-void (*w_retro_unload_game)(void);
-void (*w_retro_set_video_refresh)(retro_video_refresh_t);
-void (*w_retro_set_environment)(retro_environment_t);
-void (*w_retro_set_audio_sample)(retro_audio_sample_t);
-void (*w_retro_set_audio_sample_batch)(retro_audio_sample_batch_t);
-void (*w_retro_set_input_poll)(retro_input_poll_t);
-void (*w_retro_set_input_state)(retro_input_state_t);
-
 
 extern "C" {
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj);
 };
 
+
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
-    //void* handle = dlopen("pcsx_rearmed_libretro_android.so", RTLD_LOCAL);
-    void* handle = dlopen("mupen64plus_next_gles3_libretro_android.so", RTLD_LOCAL);
-    //void* handle = dlopen("libretro-test-gl.so", RTLD_LOCAL);
-
-    if (!handle) {
-        LOGE("Cannot dlopen library, closing");
-        exit(1);
-    }
-
-    // ATTACH RETRO API
-
-    w_retro_init = (void (*)()) get_symbol(handle, "retro_init");
-    w_retro_deinit = (void (*)()) get_symbol(handle, "retro_deinit");
-    w_retro_api_version = (unsigned (*)()) get_symbol(handle, "retro_api_version");
-    w_retro_get_system_info = (void (*)(struct retro_system_info*)) get_symbol(handle, "retro_get_system_info");
-    w_retro_get_system_av_info = (void (*)(struct retro_system_av_info*)) get_symbol(handle, "retro_get_system_av_info");
-    w_retro_set_controller_port_device = (void (*)(unsigned, unsigned)) get_symbol(handle, "retro_set_controller_port_device");
-    w_retro_reset = (void (*)()) get_symbol(handle, "retro_reset");
-    w_retro_run = (void (*)()) get_symbol(handle, "retro_run");
-    w_retro_serialize_size = (size_t (*)()) get_symbol(handle, "retro_serialize_size");
-    w_retro_serialize = (bool (*)(void*, size_t)) get_symbol(handle, "retro_serialize");
-    w_retro_unserialize = (bool (*)(const void*, size_t)) get_symbol(handle, "retro_unserialize");
-    w_retro_load_game = (bool (*)(const struct retro_game_info*)) get_symbol(handle, "retro_load_game");
-    w_retro_unload_game = (void (*)()) get_symbol(handle, "retro_unload_game");
-
-    // CALLBACK MANAGEMENT
-
-    w_retro_set_video_refresh = (void (*)(retro_video_refresh_t)) get_symbol(handle, "retro_set_video_refresh");
-    w_retro_set_environment = (void (*)(retro_environment_t)) get_symbol(handle, "retro_set_environment");
-    w_retro_set_audio_sample = (void (*)(retro_audio_sample_t)) get_symbol(handle, "retro_set_audio_sample");
-    w_retro_set_audio_sample_batch = (void (*)(retro_audio_sample_batch_t)) get_symbol(handle, "retro_set_audio_sample_batch");
-    w_retro_set_input_poll = (void (*)(retro_input_poll_t)) get_symbol(handle, "retro_set_input_poll");
-    w_retro_set_input_state = (void (*)(retro_input_state_t)) get_symbol(handle, "retro_set_input_state");
+    core = new LibretroDroid::Core("mupen64plus_next_gles3_libretro_android.so");
 
     // Attach callbacks
-    w_retro_set_video_refresh(&callback_hw_video_refresh);
-    w_retro_set_environment(&callback_environment);
-    w_retro_set_audio_sample(&callback_audio_sample);
-    w_retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
-    w_retro_set_input_poll(&callback_retro_set_input_poll);
-    w_retro_set_input_state(&callback_set_input_state);
+    core->retro_set_video_refresh(&callback_hw_video_refresh);
+    core->retro_set_environment(&callback_environment);
+    core->retro_set_audio_sample(&callback_audio_sample);
+    core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
+    core->retro_set_input_poll(&callback_retro_set_input_poll);
+    core->retro_set_input_state(&callback_set_input_state);
 
-    w_retro_init();
+    core->retro_init();
 
     struct retro_system_info system_info;
-    w_retro_get_system_info(&system_info);
+    core->retro_get_system_info(&system_info);
 
     struct retro_game_info game_info;
     if (system_info.need_fullpath) {
@@ -574,16 +494,17 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
         game_info.size = file.size;
     }
 
-    bool result = w_retro_load_game(&game_info);
+    bool result = core->retro_load_game(&game_info);
     if (!result) {
         LOGI("Cannot load game. Leaving.");
         exit(1);
     }
 
     struct retro_system_av_info system_av_info;
-    w_retro_get_system_av_info(&system_av_info);
+    core->retro_get_system_av_info(&system_av_info);
 
-    initializeAudio(std::lround(system_av_info.timing.sample_rate));
+    audio = new LibretroDroid::Audio(system_av_info.timing.sample_rate);
+    audio->start();
 
     setupGraphics(width, height, system_av_info.geometry.base_width, system_av_info.geometry.base_width);
     hw_initialize_framebuffer(system_av_info.geometry.base_width, system_av_info.geometry.base_height);
@@ -598,7 +519,7 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobj
 {
     //time_t begin = clock();
     LOGI("Begin of retro_run");
-    w_retro_run();
+    core->retro_run();
     renderFrame();
     LOGI("End of retro_run");
     //LOGI("Rendered frame %f", 1000 * ((double) current - (double) last_frame) / CLOCKS_PER_SEC);

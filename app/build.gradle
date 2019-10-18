@@ -4,7 +4,7 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId 'com.android.gl2jni'
-        minSdkVersion 14
+        minSdkVersion 21
         targetSdkVersion 27
         externalNativeBuild {
             cmake {
