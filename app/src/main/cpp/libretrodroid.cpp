@@ -18,8 +18,6 @@
 
 #include <jni.h>
 
-#include <GLES3/gl3.h>
-#include <GLES3/gl3ext.h>
 #include <EGL/egl.h>
 
 #include <stdio.h>
@@ -71,43 +69,38 @@ void callback_hw_video_refresh(const void *data, unsigned width, unsigned height
     }
 }
 
-std::vector<struct retro_variable> variables;
+std::vector<struct Variable> variables;
+
+struct Variable {
+public:
+    std::string key;
+    std::string value;
+};
 
 retro_hw_context_reset_t hw_context_reset = nullptr;
 retro_hw_context_reset_t hw_context_destroy = nullptr;
 
 bool environment_handle_set_variables(const struct retro_variable* received) {
-    unsigned count = 0;
-    while (received[count].key != nullptr) {
-        LOGI("%s: %s", received[count].key, received[count].value);
-        count++;
-    }
-
     variables.clear();
 
-    for (int i = 0; i < count; i++) {
-        char* key = (char*) malloc(sizeof(char) * strlen(received[i].key));
-        strcpy(key, received[i].key);
+    unsigned count = 0;
+    while (received[count].key != nullptr) {
+        LOGI("Received variable %s: %s", received[count].key, received[count].value);
 
-        char* start = nullptr;
-        char* end = nullptr;
-        start = (char*) strchr(received[i].value, ';') + 2;
-        end = (char*) strchr(received[i].value, '|');
+        std::string currentKey(received[count].key);
+        std::string currentValue(received[count].value);
 
-        char* value;
-        if (start != nullptr && end != nullptr) {
-            value = (char*) calloc(sizeof(char), (end - start + 1));
-            memcpy(value, start, end - start);
-        } else {
-            value = (char*) malloc(sizeof(char) * strlen(received[i].value));
-            strcpy(key, received[i].value);
-        }
+        auto firstValueStart = currentValue.find(';') + 2;
+        auto firstValueEnd = currentValue.find('|', firstValueStart);
 
-        struct retro_variable variable = { key, value };
+        currentValue = currentValue.substr(firstValueStart, firstValueEnd - firstValueStart);
 
-        LOGI("Adding parsed variable: %s %s", key, value);
-
+        auto variable = Variable { currentKey, currentValue };
         variables.push_back(variable);
+
+        LOGI("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
+
+        count++;
     }
 
     return true;
@@ -115,14 +108,12 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGI("%s", requested->key);
-
     for (int i = 0; i < variables.size(); i++) {
-        if (strcmp(variables[i].key, requested->key) == 0) {
-            requested->value = variables[i].value;
+        if (variables[i].key == requested->key) {
+            requested->value = variables[i].value.c_str();
             return true;
         }
     }
-
     return false;
 }
 
@@ -293,7 +284,7 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
         useStencil
     );
 
-    audio = new LibretroDroid::Audio(system_av_info.timing.sample_rate);
+    audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
     audio->start();
 
     if (hw_context_reset != nullptr) {
@@ -304,12 +295,9 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj)
 {
-    //time_t begin = clock();
-    LOGI("Begin of retro_run");
+    LOGI("Stepping into retro_run()");
     core->retro_run();
     video->renderFrame();
-    LOGI("End of retro_run");
-    //LOGI("Rendered frame %f", 1000 * ((double) current - (double) last_frame) / CLOCKS_PER_SEC);
 }
 
 

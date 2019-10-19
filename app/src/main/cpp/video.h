@@ -5,6 +5,9 @@
 #ifndef HELLO_GL2_VIDEO_H
 #define HELLO_GL2_VIDEO_H
 
+#include <GLES3/gl3.h>
+#include <GLES3/gl3ext.h>
+
 namespace LibretroDroid {
 
 class Video {
