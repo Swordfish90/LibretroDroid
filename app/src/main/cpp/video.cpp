@@ -107,12 +107,13 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void LibretroDroid::Video::initializeGraphics(int screenWidth, int screenHeight) {
+void LibretroDroid::Video::initializeGraphics(int screenWidth, int screenHeight, bool bottomLeftOrigin) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
+    this->bottomLeftOrigin = bottomLeftOrigin;
     this->screenWidth = screenWidth;
     this->screenHeight = screenHeight;
 
@@ -137,6 +138,8 @@ void LibretroDroid::Video::initializeGraphics(int screenWidth, int screenHeight)
 
     glViewport(0, 0, screenWidth, screenHeight);
     checkGlError("glViewport");
+
+    glUseProgram(0);
 }
 
 void LibretroDroid::Video::renderFrame() {
@@ -152,6 +155,7 @@ void LibretroDroid::Video::renderFrame() {
 
     glDisable(GL_DEPTH_TEST);
 
+    updateVertices();
     glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle);
@@ -162,12 +166,21 @@ void LibretroDroid::Video::renderFrame() {
     glEnableVertexAttribArray(gvCoordinateHandle);
     checkGlError("glEnableVertexAttribArray");
 
-    glActiveTexture(GL_TEXTURE0);
-    checkGlError("glActiveTexture");
-    glBindTexture(GL_TEXTURE_2D, current_framebuffer_texture);
-    checkGlError("glBindTexture");
-    glUniform1i(textureHandle, 0);
-    checkGlError("glUniform1i");
+    if (use3DRendering) {
+        glActiveTexture(GL_TEXTURE0);
+        checkGlError("glActiveTexture");
+        glBindTexture(GL_TEXTURE_2D, current_framebuffer_texture);
+        checkGlError("glBindTexture");
+        glUniform1i(textureHandle, 0);
+        checkGlError("glUniform1i");
+    } else {
+        glActiveTexture(GL_TEXTURE0);
+        checkGlError("glActiveTexture");
+        glBindTexture(GL_TEXTURE_2D, current_texture);
+        checkGlError("glBindTexture");
+        glUniform1i(textureHandle, 0);
+        checkGlError("glUniform1i");
+    }
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     checkGlError("glDrawArrays");
@@ -178,7 +191,10 @@ void LibretroDroid::Video::renderFrame() {
     glUseProgram(0);
 }
 
-void LibretroDroid::Video::hw_initialize_framebuffer(int width, int height, bool depth, bool stencil) {
+void LibretroDroid::Video::initialize3DRendering(int width, int height, float aspectRatio, bool depth, bool stencil) {
+    this->use3DRendering = true;
+    this->aspectRatio = aspectRatio;
+
     glGenFramebuffers(1, &current_framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer);
 
@@ -205,4 +221,87 @@ void LibretroDroid::Video::hw_initialize_framebuffer(int width, int height, bool
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void LibretroDroid::Video::initialize2DRendering(int width, int height, float aspectRatio) {
+    this->use3DRendering = false;
+    this->aspectRatio = aspectRatio;
+
+    glGenTextures(1, &current_texture);
+    checkGlError("glGenTextures");
+    glBindTexture(GL_TEXTURE_2D, current_texture);
+    checkGlError("glBindTexture");
+}
+
+void LibretroDroid::Video::onNew2DFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+    LOGI("Received new frame of size (%d, %d) %d", width, height, pitch);
+    glBindTexture(GL_TEXTURE_2D, current_texture);
+    checkGlError("glBindTexture");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, pitch / 2, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, data);
+    checkGlError("glTexImage2D");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    updateCoords(width, height, pitch);
+}
+
+void LibretroDroid::Video::onNew3DFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+
+}
+
+void LibretroDroid::Video::updateCoords(unsigned width, unsigned height, size_t pitch) {
+    float padding = (float) 2 * width / pitch;
+    int flipY = bottomLeftOrigin ? 1 : -1;
+
+    gTriangleCoords[0] = 0.0F * padding;
+    gTriangleCoords[1] = 0.0F * flipY;
+
+    gTriangleCoords[2] = 0.0F * padding;
+    gTriangleCoords[3] = 1.0F * flipY;
+
+    gTriangleCoords[4] = 1.0F * padding;
+    gTriangleCoords[5] = 0.0F * flipY;
+
+    gTriangleCoords[6] = 1.0F * padding;
+    gTriangleCoords[7] = 0.0F * flipY;
+
+    gTriangleCoords[8] = 0.0F * padding;
+    gTriangleCoords[9] = 1.0F * flipY;
+
+    gTriangleCoords[10] = 1.0F * padding;
+    gTriangleCoords[11] = 1.0F * flipY;
+}
+
+void LibretroDroid::Video::updateVertices() {
+    float screenAspectRatio = (float) screenWidth / screenHeight;
+
+    float scaleX = 1.0F;
+    float scaleY = 1.0F;
+
+    if (aspectRatio > screenAspectRatio) {
+        scaleY = screenAspectRatio / aspectRatio;
+    } else {
+        scaleX = aspectRatio / screenAspectRatio;
+    }
+
+    LOGD("Correcting vertices position with %f %f %f %f", scaleX, scaleY, screenAspectRatio, aspectRatio);
+
+    gTriangleVertices[0] = -1.0F * scaleX;
+    gTriangleVertices[1] = -1.0F * scaleY;
+
+    gTriangleVertices[2] = -1.0F * scaleX;
+    gTriangleVertices[3] = 1.0F * scaleY;
+
+    gTriangleVertices[4] = 1.0F * scaleX;
+    gTriangleVertices[5] = -1.0F * scaleY;
+
+    gTriangleVertices[6] = 1.0F * scaleX;
+    gTriangleVertices[7] = -1.0F * scaleY;
+
+    gTriangleVertices[8] = -1.0F * scaleX;
+    gTriangleVertices[9] = 1.0F * scaleY;
+
+    gTriangleVertices[10] = 1.0F * scaleX;
+    gTriangleVertices[11] = 1.0F * scaleY;
 }

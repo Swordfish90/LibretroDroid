@@ -12,9 +12,14 @@ namespace LibretroDroid {
 
 class Video {
 public:
-    void initializeGraphics(int screenWidth, int screenHeight);
+    void initializeGraphics(int screenWidth, int screenHeight, bool bottomLeftOrigin);
     void renderFrame();
-    void hw_initialize_framebuffer(int width, int height, bool depth, bool stencil);
+    void initialize2DRendering(int width, int height, float aspectRatio);
+    void initialize3DRendering(int width, int height, float aspectRatio, bool depth, bool stencil);
+
+    void onNew2DFrame(const void *data, unsigned width, unsigned height, size_t pitch);
+    void onNew3DFrame(const void *data, unsigned width, unsigned height, size_t pitch);
+
     uintptr_t getCurrentFramebuffer() { return current_framebuffer; };
 
 private:
@@ -27,7 +32,7 @@ private:
             1.0f, 1.0f
     };
 
-    const GLfloat gTriangleCoords[12] = {
+    GLfloat gTriangleCoords[12] = {
             0.0f, 0.0f,
             0.0f, 1.0f,
             1.0f, 0.0f,
@@ -36,8 +41,13 @@ private:
             1.0f, 1.0f
     };
 
+    void updateCoords(unsigned width, unsigned height, size_t pitch);
+    void updateVertices();
+
+    bool bottomLeftOrigin = false;
     int screenWidth = 0;
     int screenHeight = 0;
+    float aspectRatio = 1.0F;
 
     // OpenGL parameters
     GLuint gProgram = 0;
@@ -48,6 +58,11 @@ private:
     // HW Accelerated parameters
     unsigned current_framebuffer = 0;
     unsigned current_framebuffer_texture = 0;
+
+    // Non HW accelerated parameters
+    unsigned current_texture = 0;
+
+    bool use3DRendering = false;
 };
 
 }

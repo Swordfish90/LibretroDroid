@@ -41,10 +41,10 @@ extern "C" {
 #include "libretro/libretro.h"
 }
 
-int width = 0;
-int height = 0;
 
-// Retrograde callbacks
+LibretroDroid::Core* core = nullptr;
+LibretroDroid::Audio* audio = nullptr;
+LibretroDroid::Video* video = nullptr;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -66,6 +66,8 @@ void callback_hw_video_refresh(const void *data, unsigned width, unsigned height
     if (data == RETRO_HW_FRAME_BUFFER_VALID) {
         //renderFrame();
         //renderFrame();
+    } else {
+        video->onNew2DFrame(data, width, height, pitch);
     }
 }
 
@@ -108,35 +110,34 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGI("%s", requested->key);
-    for (int i = 0; i < variables.size(); i++) {
-        if (variables[i].key == requested->key) {
-            requested->value = variables[i].value.c_str();
+    for (auto& variable : variables) {
+        if (variable.key == requested->key) {
+            requested->value = variable.value.c_str();
             return true;
         }
     }
     return false;
 }
 
-LibretroDroid::Core* core = nullptr;
-LibretroDroid::Audio* audio = nullptr;
-LibretroDroid::Video* video = nullptr;
-
-uintptr_t hw_get_current_framebuffer() {
-    LOGI("FILIPPO... Calling hw_get_current_framebuffer");
-    return video->getCurrentFramebuffer();
-}
-
+bool useHWAcceleration = false;
 bool useDepth = false;
 bool useStencil = false;
+bool bottomLeftOrigin = false;
 
 bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
-    LOGI("FILIPPO... Calling environment_handle_set_hw_render");
+    LOGI("Setting up hardware acceleration with depth: %b, stencil: %b, bottom left origin: %b");
+    useHWAcceleration = true;
     useDepth = hw_render_callback->depth;
     useStencil = hw_render_callback->stencil;
+    bottomLeftOrigin = hw_render_callback->bottom_left_origin;
 
     hw_context_destroy = hw_render_callback->context_destroy;
     hw_context_reset = hw_render_callback->context_reset;
-    hw_render_callback->get_current_framebuffer = &hw_get_current_framebuffer;
+
+    hw_render_callback->get_current_framebuffer = []() -> uintptr_t {
+        return video->getCurrentFramebuffer();
+    };
+
     hw_render_callback->get_proc_address = &eglGetProcAddress;
 
     return true;
@@ -238,7 +239,11 @@ extern "C" {
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
-    core = new LibretroDroid::Core("mupen64plus_next_gles3_libretro_android.so");
+    //core = new LibretroDroid::Core("mupen64plus_next_gles3_libretro_android.so");
+    //core = new LibretroDroid::Core("pcsx_rearmed_libretro_android.so");
+    core = new LibretroDroid::Core("gambatte_libretro_android.so");
+    //core = new LibretroDroid::Core("mgba_libretro_android.so");
+    //core = new LibretroDroid::Core("snes9x_libretro_android.so");
 
     // Attach callbacks
     core->retro_set_video_refresh(&callback_hw_video_refresh);
@@ -255,13 +260,17 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
 
     struct retro_game_info game_info;
     if (system_info.need_fullpath) {
-        game_info.path = "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64";
-        //game_info->path = "/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp";
+        //game_info.path = "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64";
+        //game_info.path = "/storage/emulated/0/Roms Test/gba/Advance Wars.gba";
+        //game_info.path = "/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp";
         game_info.data = nullptr;
         game_info.size = 0;
     } else {
-        struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
-        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp");
+        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
+        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gba/Advance Wars.gba");
+        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gbc/Pokemon Silver Version.gbc");
+        struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
+        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/snes/Legend of Zelda, The - A Link to the Past.smc");
         game_info.data = file.data;
         game_info.size = file.size;
     }
@@ -276,13 +285,24 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
     core->retro_get_system_av_info(&system_av_info);
 
     video = new LibretroDroid::Video();
-    video->initializeGraphics(width, height);
-    video->hw_initialize_framebuffer(
-        system_av_info.geometry.base_width,
-        system_av_info.geometry.base_width,
-        useDepth,
-        useStencil
-    );
+
+    if (useHWAcceleration) {
+        video->initializeGraphics(width, height, bottomLeftOrigin);
+        video->initialize3DRendering(
+                system_av_info.geometry.base_width,
+                system_av_info.geometry.base_height,
+                system_av_info.geometry.aspect_ratio,
+                useDepth,
+                useStencil
+        );
+    } else {
+        video->initializeGraphics(width, height, bottomLeftOrigin);
+        video->initialize2DRendering(
+                system_av_info.geometry.base_width,
+                system_av_info.geometry.base_height,
+                system_av_info.geometry.aspect_ratio
+        );
+    }
 
     audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
     audio->start();
