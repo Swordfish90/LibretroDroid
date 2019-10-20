@@ -20,14 +20,7 @@
 
 #include <EGL/egl.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <dlfcn.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-
+#include <string>
 #include <vector>
 #include <cmath>
 
