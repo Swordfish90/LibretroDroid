@@ -35,6 +35,7 @@
 #include "core.h"
 #include "audio.h"
 #include "video.h"
+#include "renderer.h"
 
 extern "C" {
 #include "utils.h"
@@ -63,12 +64,7 @@ void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
 
 void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
     LOGI("hw video refresh callback called %i %i", width, height);
-    if (data == RETRO_HW_FRAME_BUFFER_VALID) {
-        //renderFrame();
-        //renderFrame();
-    } else {
-        video->onNew2DFrame(data, width, height, pitch);
-    }
+    video->onNewFrame(data, width, height, pitch);
 }
 
 std::vector<struct Variable> variables;
@@ -239,9 +235,9 @@ extern "C" {
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
-    //core = new LibretroDroid::Core("mupen64plus_next_gles3_libretro_android.so");
+    core = new LibretroDroid::Core("mupen64plus_next_gles3_libretro_android.so");
     //core = new LibretroDroid::Core("pcsx_rearmed_libretro_android.so");
-    core = new LibretroDroid::Core("gambatte_libretro_android.so");
+    //core = new LibretroDroid::Core("gambatte_libretro_android.so");
     //core = new LibretroDroid::Core("mgba_libretro_android.so");
     //core = new LibretroDroid::Core("snes9x_libretro_android.so");
 
@@ -266,10 +262,10 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
         game_info.data = nullptr;
         game_info.size = 0;
     } else {
-        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
+        struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
         //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gba/Advance Wars.gba");
         //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gbc/Pokemon Silver Version.gbc");
-        struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
+        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
         //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/snes/Legend of Zelda, The - A Link to the Past.smc");
         game_info.data = file.data;
         game_info.size = file.size;
@@ -284,25 +280,26 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
     struct retro_system_av_info system_av_info;
     core->retro_get_system_av_info(&system_av_info);
 
-    video = new LibretroDroid::Video();
-
+    LibretroDroid::Renderer* renderer;
     if (useHWAcceleration) {
-        video->initializeGraphics(width, height, bottomLeftOrigin);
-        video->initialize3DRendering(
-                system_av_info.geometry.base_width,
-                system_av_info.geometry.base_height,
-                system_av_info.geometry.aspect_ratio,
-                useDepth,
-                useStencil
+        renderer = new LibretroDroid::FramebufferRenderer(
+            system_av_info.geometry.base_width,
+            system_av_info.geometry.base_height,
+            useDepth,
+            useStencil
         );
     } else {
-        video->initializeGraphics(width, height, bottomLeftOrigin);
-        video->initialize2DRendering(
-                system_av_info.geometry.base_width,
-                system_av_info.geometry.base_height,
-                system_av_info.geometry.aspect_ratio
-        );
+        renderer = new LibretroDroid::ImageRenderer();
     }
+
+    video = new LibretroDroid::Video();
+    video->initializeGraphics(
+        renderer,
+        width,
+        height,
+        bottomLeftOrigin,
+        system_av_info.geometry.aspect_ratio
+    );
 
     audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
     audio->start();

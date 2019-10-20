@@ -15,6 +15,8 @@ add_library(gl2jni SHARED
         core.cpp
         video.h
         video.cpp
+        renderer.h
+        renderer.cpp
         audio.h
         audio.cpp
         utils.c
