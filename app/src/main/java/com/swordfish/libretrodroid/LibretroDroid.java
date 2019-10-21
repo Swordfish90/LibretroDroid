@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.gl2jni;
+package com.swordfish.libretrodroid;
 
 // Wrapper for native library
 
-public class GL2JNILib {
+public class LibretroDroid {
 
      static {
-         System.loadLibrary("gl2jni");
+         System.loadLibrary("libretrodroid");
      }
 
     /**
      * @param width the current view width
      * @param height the current view height
      */
-     public static native void init(int width, int height);
-     public static native void step();
+
+    public static native void create(String coreFilePath, String gameFilePath);
+    public static native void destroy();
+
+    public static native void setupGraphics(int width, int height);
+    public static native void step();
 }

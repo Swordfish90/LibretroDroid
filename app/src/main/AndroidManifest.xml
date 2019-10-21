@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.android.gl2jni">
+          package="com.android.libretrodroid">
   <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
 
@@ -11,7 +11,7 @@
       android:fullBackupContent="false"
       android:icon="@mipmap/ic_launcher"
       android:label="@string/gl2jni_activity">
-    <activity android:name="GL2JNIActivity"
+    <activity android:name="com.swordfish.libretrodroid.GL2JNIActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:launchMode="singleTask"
               android:configChanges="orientation|keyboardHidden">

@@ -221,20 +221,18 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 
 
 extern "C" {
-    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
-    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setupGraphics(JNIEnv * env, jobject obj,  jint width, jint height);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
 };
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath) {
+    const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
+    const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
-{
-    core = new LibretroDroid::Core("mupen64plus_next_gles3_libretro_android.so");
-    //core = new LibretroDroid::Core("pcsx_rearmed_libretro_android.so");
-    //core = new LibretroDroid::Core("gambatte_libretro_android.so");
-    //core = new LibretroDroid::Core("mgba_libretro_android.so");
-    //core = new LibretroDroid::Core("snes9x_libretro_android.so");
+    core = new LibretroDroid::Core(corePath);
 
-    // Attach callbacks
     core->retro_set_video_refresh(&callback_hw_video_refresh);
     core->retro_set_environment(&callback_environment);
     core->retro_set_audio_sample(&callback_audio_sample);
@@ -256,10 +254,6 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
         game_info.size = 0;
     } else {
         struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
-        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gba/Advance Wars.gba");
-        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gbc/Pokemon Silver Version.gbc");
-        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
-        //struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/snes/Legend of Zelda, The - A Link to the Past.smc");
         game_info.data = file.data;
         game_info.size = file.size;
     }
@@ -270,6 +264,16 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
         exit(1);
     }
 
+    env->ReleaseStringUTFChars(soFilePath, corePath);
+    env->ReleaseStringUTFChars(gameFilePath, gamePath);
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj) {
+    // TODO ... Here we should destroy everything...
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setupGraphics(JNIEnv * env, jobject obj,  jint width, jint height)
+{
     struct retro_system_av_info system_av_info;
     core->retro_get_system_av_info(&system_av_info);
 
@@ -294,8 +298,10 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
         system_av_info.geometry.aspect_ratio
     );
 
-    audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
-    audio->start();
+    if (audio == nullptr) {
+        audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
+        audio->start();
+    }
 
     if (hw_context_reset != nullptr) {
         hw_context_reset();
@@ -303,7 +309,7 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
 }
 
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj)
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj)
 {
     LOGI("Stepping into retro_run()");
     core->retro_run();

@@ -8,7 +8,7 @@ set (OBOE_DIR oboe)
 add_subdirectory (${OBOE_DIR} ./oboe)
 include_directories (${OBOE_DIR}/include)
 
-add_library(gl2jni SHARED
+add_library(libretrodroid SHARED
         libretrodroid.cpp
         log.h
         core.h
@@ -24,7 +24,7 @@ add_library(gl2jni SHARED
         libretro/libretro.h)
 
 # add lib dependencies
-target_link_libraries(gl2jni
+target_link_libraries(libretrodroid
                       android
                       log 
                       EGL
