@@ -38,5 +38,5 @@ void LibretroDroid::Audio::pause() {
 }
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
-    stream->write(data, frames, 0);
+    stream->write(data, frames, oboe::kDefaultTimeoutNanos);
 }
