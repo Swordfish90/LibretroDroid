@@ -23,12 +23,15 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 #include "log.h"
 #include "core.h"
 #include "audio.h"
 #include "video.h"
 #include "renderer.h"
+#include "fpssync.h"
 
 extern "C" {
 #include "utils.h"
@@ -39,6 +42,7 @@ extern "C" {
 LibretroDroid::Core* core = nullptr;
 LibretroDroid::Audio* audio = nullptr;
 LibretroDroid::Video* video = nullptr;
+LibretroDroid::FPSSync* fpsSync = nullptr;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -114,7 +118,6 @@ bool useStencil = false;
 bool bottomLeftOrigin = false;
 
 bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
-    LOGI("Setting up hardware acceleration with depth: %b, stencil: %b, bottom left origin: %b");
     useHWAcceleration = true;
     useDepth = hw_render_callback->depth;
     useStencil = hw_render_callback->stencil;
@@ -247,13 +250,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNI
 
     struct retro_game_info game_info;
     if (system_info.need_fullpath) {
-        //game_info.path = "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64";
-        //game_info.path = "/storage/emulated/0/Roms Test/gba/Advance Wars.gba";
-        //game_info.path = "/storage/emulated/0/Roms/psx/Metal Gear Solid.pbp";
+        game_info.path = gamePath;
         game_info.data = nullptr;
         game_info.size = 0;
     } else {
-        struct read_file_result file = read_file_as_bytes("/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
+        struct read_file_result file = read_file_as_bytes(gamePath);
         game_info.data = file.data;
         game_info.size = file.size;
     }
@@ -306,14 +307,18 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setupGraph
     if (hw_context_reset != nullptr) {
         hw_context_reset();
     }
-}
 
+    fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps);
+    fpsSync->start();
+}
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj)
 {
     LOGI("Stepping into retro_run()");
     core->retro_run();
     video->renderFrame();
+
+    fpsSync->sync();
 }
 
 

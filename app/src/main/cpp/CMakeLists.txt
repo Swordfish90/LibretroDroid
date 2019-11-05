@@ -19,6 +19,8 @@ add_library(libretrodroid SHARED
         renderer.cpp
         audio.h
         audio.cpp
+        fpssync.h
+        fpssync.cpp
         utils.c
         utils.h
         libretro/libretro.h)
