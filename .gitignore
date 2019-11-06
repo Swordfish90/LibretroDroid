@@ -1,5 +1,7 @@
 app/.externalNativeBuild
 app/build
+app/*.iml
 .google
 .gradle
 .idea
+*.iml

@@ -21,13 +21,13 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 
-public class GL2JNIActivity extends Activity {
+public class SampleActivity extends Activity {
 
-    GL2JNIView mView;
+    GLRetroView mView;
 
     @Override protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
-        mView = new GL2JNIView(getApplication());
+        mView = new GLRetroView(getApplication());
 	    setContentView(mView);
 
         Log.d("FILIPPO", "Environment: " + Environment.getExternalStorageDirectory().getPath());

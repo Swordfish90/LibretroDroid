@@ -1,17 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
     defaultConfig {
         applicationId 'com.android.gl2jni'
         minSdkVersion 21
-        targetSdkVersion 27
-        externalNativeBuild {
-            cmake {
-                // Available arguments are inside ${SDK}/cmake/.../android.toolchain.cmake file
-                arguments '-DANDROID_STL=c++_static'
-            }
-        }
+        targetSdkVersion 28
     }
 
     buildTypes {
@@ -21,11 +15,9 @@ android {
                           'proguard-rules.pro'
         }
     }
-    externalNativeBuild {
-        cmake {
-            version '3.10.2'
-            path 'src/main/cpp/CMakeLists.txt'
-        }
-    }
+}
+
+dependencies {
+    compile project(path: ':libretrodroid')
 }
 

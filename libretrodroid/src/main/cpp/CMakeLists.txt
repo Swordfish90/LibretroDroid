@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 
 # Let's include oboe
 set (OBOE_DIR oboe)
-add_subdirectory (${OBOE_DIR} ./oboe)
+add_subdirectory (${OBOE_DIR} oboe)
 include_directories (${OBOE_DIR}/include)
 
 add_library(libretrodroid SHARED
@@ -30,6 +30,6 @@ target_link_libraries(libretrodroid
                       android
                       log 
                       EGL
-                      oboe
+        oboe
                       GLESv3)
 

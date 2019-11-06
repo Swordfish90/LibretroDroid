@@ -60,34 +60,21 @@ import javax.microedition.khronos.opengles.GL10;
  *   that matches it exactly (with regards to red/green/blue/alpha channels
  *   bit depths). Failure to do so would result in an EGL_BAD_MATCH error.
  */
-class GL2JNIView extends GLSurfaceView {
-    private static String TAG = "GL2JNIView";
+class GLRetroView extends GLSurfaceView {
+    private static String TAG = "GLRetroView";
     private static final boolean DEBUG = false;
 
-    public GL2JNIView(Context context) {
+    public GLRetroView(Context context) {
         super(context);
         init();
     }
 
-    public GL2JNIView(Context context, boolean translucent, int depth, int stencil) {
+    public GLRetroView(Context context, boolean translucent, int depth, int stencil) {
         super(context);
         init();
     }
 
     private void init() {
-
-        /* By default, GLSurfaceView() creates a RGB_565 opaque surface.
-         * If we want a translucent one, we should change the surface's
-         * format here, using PixelFormat.TRANSLUCENT for GL Surfaces
-         * is interpreted as any 32-bit surface with alpha by SurfaceFlinger.
-         */
-/*        if (translucent) {
-            this.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        }*/
-
-        /* Setup the context factory for 2.0 rendering.
-         * See ContextFactory class definition below
-         */
         setEGLContextFactory(new ContextFactory());
 
         /* We need to choose an EGLConfig that matches the format of
