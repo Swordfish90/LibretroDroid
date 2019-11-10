@@ -29,6 +29,7 @@ public class SampleActivity extends Activity {
         super.onCreate(icicle);
         mView = new GLRetroView(getApplication());
 	    setContentView(mView);
+        mView.setFocusable(true);
 
         Log.d("FILIPPO", "Environment: " + Environment.getExternalStorageDirectory().getPath());
     }

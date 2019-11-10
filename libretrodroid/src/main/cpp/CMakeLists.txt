@@ -21,6 +21,8 @@ add_library(libretrodroid SHARED
         audio.cpp
         fpssync.h
         fpssync.cpp
+        input.h
+        input.cpp
         utils.c
         utils.h
         libretro/libretro.h)
@@ -30,6 +32,6 @@ target_link_libraries(libretrodroid
                       android
                       log 
                       EGL
-        oboe
+                      oboe
                       GLESv3)
 

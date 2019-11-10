@@ -24,13 +24,15 @@ public class LibretroDroid {
          System.loadLibrary("libretrodroid");
      }
 
-    /**
-     * @param width the current view width
-     * @param height the current view height
-     */
+    public static final int MOTION_SOURCE_DPAD = 0;
+    public static final int MOTION_SOURCE_ANALOG_LEFT = 1;
+    public static final int MOTION_SOURCE_ANALOG_RIGHT = 2;
 
     public static native void create(String coreFilePath, String gameFilePath);
     public static native void destroy();
+
+    public static native boolean onMotionEvent(int motionSource, float xAxis, float yAxis);
+    public static native boolean onKeyEvent(int action, int keyCode);
 
     public static native void setupGraphics(int width, int height);
     public static native void step();

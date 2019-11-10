@@ -23,8 +23,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include <chrono>
-#include <thread>
+#include <unordered_set>
 
 #include "log.h"
 #include "core.h"
@@ -32,17 +31,18 @@
 #include "video.h"
 #include "renderer.h"
 #include "fpssync.h"
+#include "input.h"
 
 extern "C" {
 #include "utils.h"
 #include "libretro/libretro.h"
 }
 
-
 LibretroDroid::Core* core = nullptr;
 LibretroDroid::Audio* audio = nullptr;
 LibretroDroid::Video* video = nullptr;
 LibretroDroid::FPSSync* fpsSync = nullptr;
+LibretroDroid::Input* input = nullptr;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -212,23 +212,36 @@ size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
 }
 
 void callback_retro_set_input_poll() {
-    LOGI("callback_retro_set_input_poll has been called");
+    // Do nothing in here...
 }
 
 int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
-    LOGI("callback_set_input_state has been called");
-    return 0;
+    LOGD("callback_set_input_state called. Retrieving user input. %u %u %u %u", port, device, index, id);
+    return input->getInputState(port, device, index, id);
 }
 
 // INITIALIZATION
-
 
 extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setupGraphics(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
+    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint action, jint keyCode);
+    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis);
 };
+
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis) {
+    LOGD("Received motion event: %d %.2f, %.2f", source, xAxis, yAxis);
+    bool result = input->onMotionEvent(source, xAxis, yAxis);
+    return (jboolean) (result ? JNI_TRUE : JNI_FALSE);
+}
+
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint action, jint keyCode) {
+    LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
+    bool result = input->onKeyEvent(action, keyCode);
+    return (jboolean) (result ? JNI_TRUE : JNI_FALSE);
+}
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath) {
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
@@ -275,6 +288,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setupGraphics(JNIEnv * env, jobject obj,  jint width, jint height)
 {
+    input = new LibretroDroid::Input();
+
     struct retro_system_av_info system_av_info;
     core->retro_get_system_av_info(&system_av_info);
 
