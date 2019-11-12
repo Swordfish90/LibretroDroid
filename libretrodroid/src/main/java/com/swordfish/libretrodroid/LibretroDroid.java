@@ -29,11 +29,14 @@ public class LibretroDroid {
     public static final int MOTION_SOURCE_ANALOG_RIGHT = 2;
 
     public static native void create(String coreFilePath, String gameFilePath);
+    public static native void resume();
+    public static native void pause();
     public static native void destroy();
 
     public static native boolean onMotionEvent(int motionSource, float xAxis, float yAxis);
     public static native boolean onKeyEvent(int action, int keyCode);
 
-    public static native void setupGraphics(int width, int height);
+    public static native void onSurfaceCreated();
+    public static native void onSurfaceChanged(int width, int height);
     public static native void step();
 }

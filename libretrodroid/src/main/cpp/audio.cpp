@@ -30,11 +30,11 @@ LibretroDroid::Audio::~Audio() {
 }
 
 void LibretroDroid::Audio::start() {
-    stream->requestStart();
+    stream->start(oboe::kDefaultTimeoutNanos);
 }
 
-void LibretroDroid::Audio::pause() {
-    stream->requestStop();
+void LibretroDroid::Audio::stop() {
+    stream->stop(oboe::kDefaultTimeoutNanos);
 }
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {

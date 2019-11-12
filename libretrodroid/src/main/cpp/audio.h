@@ -16,7 +16,7 @@ public:
     ~Audio();
 
     void start();
-    void pause();
+    void stop();
 
     void write(const int16_t *data, size_t frames);
 

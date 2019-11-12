@@ -105,7 +105,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void LibretroDroid::Video::initializeGraphics(Renderer* renderer, int screenWidth, int screenHeight, bool bottomLeftOrigin, float aspectRatio) {
+void LibretroDroid::Video::initializeGraphics(Renderer* renderer, bool bottomLeftOrigin, float aspectRatio) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
@@ -114,10 +114,8 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, int screenWidt
     this->renderer = renderer;
     this->aspectRatio = aspectRatio;
     this->bottomLeftOrigin = bottomLeftOrigin;
-    this->screenWidth = screenWidth;
-    this->screenHeight = screenHeight;
 
-    LOGI("setupGraphics(%d, %d)", screenWidth, screenHeight);
+    LOGI("Initializing graphics");
 
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
@@ -239,4 +237,10 @@ void LibretroDroid::Video::updateVertices() {
 
     gTriangleVertices[10] = 1.0F * scaleX;
     gTriangleVertices[11] = 1.0F * scaleY;
+}
+
+void LibretroDroid::Video::updateScreenSize(int screenWidth, int screenHeight) {
+    LOGI("Updating screen size: %d x %d", screenWidth, screenHeight);
+    this->screenWidth = screenWidth;
+    this->screenHeight = screenHeight;
 }

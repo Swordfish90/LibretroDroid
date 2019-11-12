@@ -14,7 +14,7 @@
     <activity android:name="com.swordfish.libretrodroid.SampleActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:launchMode="singleTask"
-              android:configChanges="orientation|keyboardHidden">
+              android:configChanges="orientation|screenSize|keyboardHidden">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

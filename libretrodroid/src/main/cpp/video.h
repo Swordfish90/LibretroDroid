@@ -14,7 +14,8 @@ namespace LibretroDroid {
 
 class Video {
 public:
-    void initializeGraphics(Renderer* renderer, int screenWidth, int screenHeight, bool bottomLeftOrigin, float aspectRatio);
+    void initializeGraphics(Renderer* renderer, bool bottomLeftOrigin, float aspectRatio);
+    void updateScreenSize(int screenWidth, int screenHeight);
 
     void renderFrame();
 

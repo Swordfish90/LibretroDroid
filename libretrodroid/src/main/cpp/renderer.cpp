@@ -49,7 +49,7 @@ LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned
     }
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        LOGE("Error while create framebuffer. Leaving!");
+        LOGE("Error while creating framebuffer. Leaving!");
         exit(2);
     }
 

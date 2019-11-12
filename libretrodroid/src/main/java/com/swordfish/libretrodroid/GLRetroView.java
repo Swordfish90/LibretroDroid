@@ -64,17 +64,26 @@ import javax.microedition.khronos.opengles.GL10;
  *   bit depths). Failure to do so would result in an EGL_BAD_MATCH error.
  */
 class GLRetroView extends GLSurfaceView {
-    private static String TAG = "GLRetroView";
-    private static final boolean DEBUG = false;
 
     public GLRetroView(Context context) {
         super(context);
         init();
     }
 
-    public GLRetroView(Context context, boolean translucent, int depth, int stencil) {
-        super(context);
-        init();
+    @Override
+    public void onPause() {
+        LibretroDroid.pause();
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        LibretroDroid.resume();
+    }
+
+    public void onDestroy() {
+        LibretroDroid.destroy();
     }
 
     @Override
@@ -100,50 +109,23 @@ class GLRetroView extends GLSurfaceView {
     }
 
     private void init() {
-        setEGLContextFactory(new ContextFactory());
-
-        /* We need to choose an EGLConfig that matches the format of
-         * our surface exactly. This is going to be done in our
-         * custom config chooser. See ConfigChooser class definition
-         * below.
-         */
-        /*setEGLConfigChooser( translucent ?
-                             new ConfigChooser(8, 8, 8, 8, depth, stencil) :
-                             new ConfigChooser(5, 6, 5, 0, depth, stencil) );*/
-
         /* Set the renderer responsible for frame rendering */
 
         //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
-        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb");
+        LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb");
+        //LibretroDroid.create("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba");
         //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Super Mario Land 2 - 6 Golden Coins.gb");
-        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Tetris.gb");
-        LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
+        //LibretroDroid.create("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Tetris.gb");
+        //LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
         //LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64");
 
+        // Disabling this leads to crashes when using mupen64plus.
+        // We should consider migrating to SurfaceView and manually manage egl contexts.
+        setPreserveEGLContextOnPause(true);
+        setEGLConfigChooser(5, 6, 5, 0, 0, 0);
+        setEGLContextClientVersion(3);
         setRenderer(new Renderer());
-    }
-
-    private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
-        private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
-        public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
-            Log.w(TAG, "creating OpenGL ES 3.0 context");
-            checkEglError("Before eglCreateContext", egl);
-            int[] attrib_list = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL10.EGL_NONE };
-            EGLContext context = egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
-            checkEglError("After eglCreateContext", egl);
-            return context;
-        }
-
-        public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) {
-            egl.eglDestroyContext(display, context);
-        }
-    }
-
-    private static void checkEglError(String prompt, EGL10 egl) {
-        int error;
-        while ((error = egl.eglGetError()) != EGL10.EGL_SUCCESS) {
-            Log.e(TAG, String.format("%s: EGL error: 0x%x", prompt, error));
-        }
+        setKeepScreenOn(true);
     }
 
     private static class Renderer implements GLSurfaceView.Renderer {
@@ -152,11 +134,11 @@ class GLRetroView extends GLSurfaceView {
         }
 
         public void onSurfaceChanged(GL10 gl, int width, int height) {
-            LibretroDroid.setupGraphics(width, height);
+            LibretroDroid.onSurfaceChanged(width, height);
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-            // Do nothing.
+            LibretroDroid.onSurfaceCreated();
         }
     }
 }

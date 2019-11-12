@@ -25,7 +25,8 @@ public class SampleActivity extends Activity {
 
     GLRetroView mView;
 
-    @Override protected void onCreate(Bundle icicle) {
+    @Override
+    protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         mView = new GLRetroView(getApplication());
 	    setContentView(mView);
@@ -34,12 +35,21 @@ public class SampleActivity extends Activity {
         Log.d("FILIPPO", "Environment: " + Environment.getExternalStorageDirectory().getPath());
     }
 
-    @Override protected void onPause() {
+    @Override
+    protected
+    void onDestroy() {
+        super.onDestroy();
+        mView.onDestroy();
+    }
+
+    @Override
+    protected void onPause() {
         super.onPause();
         mView.onPause();
     }
 
-    @Override protected void onResume() {
+    @Override
+    protected void onResume() {
         super.onResume();
         mView.onResume();
     }
