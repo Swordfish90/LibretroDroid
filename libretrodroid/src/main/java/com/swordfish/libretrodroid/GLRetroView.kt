@@ -19,15 +19,10 @@ package com.swordfish.libretrodroid
 
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
-
-import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.egl.EGLContext
-import javax.microedition.khronos.egl.EGLDisplay
 import javax.microedition.khronos.opengles.GL10
 
 class GLRetroView(context: Context) : GLSurfaceView(context) {

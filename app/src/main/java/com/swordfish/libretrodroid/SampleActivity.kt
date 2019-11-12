@@ -19,8 +19,6 @@ package com.swordfish.libretrodroid
 
 import android.app.Activity
 import android.os.Bundle
-import android.os.Environment
-import android.util.Log
 
 class SampleActivity : Activity() {
 
@@ -30,15 +28,13 @@ class SampleActivity : Activity() {
         super.onCreate(icicle)
 
         retroView = GLRetroView(application)
-        retroView.onCreate("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64")
 
-        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
-        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb")
-        //LibretroDroid.create("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba");
-        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Super Mario Land 2 - 6 Golden Coins.gb");
-        //LibretroDroid.create("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Tetris.gb");
-        //LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
-        //LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64");
+        // Here we just have a bunch of preloaded roms used for testing. This are hardcoded path, so replace them.
+        retroView.onCreate("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64")
+        //retroView.onCreate("snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc")
+        //retroView.onCreate("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64")
+        //retroView.onCreate("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb")
+        //retroView.onCreate("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba")
 
         setContentView(retroView)
         retroView.isFocusable = true

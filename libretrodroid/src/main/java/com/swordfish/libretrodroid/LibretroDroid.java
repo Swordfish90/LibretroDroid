@@ -17,8 +17,6 @@
 
 package com.swordfish.libretrodroid;
 
-// Wrapper for native library
-
 public class LibretroDroid {
 
      static {

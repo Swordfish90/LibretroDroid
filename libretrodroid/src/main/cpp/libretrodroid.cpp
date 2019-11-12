@@ -48,19 +48,23 @@ void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
     va_start(argptr, fmt);
 
-    if (level < RETRO_LOG_DEBUG) {
-        LOGD(fmt, argptr);
-    } else if (level < RETRO_LOG_ERROR) {
-        LOGI(fmt, argptr);
-    } else {
-        LOGE(fmt, argptr);
+    switch (level) {
+        case RETRO_LOG_INFO:
+            LOGI(fmt, argptr);
+            break;
+        case RETRO_LOG_WARN:
+            LOGW(fmt, argptr);
+            break;
+        case RETRO_LOG_ERROR:
+            LOGE(fmt, argptr);
+            break;
     }
 
     va_end(argptr);
 }
 
 void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
-    LOGI("hw video refresh callback called %i %i", width, height);
+    LOGD("hw video refresh callback called %i %i", width, height);
     video->onNewFrame(data, width, height, pitch);
 }
 
