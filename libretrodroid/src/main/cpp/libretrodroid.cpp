@@ -43,6 +43,7 @@ LibretroDroid::Audio* audio = nullptr;
 LibretroDroid::Video* video = nullptr;
 LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
+std::mutex retroStateMutex;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -223,6 +224,8 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 // INITIALIZATION
 
 extern "C" {
+    JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
@@ -233,6 +236,32 @@ extern "C" {
     JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint action, jint keyCode);
     JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis);
 };
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data) {
+    jboolean isCopy = JNI_FALSE;
+    jbyte* cData = env->GetByteArrayElements(data, &isCopy);
+    jsize stateSize = env->GetArrayLength(data);
+
+    retroStateMutex.lock();
+    core->retro_unserialize(cData, (size_t) stateSize);
+    retroStateMutex.unlock();
+
+    env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+}
+
+JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj) {
+    size_t size = core->retro_serialize_size();
+    jbyte* state = new jbyte[size];
+
+    retroStateMutex.lock();
+    core->retro_serialize(state, size);
+    retroStateMutex.unlock();
+
+    jbyteArray result = env->NewByteArray(size);
+    env->SetByteArrayRegion (result, 0, size, state);
+
+    return result;
+}
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height) {
     LOGD("Performing LibretroDroid onSurfaceChanged");
@@ -376,7 +405,10 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj)
 {
     LOGD("Stepping into retro_run()");
+
+    retroStateMutex.lock();
     core->retro_run();
+    retroStateMutex.unlock();
 
     if (video != nullptr) {
         video->renderFrame();
