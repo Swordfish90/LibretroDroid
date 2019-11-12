@@ -341,7 +341,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNI
         game_info.data = nullptr;
         game_info.size = 0;
     } else {
-        struct read_file_result file = read_file_as_bytes(gamePath);
+        struct LibretroDroid::Utils::ReadResult file = LibretroDroid::Utils::readFileAsBytes(gamePath);
         game_info.data = file.data;
         game_info.size = file.size;
     }

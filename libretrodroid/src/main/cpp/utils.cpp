@@ -15,20 +15,20 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <malloc.h>
+#include <iostream>
+#include <fstream>
 
 #include "utils.h"
 
-struct read_file_result read_file_as_bytes(const char *name) {
-    FILE *fl = fopen(name, "r");
-    fseek(fl, 0, SEEK_END);
-    long len = ftell(fl);
-    char *ret = malloc(len);
-    fseek(fl, 0, SEEK_SET);
-    fread(ret, 1, len, fl);
-    fclose(fl);
+LibretroDroid::Utils::ReadResult LibretroDroid::Utils::readFileAsBytes(const char *filePath) {
+    std::ifstream fileStream(filePath);
+    fileStream.seekg( 0, std::ios::end );
+    size_t size = fileStream.tellg();
+    char* bytes = new char[size];
+    fileStream.seekg(0, std::ios::beg);
+    fileStream.read(bytes, size);
+    fileStream.close();
 
-    struct read_file_result result = { ret, len };
+    struct LibretroDroid::Utils::ReadResult result { size, bytes };
     return result;
 }

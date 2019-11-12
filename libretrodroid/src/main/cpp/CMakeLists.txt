@@ -23,7 +23,7 @@ add_library(libretrodroid SHARED
         fpssync.cpp
         input.h
         input.cpp
-        utils.c
+        utils.cpp
         utils.h
         libretro/libretro.h)
 

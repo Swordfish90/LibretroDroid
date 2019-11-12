@@ -15,14 +15,21 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef LIBRETRODROID_UTILS_H
+#define LIBRETRODROID_UTILS_H
 
-struct read_file_result {
-    char* data;
-    long size;
+namespace LibretroDroid {
+
+class Utils {
+public:
+    struct ReadResult {
+        size_t size;
+        char* data;
+    };
+
+    static ReadResult readFileAsBytes(const char* filePath);
 };
 
-struct read_file_result read_file_as_bytes(const char *name);
+}
 
-#endif
+#endif //LIBRETRODROID_UTILS_H
