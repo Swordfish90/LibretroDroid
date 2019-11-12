@@ -1,0 +1,61 @@
+/*
+ *     Copyright (C) 2019  Filippo Scognamiglio
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package com.swordfish.libretrodroid
+
+import android.app.Activity
+import android.os.Bundle
+import android.os.Environment
+import android.util.Log
+
+class SampleActivity : Activity() {
+
+    private lateinit var retroView: GLRetroView
+
+    override fun onCreate(icicle: Bundle?) {
+        super.onCreate(icicle)
+
+        retroView = GLRetroView(application)
+        retroView.onCreate("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64")
+
+        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Super Mario Land.gb");
+        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb")
+        //LibretroDroid.create("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba");
+        //LibretroDroid.create("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Super Mario Land 2 - 6 Golden Coins.gb");
+        //LibretroDroid.create("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Tetris.gb");
+        //LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64");
+        //LibretroDroid.create("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64");
+
+        setContentView(retroView)
+        retroView.isFocusable = true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        retroView.onDestroy()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        retroView.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        retroView.onResume()
+    }
+}
