@@ -1,4 +1,4 @@
-#LibretroDroid
+# LibretroDroid
 
 LibretroDroid is a simple C++ libretro frontend library for Android. It's usable, but still very young so expect a bumpy road.
 
