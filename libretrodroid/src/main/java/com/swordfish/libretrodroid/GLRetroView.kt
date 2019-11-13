@@ -33,6 +33,7 @@ class GLRetroView(context: Context) : GLSurfaceView(context) {
         setEGLContextClientVersion(3)
         setRenderer(Renderer())
         keepScreenOn = true
+        isFocusable = true
     }
 
     fun onCreate(coreFilePath: String, gameFilePath: String) {
@@ -53,20 +54,36 @@ class GLRetroView(context: Context) : GLSurfaceView(context) {
         LibretroDroid.destroy()
     }
 
+    fun sendKeyEvent(action: Int, keyCode: Int): Boolean {
+        return LibretroDroid.onKeyEvent(action, keyCode)
+    }
+
+    fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float) {
+        LibretroDroid.onMotionEvent(source, xAxis, yAxis)
+    }
+
+    fun serialize(): ByteArray {
+        return LibretroDroid.serialize()
+    }
+
+    fun unserialize(data: ByteArray) {
+        LibretroDroid.unserialize(data)
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        return !LibretroDroid.onKeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+        return !sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        return !LibretroDroid.onKeyEvent(KeyEvent.ACTION_UP, keyCode)
+        return !sendKeyEvent(KeyEvent.ACTION_UP, keyCode)
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         when (event.source) {
             InputDevice.SOURCE_JOYSTICK -> {
-                LibretroDroid.onMotionEvent(LibretroDroid.MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y))
-                LibretroDroid.onMotionEvent(LibretroDroid.MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y))
-                LibretroDroid.onMotionEvent(LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ))
+                sendMotionEvent(MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y))
+                sendMotionEvent(MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y))
+                sendMotionEvent(MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ))
             }
         }
         return super.onGenericMotionEvent(event)
@@ -84,5 +101,11 @@ class GLRetroView(context: Context) : GLSurfaceView(context) {
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
             LibretroDroid.onSurfaceCreated()
         }
+    }
+
+    companion object {
+        const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
+        const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
+        const val MOTION_SOURCE_ANALOG_RIGHT = LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT
     }
 }

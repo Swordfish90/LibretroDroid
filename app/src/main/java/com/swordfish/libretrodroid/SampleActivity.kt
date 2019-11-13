@@ -37,7 +37,6 @@ class SampleActivity : Activity() {
         //retroView.onCreate("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba")
 
         setContentView(retroView)
-        retroView.isFocusable = true
     }
 
     override fun onDestroy() {
