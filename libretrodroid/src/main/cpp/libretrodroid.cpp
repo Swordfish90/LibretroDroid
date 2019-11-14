@@ -15,6 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#define MODULE_NAME_CORE "Libretro Core"
+
 #include <jni.h>
 
 #include <EGL/egl.h>
@@ -49,18 +51,22 @@ void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_start(argptr, fmt);
 
     switch (level) {
+        case RETRO_LOG_DEBUG:
+            __android_log_vprint(ANDROID_LOG_DEBUG, MODULE_NAME_CORE, fmt, argptr);
+            break;
         case RETRO_LOG_INFO:
-            LOGI(fmt, argptr);
+            __android_log_vprint(ANDROID_LOG_INFO, MODULE_NAME_CORE, fmt, argptr);
             break;
         case RETRO_LOG_WARN:
-            LOGW(fmt, argptr);
+            __android_log_vprint(ANDROID_LOG_WARN, MODULE_NAME_CORE, fmt, argptr);
             break;
         case RETRO_LOG_ERROR:
-            LOGE(fmt, argptr);
+            __android_log_vprint(ANDROID_LOG_ERROR, MODULE_NAME_CORE, fmt, argptr);
+            break;
+        default:
+            // Log nothing in here.
             break;
     }
-
-    va_end(argptr);
 }
 
 void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
