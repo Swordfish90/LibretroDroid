@@ -234,7 +234,7 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 
 extern "C" {
     JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data);
+    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
@@ -246,16 +246,18 @@ extern "C" {
     JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis);
 };
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data) {
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data) {
     jboolean isCopy = JNI_FALSE;
     jbyte* cData = env->GetByteArrayElements(data, &isCopy);
     jsize stateSize = env->GetArrayLength(data);
 
     retroStateMutex.lock();
-    core->retro_unserialize(cData, (size_t) stateSize);
+    bool result = core->retro_unserialize(cData, (size_t) stateSize);
     retroStateMutex.unlock();
 
     env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+
+    return result ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj) {

@@ -76,8 +76,8 @@ class GLRetroView(context: Context,
         return LibretroDroid.serialize()
     }
 
-    fun unserialize(data: ByteArray) {
-        LibretroDroid.unserialize(data)
+    fun unserialize(data: ByteArray): Boolean {
+        return LibretroDroid.unserialize(data)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
