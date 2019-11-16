@@ -22,10 +22,16 @@ import android.opengl.GLSurfaceView
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class GLRetroView(context: Context) : GLSurfaceView(context) {
+class GLRetroView(context: Context,
+    private val coreFilePath: String,
+    private val gameFilePath: String
+) : GLSurfaceView(context), LifecycleObserver {
 
     init {
         preserveEGLContextOnPause = true
@@ -36,20 +42,24 @@ class GLRetroView(context: Context) : GLSurfaceView(context) {
         isFocusable = true
     }
 
-    fun onCreate(coreFilePath: String, gameFilePath: String) {
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    fun onCreate() {
         LibretroDroid.create(coreFilePath, gameFilePath)
     }
 
+    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     override fun onPause() {
         LibretroDroid.pause()
         super.onPause()
     }
 
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     override fun onResume() {
         super.onResume()
         LibretroDroid.resume()
     }
 
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() {
         LibretroDroid.destroy()
     }

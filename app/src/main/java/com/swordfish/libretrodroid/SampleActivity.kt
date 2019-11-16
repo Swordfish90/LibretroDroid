@@ -27,16 +27,16 @@ class SampleActivity : Activity() {
     override fun onCreate(icicle: Bundle?) {
         super.onCreate(icicle)
 
-        retroView = GLRetroView(application)
-
         // Here we just have a bunch of preloaded roms used for testing. This are hardcoded path, so replace them.
-        retroView.onCreate("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64")
-        //retroView.onCreate("snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc")
-        //retroView.onCreate("mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64")
-        //retroView.onCreate("gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb")
-        //retroView.onCreate("mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba")
+        retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Super Mario 64/Super Mario 64.n64")
+        // retroView = GLRetroView(this, "snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc")
+        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64")
+        //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb")
+        //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Advance Wars.gba")
 
         setContentView(retroView)
+
+        retroView.onCreate()
     }
 
     override fun onDestroy() {
