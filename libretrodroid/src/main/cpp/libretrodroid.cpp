@@ -261,11 +261,14 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
 }
 
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj) {
+
+    retroStateMutex.lock();
+
     size_t size = core->retro_serialize_size();
     jbyte* state = new jbyte[size];
 
-    retroStateMutex.lock();
     core->retro_serialize(state, size);
+
     retroStateMutex.unlock();
 
     jbyteArray result = env->NewByteArray(size);
