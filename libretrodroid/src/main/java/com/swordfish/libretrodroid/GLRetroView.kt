@@ -30,7 +30,8 @@ import javax.microedition.khronos.opengles.GL10
 
 class GLRetroView(context: Context,
     private val coreFilePath: String,
-    private val gameFilePath: String
+    private val gameFilePath: String,
+    private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : GLSurfaceView(context), LifecycleObserver {
 
     init {
@@ -44,7 +45,7 @@ class GLRetroView(context: Context,
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
-        LibretroDroid.create(coreFilePath, gameFilePath)
+        LibretroDroid.create(coreFilePath, gameFilePath, shader)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
@@ -117,5 +118,9 @@ class GLRetroView(context: Context,
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
         const val MOTION_SOURCE_ANALOG_RIGHT = LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT
+
+        const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
+        const val SHADER_CRT = LibretroDroid.SHADER_CRT
+        const val SHADER_LCD = LibretroDroid.SHADER_LCD
     }
 }

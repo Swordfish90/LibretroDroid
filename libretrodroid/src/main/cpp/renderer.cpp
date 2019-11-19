@@ -26,6 +26,8 @@ LibretroDroid::ImageRenderer::ImageRenderer() {
 }
 
 void LibretroDroid::ImageRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
+
     // TODO We need to handle different texture types.
     glBindTexture(GL_TEXTURE_2D, currentTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, pitch / 2, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, data);
@@ -72,7 +74,7 @@ LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned
 }
 
 void LibretroDroid::FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
-    // TODO Here something might be needed to handle frame duping.
+    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
 }
 
 uintptr_t LibretroDroid::FramebufferRenderer::getTexture() {
@@ -81,4 +83,8 @@ uintptr_t LibretroDroid::FramebufferRenderer::getTexture() {
 
 uintptr_t LibretroDroid::FramebufferRenderer::getFramebuffer() {
     return currentFramebuffer;
+}
+
+void LibretroDroid::Renderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+    lastFrameSize = std::make_pair(width, height);
 }

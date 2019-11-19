@@ -19,6 +19,7 @@
 #include <GLES3/gl3ext.h>
 #include <EGL/egl.h>
 #include <cstdlib>
+#include <string>
 
 #include "log.h"
 
@@ -38,20 +39,15 @@ static void checkGlError(const char* op) {
 const char* gVertexShader =
         "attribute vec4 vPosition;\n"
         "attribute vec2 vCoordinate;\n"
+        "uniform mediump float vPadding;\n"
+        "uniform mediump float vFlipY;\n"
         "uniform lowp sampler2D texture;\n"
-        "varying vec2 coords;\n"
+        "varying vec2 coords;"
+        "varying vec2 origCoords;\n"
         "void main() {\n"
-        "  coords = vCoordinate;\n"
+        "  origCoords = vCoordinate;\n"
+        "  coords = vCoordinate * vec2(vPadding, vFlipY);\n"
         "  gl_Position = vPosition;\n"
-        "}\n";
-
-const char* gFragmentShader =
-        "precision mediump float;\n"
-        "uniform lowp sampler2D texture;\n"
-        "varying vec2 coords;\n"
-        "void main() {\n"
-        "  vec4 tex = texture2D(texture, coords);"
-        "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
         "}\n";
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
@@ -118,7 +114,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void LibretroDroid::Video::initializeGraphics(Renderer* renderer, bool bottomLeftOrigin, float aspectRatio) {
+void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float aspectRatio) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
@@ -130,7 +126,7 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, bool bottomLef
 
     LOGI("Initializing graphics");
 
-    gProgram = createProgram(gVertexShader, gFragmentShader);
+    gProgram = createProgram(gVertexShader, fragmentShader.data());
     if (!gProgram) {
         LOGE("Could not create program.");
         exit(2);
@@ -142,7 +138,16 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, bool bottomLef
     gvCoordinateHandle = glGetAttribLocation(gProgram, "vCoordinate");
     checkGlError("glGetAttribLocation");
 
-    textureHandle = glGetUniformLocation(gProgram, "texture");
+    gTextureHandle = glGetUniformLocation(gProgram, "texture");
+    checkGlError("glGetAttribLocation");
+
+    gTextureSizeHandle = glGetUniformLocation(gProgram, "textureSize");
+    checkGlError("glGetAttribLocation");
+
+    gFlipYHandle = glGetUniformLocation(gProgram, "vFlipY");
+    checkGlError("glGetAttribLocation");
+
+    gPaddingHandle = glGetUniformLocation(gProgram, "vPadding");
     checkGlError("glGetAttribLocation");
 
     glViewport(0, 0, screenWidth, screenHeight);
@@ -173,14 +178,24 @@ void LibretroDroid::Video::renderFrame() {
     glVertexAttribPointer(gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvCoordinateHandle);
-    checkGlError("glEnableVertexAttribArray");;
+    checkGlError("glEnableVertexAttribArray");
 
     glActiveTexture(GL_TEXTURE0);
     checkGlError("glActiveTexture");
     glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
     checkGlError("glBindTexture");
-    glUniform1i(textureHandle, 0);
+
+    glUniform1i(gTextureHandle, 0);
     checkGlError("glUniform1i");
+
+    glUniform2f(gTextureSizeHandle, renderer->lastFrameSize.first, renderer->lastFrameSize.second);
+    checkGlError("glUniform2f");
+
+    glUniform1f(gPaddingHandle, gPadding);
+    checkGlError("glUniform1f");
+
+    glUniform1f(gFlipYHandle, gFlipY);
+    checkGlError("glUniform1f");
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     checkGlError("glDrawArrays");
@@ -197,26 +212,26 @@ void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned
 }
 
 void LibretroDroid::Video::updateCoords(unsigned width, unsigned height, size_t pitch) {
-    float padding = pitch >= width ? (float) 2 * width / pitch : 1.0F;
-    int flipY = bottomLeftOrigin ? 1 : -1;
+    gPadding = pitch >= width ? (float) 2 * width / pitch : 1.0F;
+    gFlipY = bottomLeftOrigin ? 1 : -1;
 
-    gTriangleCoords[0] = 0.0F * padding;
-    gTriangleCoords[1] = 0.0F * flipY;
+    gTriangleCoords[0] = 0.0F;
+    gTriangleCoords[1] = 0.0F;
 
-    gTriangleCoords[2] = 0.0F * padding;
-    gTriangleCoords[3] = 1.0F * flipY;
+    gTriangleCoords[2] = 0.0F;
+    gTriangleCoords[3] = 1.0F;
 
-    gTriangleCoords[4] = 1.0F * padding;
-    gTriangleCoords[5] = 0.0F * flipY;
+    gTriangleCoords[4] = 1.0F;
+    gTriangleCoords[5] = 0.0F;
 
-    gTriangleCoords[6] = 1.0F * padding;
-    gTriangleCoords[7] = 0.0F * flipY;
+    gTriangleCoords[6] = 1.0F;
+    gTriangleCoords[7] = 0.0F;
 
-    gTriangleCoords[8] = 0.0F * padding;
-    gTriangleCoords[9] = 1.0F * flipY;
+    gTriangleCoords[8] = 0.0F;
+    gTriangleCoords[9] = 1.0F;
 
-    gTriangleCoords[10] = 1.0F * padding;
-    gTriangleCoords[11] = 1.0F * flipY;
+    gTriangleCoords[10] = 1.0F;
+    gTriangleCoords[11] = 1.0F;
 }
 
 void LibretroDroid::Video::updateVertices() {

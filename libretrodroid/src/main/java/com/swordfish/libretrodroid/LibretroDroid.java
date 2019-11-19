@@ -27,7 +27,11 @@ public class LibretroDroid {
     public static final int MOTION_SOURCE_ANALOG_LEFT = 1;
     public static final int MOTION_SOURCE_ANALOG_RIGHT = 2;
 
-    public static native void create(String coreFilePath, String gameFilePath);
+    public static final int SHADER_DEFAULT = 0;
+    public static final int SHADER_CRT = 1;
+    public static final int SHADER_LCD = 2;
+
+    public static native void create(String coreFilePath, String gameFilePath, int shaderType);
     public static native void resume();
 
     public static native void onSurfaceCreated();

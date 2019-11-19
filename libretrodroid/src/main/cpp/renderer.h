@@ -21,6 +21,7 @@
 #include <GLES3/gl3.h>
 #include <GLES3/gl3ext.h>
 #include <cstdint>
+#include <utility>
 
 namespace LibretroDroid {
 
@@ -28,12 +29,13 @@ class Renderer {
 public:
     virtual uintptr_t getFramebuffer() = 0;
     virtual uintptr_t getTexture() = 0;
-    virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) = 0;
+    virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
+    std::pair<int, int> lastFrameSize;
 };
 
 class ImageRenderer: public Renderer {
 public:
-    ImageRenderer();
+    explicit ImageRenderer();
     uintptr_t getTexture();
     uintptr_t getFramebuffer();
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
