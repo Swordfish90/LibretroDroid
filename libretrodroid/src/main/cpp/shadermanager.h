@@ -11,9 +11,11 @@ namespace LibretroDroid {
 
 class ShaderManager {
 public:
-    static const int SHADER_DEFAULT = 0;
-    static const int SHADER_CRT = 1;
-    static const int SHADER_LCD = 2;
+    static enum class Type {
+        SHADER_DEFAULT = 0,
+        SHADER_CRT = 1,
+        SHADER_LCD = 2
+    };
 
 private:
     static const std::string defaultShader;
@@ -21,7 +23,7 @@ private:
     static const std::string lcdShader;
 
 public:
-    static std::string getShader(int type);
+    static std::string getShader(Type type);
 
 };
 

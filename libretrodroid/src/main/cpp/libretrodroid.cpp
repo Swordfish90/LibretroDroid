@@ -46,7 +46,7 @@ LibretroDroid::Video* video = nullptr;
 LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
 std::mutex retroStateMutex;
-int fragmentShaderType = LibretroDroid::ShaderManager::SHADER_DEFAULT;
+auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -373,7 +373,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNI
     env->ReleaseStringUTFChars(soFilePath, corePath);
     env->ReleaseStringUTFChars(gameFilePath, gamePath);
 
-    fragmentShaderType = shaderType;
+    fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj) {
