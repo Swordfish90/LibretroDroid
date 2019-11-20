@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_AUDIO_H
-#define HELLO_GL2_AUDIO_H
+#ifndef LIBRETRODROID_AUDIO_H
+#define LIBRETRODROID_AUDIO_H
 
 #include <unistd.h>
 #include <oboe/Oboe.h>
@@ -41,4 +41,4 @@ private:
 
 }
 
-#endif //HELLO_GL2_AUDIO_H
+#endif //LIBRETRODROID_AUDIO_H

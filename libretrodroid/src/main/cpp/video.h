@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_VIDEO_H
-#define HELLO_GL2_VIDEO_H
+#ifndef LIBRETRODROID_VIDEO_H
+#define LIBRETRODROID_VIDEO_H
 
 #include <GLES3/gl3.h>
 #include <GLES3/gl3ext.h>
@@ -68,4 +68,4 @@ private:
 
 }
 
-#endif //HELLO_GL2_VIDEO_H
+#endif //LIBRETRODROID_VIDEO_H

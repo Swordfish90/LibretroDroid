@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_LOG_H
-#define HELLO_GL2_LOG_H
+#ifndef LIBRETRODROID_LOG_H
+#define LIBRETRODROID_LOG_H
 
 #include <android/log.h>
 
@@ -29,4 +29,4 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, MODULE_NAME, __VA_ARGS__)
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL, MODULE_NAME, __VA_ARGS__)
 
-#endif //HELLO_GL2_LOG_H
+#endif //LIBRETRODROID_LOG_H

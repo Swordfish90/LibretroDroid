@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_CORE_H
-#define HELLO_GL2_CORE_H
+#ifndef LIBRETRODROID_CORE_H
+#define LIBRETRODROID_CORE_H
 
 #include <string>
 
@@ -60,4 +60,4 @@ private:
 
 
 
-#endif //HELLO_GL2_CORE_H
+#endif //LIBRETRODROID_CORE_H

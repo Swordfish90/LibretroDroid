@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_FPSSYNC_H
-#define HELLO_GL2_FPSSYNC_H
+#ifndef LIBRETRODROID_FPSSYNC_H
+#define LIBRETRODROID_FPSSYNC_H
 
 #include <chrono>
 #include <thread>
@@ -42,4 +42,4 @@ private:
 }
 
 
-#endif //HELLO_GL2_FPSSYNC_H
+#endif //LIBRETRODROID_FPSSYNC_H

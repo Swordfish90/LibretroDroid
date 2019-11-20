@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_INPUT_H
-#define HELLO_GL2_INPUT_H
+#ifndef LIBRETRODROID_INPUT_H
+#define LIBRETRODROID_INPUT_H
 
 #include <cstdint>
 #include <unordered_set>
@@ -53,4 +53,4 @@ private:
 
 }
 
-#endif //HELLO_GL2_INPUT_H
+#endif //LIBRETRODROID_INPUT_H

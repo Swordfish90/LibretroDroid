@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HELLO_GL2_RENDERER_H
-#define HELLO_GL2_RENDERER_H
+#ifndef LIBRETRODROID_RENDERER_H
+#define LIBRETRODROID_RENDERER_H
 
 #include <GLES3/gl3.h>
 #include <GLES3/gl3ext.h>
@@ -59,4 +59,4 @@ private:
 }
 
 
-#endif //HELLO_GL2_RENDERER_H
+#endif //LIBRETRODROID_RENDERER_H
