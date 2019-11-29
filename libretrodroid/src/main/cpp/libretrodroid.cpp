@@ -235,6 +235,7 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 // INITIALIZATION
 
 extern "C" {
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj);
     JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj);
     JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv * env, jobject obj);
@@ -256,7 +257,6 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
     retroStateMutex.lock();
     bool result = core->retro_unserialize(cData, (size_t) stateSize);
     retroStateMutex.unlock();
-
     env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
 
     return result ? JNI_TRUE : JNI_FALSE;
@@ -277,6 +277,12 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
     env->SetByteArrayRegion (result, 0, size, state);
 
     return result;
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj) {
+    retroStateMutex.lock();
+    core->retro_reset();
+    retroStateMutex.unlock();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height) {

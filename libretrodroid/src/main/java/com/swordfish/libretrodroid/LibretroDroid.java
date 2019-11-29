@@ -42,6 +42,8 @@ public class LibretroDroid {
 
     public static native void step();
 
+    public static native void reset();
+
     public static native byte[] serialize();
     public static native boolean unserialize(byte[] state);
 

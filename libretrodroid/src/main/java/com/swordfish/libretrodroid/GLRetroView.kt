@@ -81,6 +81,10 @@ class GLRetroView(context: Context,
         return LibretroDroid.unserialize(data)
     }
 
+    fun reset() {
+        LibretroDroid.reset()
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         return !sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode)
     }
