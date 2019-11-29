@@ -81,13 +81,13 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
         case AKEYCODE_BUTTON_SELECT:
             return RETRO_DEVICE_ID_JOYPAD_SELECT;
         case AKEYCODE_BUTTON_A:
-            return RETRO_DEVICE_ID_JOYPAD_A;
-        case AKEYCODE_BUTTON_X:
-            return RETRO_DEVICE_ID_JOYPAD_X;
-        case AKEYCODE_BUTTON_Y:
-            return RETRO_DEVICE_ID_JOYPAD_Y;
-        case AKEYCODE_BUTTON_B:
             return RETRO_DEVICE_ID_JOYPAD_B;
+        case AKEYCODE_BUTTON_X:
+            return RETRO_DEVICE_ID_JOYPAD_Y;
+        case AKEYCODE_BUTTON_Y:
+            return RETRO_DEVICE_ID_JOYPAD_X;
+        case AKEYCODE_BUTTON_B:
+            return RETRO_DEVICE_ID_JOYPAD_A;
         case AKEYCODE_BUTTON_L1:
             return RETRO_DEVICE_ID_JOYPAD_L;
         case AKEYCODE_BUTTON_L2:
