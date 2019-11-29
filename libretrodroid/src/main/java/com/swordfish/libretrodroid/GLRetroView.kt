@@ -31,6 +31,8 @@ import javax.microedition.khronos.opengles.GL10
 class GLRetroView(context: Context,
     private val coreFilePath: String,
     private val gameFilePath: String,
+    private val systemDirectory: String = context.filesDir.absolutePath,
+    private val savesDirectory: String = context.filesDir.absolutePath,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : GLSurfaceView(context), LifecycleObserver {
 
@@ -45,7 +47,7 @@ class GLRetroView(context: Context,
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
-        LibretroDroid.create(coreFilePath, gameFilePath, shader)
+        LibretroDroid.create(coreFilePath, gameFilePath, systemDirectory, savesDirectory, shader)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)

@@ -11,7 +11,7 @@ namespace LibretroDroid {
 
 class ShaderManager {
 public:
-    static enum class Type {
+    enum class Type {
         SHADER_DEFAULT = 0,
         SHADER_CRT = 1,
         SHADER_LCD = 2

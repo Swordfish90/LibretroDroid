@@ -47,6 +47,8 @@ LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
 std::mutex retroStateMutex;
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
+const char* savesDirectory = nullptr;
+const char* systemDirectory = nullptr;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -153,10 +155,6 @@ bool callback_environment(unsigned cmd, void *data) {
             *((bool*) data) = true;
             return true;
 
-        case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
-            *(const char**) data = "/storage/emulated/0/test-system";
-            return true;
-
         case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
             LOGI("Called SET_PIXEL_FORMAT");
             return true;
@@ -192,8 +190,12 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
             LOGI("Called RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
-            *(const char**) data = "/storage/emulated/0/test-saves";
-            return false;
+            *(const char**) data = savesDirectory;
+            return savesDirectory != nullptr;
+
+        case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+            *(const char**) data = systemDirectory;
+            return systemDirectory != nullptr;
 
         case RETRO_ENVIRONMENT_GET_PERF_INTERFACE:
             LOGI("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
@@ -243,7 +245,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jint shaderType);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint action, jint keyCode);
     JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis);
@@ -340,10 +342,21 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyE
     return (jboolean) (result ? JNI_TRUE : JNI_FALSE);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jint shaderType) {
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
+    JNIEnv * env,
+    jobject obj,
+    jstring soFilePath,
+    jstring gameFilePath,
+    jstring systemDir,
+    jstring savesDir,
+    jint shaderType
+) {
     LOGD("Performing LibretroDroid create");
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
     const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
+
+    systemDirectory = env->GetStringUTFChars(systemDir, nullptr);
+    savesDirectory = env->GetStringUTFChars(savesDir, nullptr);
 
     core = new LibretroDroid::Core(corePath);
 
