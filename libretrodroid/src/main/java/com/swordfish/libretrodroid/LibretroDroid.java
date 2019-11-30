@@ -17,7 +17,7 @@
 
 package com.swordfish.libretrodroid;
 
-public class LibretroDroid {
+class LibretroDroid {
 
      static {
          System.loadLibrary("libretrodroid");

@@ -22,7 +22,7 @@ import android.hardware.input.InputManager
 import android.view.InputDevice
 import android.view.KeyEvent
 
-class GamepadsManager(appContext: Context): InputManager.InputDeviceListener {
+internal class GamepadsManager(appContext: Context): InputManager.InputDeviceListener {
 
     private val devicePortMap: MutableMap<Int, Int> = mutableMapOf()
     private val inputManager = appContext.getSystemService(Context.INPUT_SERVICE) as InputManager
