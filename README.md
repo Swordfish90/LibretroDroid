@@ -7,17 +7,13 @@ Supported features:
 * 2D Cores
 * GL Cores
 * Audio
-* Single gamepad events
+* Gamepad events
 * Serialization and Deserialization of game states
-
-Missing features:
-* Shader effects
-* Multiple gamepads for local multiplayer
-* You tell me :)
+* Simple shader effects (CRT and LCD)
 
 Tested working cores:
 * Gambatte
 * mGBA
-* Mupen64Plus GLES3
+* Mupen64Plus
 * Snes9x
-
+* QuickNES
