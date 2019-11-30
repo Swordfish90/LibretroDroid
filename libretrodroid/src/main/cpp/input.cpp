@@ -25,24 +25,19 @@
 #include "libretro/libretro.h"
 
 int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsigned index, unsigned id) {
-    // TODO... We need to handle multiple input source for local multiplayer...
-    if (port != 0) {
-        return 0;
-    }
-
     switch (device) {
         case RETRO_DEVICE_JOYPAD:
             switch (id) {
                 case RETRO_DEVICE_ID_JOYPAD_LEFT:
-                    return dpadXAxis == -1;
+                    return pads[port].dpadXAxis == -1;
                 case RETRO_DEVICE_ID_JOYPAD_RIGHT:
-                    return dpadXAxis == 1;
+                    return pads[port].dpadXAxis == 1;
                 case RETRO_DEVICE_ID_JOYPAD_UP:
-                    return dpadYAxis == -1;
+                    return pads[port].dpadYAxis == -1;
                 case RETRO_DEVICE_ID_JOYPAD_DOWN:
-                    return dpadYAxis == 1;
+                    return pads[port].dpadYAxis == 1;
                 default:
-                    return pressedKeys.count(id) > 0;
+                    return pads[port].pressedKeys.count(id) > 0;
             }
 
         case RETRO_DEVICE_ANALOG:
@@ -50,18 +45,18 @@ int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsi
                 case RETRO_DEVICE_INDEX_ANALOG_LEFT:
                     switch (id) {
                         case RETRO_DEVICE_ID_ANALOG_X:
-                            return (int16_t) (joypadLeftXAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadLeftXAxis * ANALOG_MAX_RANGE);
                         case RETRO_DEVICE_ID_ANALOG_Y:
-                            return (int16_t) (joypadLeftYAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadLeftYAxis * ANALOG_MAX_RANGE);
                         default:
                             return 0;
                     }
                 case RETRO_DEVICE_INDEX_ANALOG_RIGHT:
                     switch (id) {
                         case RETRO_DEVICE_ID_ANALOG_X:
-                            return (int16_t) (joypadRightXAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadRightXAxis * ANALOG_MAX_RANGE);
                         case RETRO_DEVICE_ID_ANALOG_Y:
-                            return (int16_t) (joypadRightYAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadRightYAxis * ANALOG_MAX_RANGE);
                         default:
                             return 0;
                     }
@@ -81,13 +76,13 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
         case AKEYCODE_BUTTON_SELECT:
             return RETRO_DEVICE_ID_JOYPAD_SELECT;
         case AKEYCODE_BUTTON_A:
-            return RETRO_DEVICE_ID_JOYPAD_B;
-        case AKEYCODE_BUTTON_X:
-            return RETRO_DEVICE_ID_JOYPAD_Y;
-        case AKEYCODE_BUTTON_Y:
-            return RETRO_DEVICE_ID_JOYPAD_X;
-        case AKEYCODE_BUTTON_B:
             return RETRO_DEVICE_ID_JOYPAD_A;
+        case AKEYCODE_BUTTON_X:
+            return RETRO_DEVICE_ID_JOYPAD_X;
+        case AKEYCODE_BUTTON_Y:
+            return RETRO_DEVICE_ID_JOYPAD_Y;
+        case AKEYCODE_BUTTON_B:
+            return RETRO_DEVICE_ID_JOYPAD_B;
         case AKEYCODE_BUTTON_L1:
             return RETRO_DEVICE_ID_JOYPAD_L;
         case AKEYCODE_BUTTON_L2:
@@ -100,35 +95,35 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
     return UNKNOWN_KEY;
 }
 
-bool LibretroDroid::Input::onKeyEvent(int action, int keyCode) {
+bool LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
     int retroKeyCode = convertAndroidToLibretroKey(keyCode);
     if (retroKeyCode == UNKNOWN_KEY) {
         return false;
     }
 
     if (action == AKEY_EVENT_ACTION_DOWN) {
-        pressedKeys.insert(retroKeyCode);
+        pads[port].pressedKeys.insert(retroKeyCode);
     } else if (action == AKEY_EVENT_ACTION_UP) {
-        pressedKeys.erase(retroKeyCode);
+        pads[port].pressedKeys.erase(retroKeyCode);
     }
     return true;
 }
 
-bool LibretroDroid::Input::onMotionEvent(int motionSource, float xAxis, float yAxis) {
+bool LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis, float yAxis) {
     switch (motionSource) {
         case LibretroDroid::Input::MOTION_SOURCE_DPAD:
-            dpadXAxis = (int) round(xAxis);
-            dpadYAxis = (int) round(yAxis);
+            pads[port].dpadXAxis = (int) round(xAxis);
+            pads[port].dpadYAxis = (int) round(yAxis);
             break;
 
         case LibretroDroid::Input::MOTION_SOURCE_ANALOG_LEFT:
-            joypadLeftXAxis = xAxis;
-            joypadLeftYAxis = yAxis;
+            pads[port].joypadLeftXAxis = xAxis;
+            pads[port].joypadLeftYAxis = yAxis;
             break;
 
         case LibretroDroid::Input::MOTION_SOURCE_ANALOG_RIGHT:
-            joypadRightXAxis = xAxis;
-            joypadRightYAxis = yAxis;
+            pads[port].joypadRightXAxis = xAxis;
+            pads[port].joypadRightYAxis = yAxis;
             break;
 
         default:

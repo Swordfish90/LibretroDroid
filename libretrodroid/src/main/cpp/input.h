@@ -25,6 +25,18 @@ namespace LibretroDroid {
 
 class Input {
 
+private:
+    struct GamePadState {
+        std::unordered_set<int> pressedKeys;
+
+        int dpadXAxis = 0;
+        int dpadYAxis = 0;
+        float joypadLeftXAxis = 0;
+        float joypadLeftYAxis = 0;
+        float joypadRightXAxis = 0;
+        float joypadRightYAxis = 0;
+    };
+
 public:
     static const int MOTION_SOURCE_DPAD = 0;
     static const int MOTION_SOURCE_ANALOG_LEFT = 1;
@@ -33,22 +45,15 @@ public:
 
     int16_t getInputState(unsigned port, unsigned device, unsigned index, unsigned id);
 
-    bool onKeyEvent(int action, int keyCode);
-    bool onMotionEvent(int motionSource, float xAxis, float yAxis);
+    bool onKeyEvent(int port, int action, int keyCode);
+    bool onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
 
 private:
     const int UNKNOWN_KEY = -1;
 
     int convertAndroidToLibretroKey(int keyCode);
 
-    std::unordered_set<int> pressedKeys;
-
-    int dpadXAxis = 0;
-    int dpadYAxis = 0;
-    float joypadLeftXAxis = 0;
-    float joypadLeftYAxis = 0;
-    float joypadRightXAxis = 0;
-    float joypadRightYAxis = 0;
+    GamePadState pads[4];
 };
 
 }

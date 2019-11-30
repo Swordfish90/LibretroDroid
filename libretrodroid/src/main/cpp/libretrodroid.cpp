@@ -230,7 +230,6 @@ void callback_retro_set_input_poll() {
 }
 
 int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
-    LOGD("callback_set_input_state called. Retrieving user input. %u %u %u %u", port, device, index, id);
     return input->getInputState(port, device, index, id);
 }
 
@@ -247,8 +246,8 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
-    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint action, jint keyCode);
-    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis);
+    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
+    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
 };
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data) {
@@ -330,15 +329,15 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     }
 }
 
-JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint source, jfloat xAxis, jfloat yAxis) {
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis) {
     LOGD("Received motion event: %d %.2f, %.2f", source, xAxis, yAxis);
-    bool result = input->onMotionEvent(source, xAxis, yAxis);
+    bool result = input->onMotionEvent(port, source, xAxis, yAxis);
     return (jboolean) (result ? JNI_TRUE : JNI_FALSE);
 }
 
-JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint action, jint keyCode) {
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode) {
     LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
-    bool result = input->onKeyEvent(action, keyCode);
+    bool result = input->onKeyEvent(port, action, keyCode);
     return (jboolean) (result ? JNI_TRUE : JNI_FALSE);
 }
 

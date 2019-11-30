@@ -36,6 +36,8 @@ class GLRetroView(context: Context,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : GLSurfaceView(context), LifecycleObserver {
 
+    private val gamepadsManager = GamepadsManager(context.applicationContext)
+
     init {
         preserveEGLContextOnPause = true
         setEGLConfigChooser(5, 6, 5, 0, 0, 0)
@@ -48,12 +50,7 @@ class GLRetroView(context: Context,
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
         LibretroDroid.create(coreFilePath, gameFilePath, systemDirectory, savesDirectory, shader)
-    }
-
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-    override fun onPause() {
-        LibretroDroid.pause()
-        super.onPause()
+        gamepadsManager.init()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -62,17 +59,24 @@ class GLRetroView(context: Context,
         LibretroDroid.resume()
     }
 
+    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+    override fun onPause() {
+        LibretroDroid.pause()
+        super.onPause()
+    }
+
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() {
         LibretroDroid.destroy()
+        gamepadsManager.deinit()
     }
 
-    fun sendKeyEvent(action: Int, keyCode: Int): Boolean {
-        return LibretroDroid.onKeyEvent(action, keyCode)
+    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0): Boolean {
+        return LibretroDroid.onKeyEvent(port, action, keyCode)
     }
 
-    fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float) {
-        LibretroDroid.onMotionEvent(source, xAxis, yAxis)
+    fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
+        LibretroDroid.onMotionEvent(port, source, xAxis, yAxis)
     }
 
     fun serialize(): ByteArray {
@@ -87,20 +91,29 @@ class GLRetroView(context: Context,
         LibretroDroid.reset()
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        return !sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+    fun getConnectedGamepads(): Int {
+        return gamepadsManager.getConnectedGamepads()
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        return !sendKeyEvent(KeyEvent.ACTION_UP, keyCode)
+    override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
+        val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
+        val port = gamepadsManager.getGamepadPort(event.deviceId)
+        return !sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
+    }
+
+    override fun onKeyUp(originalKeyCode: Int, event: KeyEvent): Boolean {
+        val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
+        val port = gamepadsManager.getGamepadPort(event.deviceId)
+        return !sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        val port = gamepadsManager.getGamepadPort(event.deviceId)
         when (event.source) {
             InputDevice.SOURCE_JOYSTICK -> {
-                sendMotionEvent(MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y))
-                sendMotionEvent(MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y))
-                sendMotionEvent(MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ))
+                sendMotionEvent(MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y), port)
+                sendMotionEvent(MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y), port)
+                sendMotionEvent(MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ), port)
             }
         }
         return super.onGenericMotionEvent(event)
