@@ -67,6 +67,7 @@ class GamepadsManager(appContext: Context): InputManager.InputDeviceListener {
         InputDevice.getDeviceIds()
             .map { InputDevice.getDevice(it) }
             .filter { isGamePad(it) }
+            .filter { it.controllerNumber > 0 }
             .forEach { devicePortMap[it.id] = it.controllerNumber - 1 }
     }
 
