@@ -46,7 +46,8 @@ const char* gVertexShader =
         "varying vec2 origCoords;\n"
         "void main() {\n"
         "  origCoords = vCoordinate;\n"
-        "  coords = vCoordinate * vec2(vPadding, vFlipY);\n"
+        "  coords.x = vCoordinate.x * vPadding;\n"
+        "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
         "  gl_Position = vPosition;\n"
         "}\n";
 
@@ -213,7 +214,7 @@ void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned
 
 void LibretroDroid::Video::updateCoords(unsigned width, unsigned height, size_t pitch) {
     gPadding = pitch >= width ? (float) 2 * width / pitch : 1.0F;
-    gFlipY = bottomLeftOrigin ? 1 : -1;
+    gFlipY = bottomLeftOrigin ? 0 : 1;
 
     gTriangleCoords[0] = 0.0F;
     gTriangleCoords[1] = 0.0F;
