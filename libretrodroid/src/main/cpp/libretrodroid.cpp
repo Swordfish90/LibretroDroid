@@ -34,6 +34,7 @@
 #include "fpssync.h"
 #include "input.h"
 #include "shadermanager.h"
+#include "javautils.h"
 
 extern "C" {
 #include "utils.h"
@@ -94,7 +95,7 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 
     unsigned count = 0;
     while (received[count].key != nullptr) {
-        LOGI("Received variable %s: %s", received[count].key, received[count].value);
+        LOGD("Received variable %s: %s", received[count].key, received[count].value);
 
         std::string currentKey(received[count].key);
         std::string currentValue(received[count].value);
@@ -107,7 +108,7 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
         auto variable = Variable { currentKey, currentValue };
         variables.push_back(variable);
 
-        LOGI("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
+        LOGD("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
 
         count++;
     }
@@ -156,40 +157,40 @@ bool callback_environment(unsigned cmd, void *data) {
             return true;
 
         case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
-            LOGI("Called SET_PIXEL_FORMAT");
+            LOGD("Called SET_PIXEL_FORMAT");
             return true;
 
         case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
-            LOGI("Callsed SET_INPUT_DESCRIPTORS");
+            LOGD("Called SET_INPUT_DESCRIPTORS");
             return false;
 
         case RETRO_ENVIRONMENT_GET_VARIABLE:
-            LOGI("Called RETRO_ENVIRONMENT_GET_VARIABLE");
+            LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE");
             return environment_handle_get_variable(static_cast<struct retro_variable*>(data));
 
         case RETRO_ENVIRONMENT_SET_VARIABLES:
-            LOGI("Called RETRO_ENVIRONMENT_SET_VARIABLES");
+            LOGD("Called RETRO_ENVIRONMENT_SET_VARIABLES");
             return environment_handle_set_variables(static_cast<const struct retro_variable*>(data));
 
         case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
-            LOGI("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+            LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
             return false;
 
         case RETRO_ENVIRONMENT_SET_HW_RENDER:
-            LOGI("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
+            LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
             return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
 
         case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
-            LOGI("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
+            LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
             return false;
 
         case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
-            LOGI("Called RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
+            LOGD("Called RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
             ((struct retro_log_callback*) data)->log = &callback_retro_log;
             return true;
 
         case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
-            LOGI("Called RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
+            LOGD("Called RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
             *(const char**) data = savesDirectory;
             return savesDirectory != nullptr;
 
@@ -198,15 +199,15 @@ bool callback_environment(unsigned cmd, void *data) {
             return systemDirectory != nullptr;
 
         case RETRO_ENVIRONMENT_GET_PERF_INTERFACE:
-            LOGI("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
+            LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
             return false;
 
         case RETRO_ENVIRONMENT_SET_GEOMETRY:
-            LOGI("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
+            LOGD("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
             return false;
 
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
-            LOGI("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+            LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
             return false;
     }
 
@@ -251,39 +252,54 @@ extern "C" {
 };
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data) {
-    jboolean isCopy = JNI_FALSE;
-    jbyte* cData = env->GetByteArrayElements(data, &isCopy);
-    jsize stateSize = env->GetArrayLength(data);
+    try {
+        jboolean isCopy = JNI_FALSE;
+        jbyte* cData = env->GetByteArrayElements(data, &isCopy);
+        jsize stateSize = env->GetArrayLength(data);
 
-    retroStateMutex.lock();
-    bool result = core->retro_unserialize(cData, (size_t) stateSize);
-    retroStateMutex.unlock();
-    env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+        retroStateMutex.lock();
+        bool result = core->retro_unserialize(cData, (size_t) stateSize);
+        retroStateMutex.unlock();
+        env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
 
-    return result ? JNI_TRUE : JNI_FALSE;
+        return result ? JNI_TRUE : JNI_FALSE;
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
 }
 
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj) {
 
-    retroStateMutex.lock();
+    try {
+        retroStateMutex.lock();
 
-    size_t size = core->retro_serialize_size();
-    jbyte* state = new jbyte[size];
+        size_t size = core->retro_serialize_size();
+        jbyte* state = new jbyte[size];
 
-    core->retro_serialize(state, size);
+        core->retro_serialize(state, size);
 
-    retroStateMutex.unlock();
+        retroStateMutex.unlock();
 
-    jbyteArray result = env->NewByteArray(size);
-    env->SetByteArrayRegion (result, 0, size, state);
+        jbyteArray result = env->NewByteArray(size);
+        env->SetByteArrayRegion (result, 0, size, state);
 
-    return result;
+        return result;
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj) {
-    retroStateMutex.lock();
-    core->retro_reset();
-    retroStateMutex.unlock();
+    try {
+        retroStateMutex.lock();
+        core->retro_reset();
+        retroStateMutex.unlock();
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height) {
@@ -298,7 +314,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     core->retro_get_system_av_info(&system_av_info);
 
     if (video != nullptr) {
-        free(video);
+        delete video;
         video = nullptr;
     }
 
@@ -354,89 +370,109 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
     const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
 
-    systemDirectory = env->GetStringUTFChars(systemDir, nullptr);
-    savesDirectory = env->GetStringUTFChars(savesDir, nullptr);
+    try {
+        systemDirectory = env->GetStringUTFChars(systemDir, nullptr);
+        savesDirectory = env->GetStringUTFChars(savesDir, nullptr);
 
-    core = new LibretroDroid::Core(corePath);
+        core = new LibretroDroid::Core(corePath);
 
-    core->retro_set_video_refresh(&callback_hw_video_refresh);
-    core->retro_set_environment(&callback_environment);
-    core->retro_set_audio_sample(&callback_audio_sample);
-    core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
-    core->retro_set_input_poll(&callback_retro_set_input_poll);
-    core->retro_set_input_state(&callback_set_input_state);
+        core->retro_set_video_refresh(&callback_hw_video_refresh);
+        core->retro_set_environment(&callback_environment);
+        core->retro_set_audio_sample(&callback_audio_sample);
+        core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
+        core->retro_set_input_poll(&callback_retro_set_input_poll);
+        core->retro_set_input_state(&callback_set_input_state);
 
-    core->retro_init();
+        core->retro_init();
 
-    struct retro_system_info system_info;
-    core->retro_get_system_info(&system_info);
+        struct retro_system_info system_info;
+        core->retro_get_system_info(&system_info);
 
-    struct retro_game_info game_info;
-    if (system_info.need_fullpath) {
-        game_info.path = gamePath;
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        struct LibretroDroid::Utils::ReadResult file = LibretroDroid::Utils::readFileAsBytes(gamePath);
-        game_info.data = file.data;
-        game_info.size = file.size;
+        struct retro_game_info game_info;
+        if (system_info.need_fullpath) {
+            game_info.path = gamePath;
+            game_info.data = nullptr;
+            game_info.size = 0;
+        } else {
+            struct LibretroDroid::Utils::ReadResult file = LibretroDroid::Utils::readFileAsBytes(gamePath);
+            game_info.data = file.data;
+            game_info.size = file.size;
+        }
+
+        bool result = core->retro_load_game(&game_info);
+        if (!result) {
+            LOGE("Cannot load game. Leaving.");
+            throw std::runtime_error("Cannot load game");
+        }
+
+        env->ReleaseStringUTFChars(soFilePath, corePath);
+        env->ReleaseStringUTFChars(gameFilePath, gamePath);
+
+        fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
     }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
-        LOGI("Cannot load game. Leaving.");
-        exit(1);
-    }
-
-    env->ReleaseStringUTFChars(soFilePath, corePath);
-    env->ReleaseStringUTFChars(gameFilePath, gamePath);
-
-    fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj) {
     LOGD("Performing LibretroDroid destroy");
 
-    if (hw_context_destroy != nullptr) {
-        hw_context_destroy();
+    try {
+        if (hw_context_destroy != nullptr) {
+            hw_context_destroy();
+        }
+
+        core->retro_deinit();
+
+        delete video;
+        video = nullptr;
+
+        delete core;
+        core = nullptr;
+
+        hw_context_destroy = nullptr;
+        hw_context_reset = nullptr;
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
     }
-
-    core->retro_deinit();
-
-    free(video);
-    video = nullptr;
-
-    free(core);
-    core = nullptr;
-
-    hw_context_destroy = nullptr;
-    hw_context_reset = nullptr;
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj) {
     LOGD("Performing LibretroDroid resume");
 
-    input = new LibretroDroid::Input();
+    try {
+        input = new LibretroDroid::Input();
 
-    struct retro_system_av_info system_av_info;
-    core->retro_get_system_av_info(&system_av_info);
+        struct retro_system_av_info system_av_info;
+        core->retro_get_system_av_info(&system_av_info);
 
-    audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
-    audio->start();
+        audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
+        audio->start();
 
-    fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps);
-    fpsSync->start();
+        fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps);
+        fpsSync->start();
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj) {
     LOGD("Performing LibretroDroid pause");
 
-    free(input);
+    try {
+        delete input;
 
-    audio->stop();
-    free(audio);
+        audio->stop();
+        delete audio;
 
-    free(fpsSync);
+        delete fpsSync;
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj)

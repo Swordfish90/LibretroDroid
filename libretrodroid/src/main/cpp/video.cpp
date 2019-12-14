@@ -129,8 +129,8 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::str
 
     gProgram = createProgram(gVertexShader, fragmentShader.data());
     if (!gProgram) {
-        LOGE("Could not create program.");
-        exit(2);
+        LOGE("Could not create gl program.");
+        throw std::runtime_error("Cannot create gl program");
     }
 
     gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
@@ -269,7 +269,7 @@ void LibretroDroid::Video::updateVertices() {
 }
 
 void LibretroDroid::Video::updateScreenSize(int screenWidth, int screenHeight) {
-    LOGI("Updating screen size: %d x %d", screenWidth, screenHeight);
+    LOGD("Updating screen size: %d x %d", screenWidth, screenHeight);
     this->screenWidth = screenWidth;
     this->screenHeight = screenHeight;
 }

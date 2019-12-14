@@ -16,6 +16,7 @@
  */
 
 #include <cstdlib>
+#include <stdexcept>
 #include "log.h"
 
 #include "renderer.h"
@@ -67,7 +68,7 @@ LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         LOGE("Error while creating framebuffer. Leaving!");
-        exit(2);
+        throw std::runtime_error("Cannot create framebuffer");
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);

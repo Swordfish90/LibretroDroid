@@ -25,6 +25,8 @@ add_library(libretrodroid SHARED
         input.cpp
         shadermanager.h
         shadermanager.cpp
+        javautils.h
+        javautils.cpp
         utils.cpp
         utils.h
         libretro/libretro.h)

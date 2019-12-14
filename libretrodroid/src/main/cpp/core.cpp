@@ -28,7 +28,7 @@ void* get_symbol(void* handle, const char* symbol) {
     void* result = dlsym(handle, symbol);
     if (!result) {
         LOGE("Cannot get symbol %s... Quitting", symbol);
-        exit(1);
+        throw std::runtime_error("Missing libretro core symbol");
     }
     return result;
 }
@@ -37,7 +37,7 @@ void LibretroDroid::Core::open(const std::string& soCorePath) {
     libHandle = dlopen(soCorePath.c_str(), RTLD_LOCAL);
     if (!libHandle) {
         LOGE("Cannot dlopen library, closing");
-        exit(1);
+        throw std::runtime_error("Cannot dlopen library");
     }
 
     retro_init = (void (*)()) get_symbol(libHandle, "retro_init");
