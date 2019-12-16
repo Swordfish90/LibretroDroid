@@ -22,9 +22,6 @@ import android.opengl.GLSurfaceView
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -34,7 +31,7 @@ class GLRetroView(context: Context,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
-) : GLSurfaceView(context), LifecycleObserver {
+) : GLSurfaceView(context) {
 
     private val gamepadsManager = GamepadsManager(context.applicationContext)
 
@@ -47,25 +44,21 @@ class GLRetroView(context: Context,
         isFocusable = true
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
         LibretroDroid.create(coreFilePath, gameFilePath, systemDirectory, savesDirectory, shader)
         gamepadsManager.init()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     override fun onResume() {
         LibretroDroid.resume()
         super.onResume()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     override fun onPause() {
         super.onPause()
         LibretroDroid.pause()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() {
         LibretroDroid.destroy()
         gamepadsManager.deinit()
