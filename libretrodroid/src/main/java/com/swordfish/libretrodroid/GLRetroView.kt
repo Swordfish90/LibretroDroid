@@ -71,12 +71,12 @@ class GLRetroView(context: Context,
         gamepadsManager.deinit()
     }
 
-    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0): Boolean {
-        return LibretroDroid.onKeyEvent(port, action, keyCode)
+    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
+        queueEvent { LibretroDroid.onKeyEvent(port, action, keyCode) }
     }
 
     fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
-        LibretroDroid.onMotionEvent(port, source, xAxis, yAxis)
+        queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
     fun serialize(): ByteArray {
@@ -98,13 +98,23 @@ class GLRetroView(context: Context,
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
-        return !sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
+
+        if (keyCode in GAMEPAD_KEYS) {
+            sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
+            return true
+        }
+        return false
     }
 
     override fun onKeyUp(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
-        return !sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
+
+        if (keyCode in GAMEPAD_KEYS) {
+            sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
+            return true
+        }
+        return false
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
@@ -141,5 +151,18 @@ class GLRetroView(context: Context,
         const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
+
+        private val GAMEPAD_KEYS = setOf(
+                KeyEvent.KEYCODE_BUTTON_SELECT,
+                KeyEvent.KEYCODE_BUTTON_START,
+                KeyEvent.KEYCODE_BUTTON_A,
+                KeyEvent.KEYCODE_BUTTON_X,
+                KeyEvent.KEYCODE_BUTTON_Y,
+                KeyEvent.KEYCODE_BUTTON_B,
+                KeyEvent.KEYCODE_BUTTON_L1,
+                KeyEvent.KEYCODE_BUTTON_L2,
+                KeyEvent.KEYCODE_BUTTON_R1,
+                KeyEvent.KEYCODE_BUTTON_R2
+        )
     }
 }

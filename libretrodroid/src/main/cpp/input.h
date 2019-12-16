@@ -45,8 +45,8 @@ public:
 
     int16_t getInputState(unsigned port, unsigned device, unsigned index, unsigned id);
 
-    bool onKeyEvent(int port, int action, int keyCode);
-    bool onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
+    void onKeyEvent(int port, int action, int keyCode);
+    void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
 
 private:
     const int UNKNOWN_KEY = -1;

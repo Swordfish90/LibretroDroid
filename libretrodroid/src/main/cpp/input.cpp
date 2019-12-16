@@ -95,10 +95,10 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
     return UNKNOWN_KEY;
 }
 
-bool LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
+void LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
     int retroKeyCode = convertAndroidToLibretroKey(keyCode);
     if (retroKeyCode == UNKNOWN_KEY) {
-        return false;
+        return;
     }
 
     if (action == AKEY_EVENT_ACTION_DOWN) {
@@ -106,10 +106,9 @@ bool LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
     } else if (action == AKEY_EVENT_ACTION_UP) {
         pads[port].pressedKeys.erase(retroKeyCode);
     }
-    return true;
 }
 
-bool LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis, float yAxis) {
+void LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis, float yAxis) {
     switch (motionSource) {
         case LibretroDroid::Input::MOTION_SOURCE_DPAD:
             pads[port].dpadXAxis = (int) round(xAxis);
@@ -125,10 +124,5 @@ bool LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis
             pads[port].joypadRightXAxis = xAxis;
             pads[port].joypadRightYAxis = yAxis;
             break;
-
-        default:
-            return false;
     }
-
-    return true;
 }
