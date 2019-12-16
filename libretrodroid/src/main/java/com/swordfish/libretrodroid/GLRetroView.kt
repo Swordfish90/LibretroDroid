@@ -22,6 +22,7 @@ import android.opengl.GLSurfaceView
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import io.reactivex.Observable
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -84,7 +85,7 @@ class GLRetroView(context: Context,
         LibretroDroid.reset()
     }
 
-    fun getConnectedGamepads(): Int {
+    fun getConnectedGamepads(): Observable<Int> {
         return gamepadsManager.getConnectedGamepads()
     }
 
