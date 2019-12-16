@@ -231,7 +231,10 @@ void callback_retro_set_input_poll() {
 }
 
 int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
-    return input->getInputState(port, device, index, id);
+    if (input != nullptr) {
+        return input->getInputState(port, device, index, id);
+    }
+    return 0;
 }
 
 // INITIALIZATION
@@ -464,11 +467,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
 
     try {
         delete input;
+        input = nullptr;
 
         audio->stop();
         delete audio;
+        audio = nullptr;
 
         delete fpsSync;
+        fpsSync = nullptr;
 
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
@@ -487,7 +493,9 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
         video->renderFrame();
     }
 
-    fpsSync->sync();
+    if (fpsSync != nullptr) {
+        fpsSync->sync();
+    }
 }
 
 

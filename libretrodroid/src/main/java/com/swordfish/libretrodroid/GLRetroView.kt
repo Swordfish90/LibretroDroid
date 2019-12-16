@@ -55,14 +55,14 @@ class GLRetroView(context: Context,
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     override fun onResume() {
-        super.onResume()
         LibretroDroid.resume()
+        super.onResume()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     override fun onPause() {
-        LibretroDroid.pause()
         super.onPause()
+        LibretroDroid.pause()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
