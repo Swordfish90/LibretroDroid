@@ -21,11 +21,14 @@ import android.content.Context
 import android.hardware.input.InputManager
 import android.view.InputDevice
 import android.view.KeyEvent
+import com.jakewharton.rxrelay2.BehaviorRelay
+import io.reactivex.Observable
 
 internal class GamepadsManager(appContext: Context): InputManager.InputDeviceListener {
-
     private val devicePortMap: MutableMap<Int, Int> = mutableMapOf()
     private val inputManager = appContext.getSystemService(Context.INPUT_SERVICE) as InputManager
+
+    private val countSubject = BehaviorRelay.createDefault(0)
 
     override fun onInputDeviceAdded(p0: Int) = updateDevicePortMap()
 
@@ -57,8 +60,8 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
         return devicePortMap.getOrElse(deviceId) { 0 }
     }
 
-    fun getConnectedGamepads(): Int {
-        return devicePortMap.count()
+    fun getConnectedGamepads(): Observable<Int> {
+        return countSubject.distinctUntilChanged()
     }
 
     private fun updateDevicePortMap() {
@@ -69,6 +72,8 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
             .filter { isGamePad(it) }
             .filter { it.controllerNumber > 0 }
             .forEach { devicePortMap[it.id] = it.controllerNumber - 1 }
+
+        countSubject.accept(devicePortMap.count())
     }
 
     private fun isGamePad(it: InputDevice): Boolean {

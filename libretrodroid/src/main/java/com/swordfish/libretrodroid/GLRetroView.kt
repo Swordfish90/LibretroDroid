@@ -22,9 +22,7 @@ import android.opengl.GLSurfaceView
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import io.reactivex.Observable
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -34,7 +32,7 @@ class GLRetroView(context: Context,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
-) : GLSurfaceView(context), LifecycleObserver {
+) : GLSurfaceView(context) {
 
     private val gamepadsManager = GamepadsManager(context.applicationContext)
 
@@ -47,36 +45,32 @@ class GLRetroView(context: Context,
         isFocusable = true
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
         LibretroDroid.create(coreFilePath, gameFilePath, systemDirectory, savesDirectory, shader)
         gamepadsManager.init()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     override fun onResume() {
         LibretroDroid.resume()
         super.onResume()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     override fun onPause() {
         super.onPause()
         LibretroDroid.pause()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() {
         LibretroDroid.destroy()
         gamepadsManager.deinit()
     }
 
-    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0): Boolean {
-        return LibretroDroid.onKeyEvent(port, action, keyCode)
+    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
+        queueEvent { LibretroDroid.onKeyEvent(port, action, keyCode) }
     }
 
     fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
-        LibretroDroid.onMotionEvent(port, source, xAxis, yAxis)
+        queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
     fun serialize(): ByteArray {
@@ -91,20 +85,30 @@ class GLRetroView(context: Context,
         LibretroDroid.reset()
     }
 
-    fun getConnectedGamepads(): Int {
+    fun getConnectedGamepads(): Observable<Int> {
         return gamepadsManager.getConnectedGamepads()
     }
 
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
-        return !sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
+
+        if (keyCode in GAMEPAD_KEYS) {
+            sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
+            return true
+        }
+        return false
     }
 
     override fun onKeyUp(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
-        return !sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
+
+        if (keyCode in GAMEPAD_KEYS) {
+            sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
+            return true
+        }
+        return false
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
@@ -141,5 +145,18 @@ class GLRetroView(context: Context,
         const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
+
+        private val GAMEPAD_KEYS = setOf(
+                KeyEvent.KEYCODE_BUTTON_SELECT,
+                KeyEvent.KEYCODE_BUTTON_START,
+                KeyEvent.KEYCODE_BUTTON_A,
+                KeyEvent.KEYCODE_BUTTON_X,
+                KeyEvent.KEYCODE_BUTTON_Y,
+                KeyEvent.KEYCODE_BUTTON_B,
+                KeyEvent.KEYCODE_BUTTON_L1,
+                KeyEvent.KEYCODE_BUTTON_L2,
+                KeyEvent.KEYCODE_BUTTON_R1,
+                KeyEvent.KEYCODE_BUTTON_R2
+        )
     }
 }
