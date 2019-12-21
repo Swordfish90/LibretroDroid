@@ -396,6 +396,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         struct retro_game_info game_info;
         game_info.path = gamePath;
+        game_info.meta = nullptr;
 
         if (system_info.need_fullpath) {
             game_info.data = nullptr;
