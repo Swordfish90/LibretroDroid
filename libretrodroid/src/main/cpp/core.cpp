@@ -51,6 +51,8 @@ void LibretroDroid::Core::open(const std::string& soCorePath) {
     retro_serialize_size = (size_t (*)()) get_symbol(libHandle, "retro_serialize_size");
     retro_serialize = (bool (*)(void*, size_t)) get_symbol(libHandle, "retro_serialize");
     retro_unserialize = (bool (*)(const void*, size_t)) get_symbol(libHandle, "retro_unserialize");
+    retro_get_memory_size = (size_t (*)(unsigned)) get_symbol(libHandle, "retro_get_memory_size");
+    retro_get_memory_data = (void* (*)(unsigned)) get_symbol(libHandle, "retro_get_memory_data");
     retro_load_game = (bool (*)(const struct retro_game_info*)) get_symbol(libHandle, "retro_load_game");
     retro_unload_game = (void (*)()) get_symbol(libHandle, "retro_unload_game");
     retro_set_video_refresh = (void (*)(retro_video_refresh_t)) get_symbol(libHandle, "retro_set_video_refresh");

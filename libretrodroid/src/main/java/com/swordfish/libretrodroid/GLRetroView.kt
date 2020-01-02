@@ -74,11 +74,19 @@ class GLRetroView(context: Context,
     }
 
     fun serialize(): ByteArray {
-        return LibretroDroid.serialize()
+        return LibretroDroid.serializeState()
     }
 
     fun unserialize(data: ByteArray): Boolean {
-        return LibretroDroid.unserialize(data)
+        return LibretroDroid.unserializeState(data)
+    }
+
+    fun serializeSRAM(): ByteArray {
+        return LibretroDroid.serializeSRAM()
+    }
+
+    fun unserializeSRAM(data: ByteArray): Boolean {
+        return LibretroDroid.unserializeSRAM(data)
     }
 
     fun reset() {

@@ -241,8 +241,10 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 
 extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj);
-    JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj);
-    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data);
+    JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeState(JNIEnv * env, jobject obj);
+    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data);
+    JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv * env, jobject obj, jbyteArray data);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
@@ -254,15 +256,15 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
 };
 
-JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserialize(JNIEnv * env, jobject obj, jbyteArray data) {
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+
     try {
         jboolean isCopy = JNI_FALSE;
         jbyte* cData = env->GetByteArrayElements(data, &isCopy);
         jsize stateSize = env->GetArrayLength(data);
 
-        retroStateMutex.lock();
         bool result = core->retro_unserialize(cData, (size_t) stateSize);
-        retroStateMutex.unlock();
         env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
 
         return result ? JNI_TRUE : JNI_FALSE;
@@ -273,17 +275,14 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
     }
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serialize(JNIEnv * env, jobject obj) {
+JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeState(JNIEnv * env, jobject obj) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
 
     try {
-        retroStateMutex.lock();
-
         size_t size = core->retro_serialize_size();
         jbyte* state = new jbyte[size];
 
         core->retro_serialize(state, size);
-
-        retroStateMutex.unlock();
 
         jbyteArray result = env->NewByteArray(size);
         env->SetByteArrayRegion (result, 0, size, state);
@@ -295,12 +294,59 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj) {
-    try {
-        retroStateMutex.lock();
-        core->retro_reset();
-        retroStateMutex.unlock();
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv * env, jobject obj, jbyteArray data) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
 
+    try {
+        jboolean isCopy = JNI_FALSE;
+        jbyte* cData = env->GetByteArrayElements(data, &isCopy);
+        jsize stateSize = env->GetArrayLength(data);
+
+        size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+        void* sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
+
+        if (sramState == nullptr) {
+            LOGE("Cannot load SRAM: nullptr in retro_get_memory_data");
+            env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+            return;
+        }
+
+        if (sramSize != stateSize) {
+            LOGE("Cannot load SRAM: size mismatch");
+            env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+            return;
+        }
+
+        memcpy(sramState, cData, sramSize);
+        env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
+}
+
+JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv * env, jobject obj) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+
+    try {
+        size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+        void* sram = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
+
+        jbyteArray result = env->NewByteArray(size);
+        env->SetByteArrayRegion(result, 0, size, (jbyte*) sram);
+
+        return result;
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+
+    try {
+        core->retro_reset();
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
     }
