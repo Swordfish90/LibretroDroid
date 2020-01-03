@@ -73,11 +73,11 @@ class GLRetroView(context: Context,
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
-    fun serialize(): ByteArray {
+    fun serializeState(): ByteArray {
         return LibretroDroid.serializeState()
     }
 
-    fun unserialize(data: ByteArray): Boolean {
+    fun unserializeState(data: ByteArray): Boolean {
         return LibretroDroid.unserializeState(data)
     }
 
