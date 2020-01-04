@@ -9,6 +9,7 @@ Supported features:
 * Audio
 * Gamepad events
 * Serialization and Deserialization of game states
+* Serialization and Deserialization of SaveRAM
 * Simple shader effects (CRT and LCD)
 
 Tested working cores:
