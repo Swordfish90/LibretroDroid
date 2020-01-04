@@ -22,6 +22,7 @@ import android.opengl.GLSurfaceView
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.jakewharton.rxrelay2.PublishRelay
 import io.reactivex.Observable
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -35,6 +36,8 @@ class GLRetroView(context: Context,
 ) : GLSurfaceView(context) {
 
     private val gamepadsManager = GamepadsManager(context.applicationContext)
+    private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
+    private val motionEventSubject = PublishRelay.create<GameMotionEvent>()
 
     init {
         preserveEGLContextOnPause = true
@@ -67,18 +70,28 @@ class GLRetroView(context: Context,
 
     fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
         queueEvent { LibretroDroid.onKeyEvent(port, action, keyCode) }
+        keyEventSubject.accept(GameKeyEvent(action, keyCode, port))
     }
 
     fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
+        motionEventSubject.accept(GameMotionEvent(source, xAxis, yAxis, port))
     }
 
-    fun serialize(): ByteArray {
-        return LibretroDroid.serialize()
+    fun serializeState(): ByteArray {
+        return LibretroDroid.serializeState()
     }
 
-    fun unserialize(data: ByteArray): Boolean {
-        return LibretroDroid.unserialize(data)
+    fun unserializeState(data: ByteArray): Boolean {
+        return LibretroDroid.unserializeState(data)
+    }
+
+    fun serializeSRAM(): ByteArray {
+        return LibretroDroid.serializeSRAM()
+    }
+
+    fun unserializeSRAM(data: ByteArray): Boolean {
+        return LibretroDroid.unserializeSRAM(data)
     }
 
     fun reset() {
@@ -87,6 +100,14 @@ class GLRetroView(context: Context,
 
     fun getConnectedGamepads(): Observable<Int> {
         return gamepadsManager.getConnectedGamepads()
+    }
+
+    fun getGameKeyEvents(): Observable<GameKeyEvent> {
+        return keyEventSubject
+    }
+
+    fun getGameMotionEvents(): Observable<GameMotionEvent> {
+        return motionEventSubject
     }
 
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
@@ -137,6 +158,9 @@ class GLRetroView(context: Context,
         }
     }
 
+    data class GameKeyEvent(val action: Int, val keyCode: Int, val port: Int)
+    data class GameMotionEvent(val source: Int, val xAxis: Float, val yAxis: Float, val port: Int)
+
     companion object {
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
@@ -156,7 +180,9 @@ class GLRetroView(context: Context,
                 KeyEvent.KEYCODE_BUTTON_L1,
                 KeyEvent.KEYCODE_BUTTON_L2,
                 KeyEvent.KEYCODE_BUTTON_R1,
-                KeyEvent.KEYCODE_BUTTON_R2
+                KeyEvent.KEYCODE_BUTTON_R2,
+                KeyEvent.KEYCODE_BUTTON_THUMBL,
+                KeyEvent.KEYCODE_BUTTON_THUMBR
         )
     }
 }

@@ -44,8 +44,11 @@ class LibretroDroid {
 
     public static native void reset();
 
-    public static native byte[] serialize();
-    public static native boolean unserialize(byte[] state);
+    public static native byte[] serializeState();
+    public static native boolean unserializeState(byte[] state);
+
+    public static native byte[] serializeSRAM();
+    public static native boolean unserializeSRAM(byte[] sram);
 
     public static native void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
     public static native void onKeyEvent(int port, int action, int keyCode);

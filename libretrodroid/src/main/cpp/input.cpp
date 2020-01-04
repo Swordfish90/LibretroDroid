@@ -91,6 +91,10 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
             return RETRO_DEVICE_ID_JOYPAD_R;
         case AKEYCODE_BUTTON_R2:
             return RETRO_DEVICE_ID_JOYPAD_R2;
+        case AKEYCODE_BUTTON_THUMBL:
+            return RETRO_DEVICE_ID_JOYPAD_L3;
+        case AKEYCODE_BUTTON_THUMBR:
+            return RETRO_DEVICE_ID_JOYPAD_R3;
     }
     return UNKNOWN_KEY;
 }
