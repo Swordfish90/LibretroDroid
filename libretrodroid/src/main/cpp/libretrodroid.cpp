@@ -156,9 +156,11 @@ bool callback_environment(unsigned cmd, void *data) {
             *((bool*) data) = true;
             return true;
 
-        case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
+        case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT: {
             LOGD("Called SET_PIXEL_FORMAT");
-            return true;
+            int requiredFormat = *static_cast<enum retro_pixel_format *>(data);
+            return requiredFormat == RETRO_PIXEL_FORMAT_RGB565;
+        }
 
         case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
             LOGD("Called SET_INPUT_DESCRIPTORS");
