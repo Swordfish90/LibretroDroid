@@ -213,7 +213,12 @@ void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned
 }
 
 void LibretroDroid::Video::updateCoords(unsigned width, unsigned height, size_t pitch) {
-    gPadding = pitch >= width ? (float) 2 * width / pitch : 1.0F;
+    if (pitch >= width) {
+        gPadding = (float) renderer->getBytesPerPixel() * width / pitch;
+    } else {
+        gPadding = 1.0F;
+    }
+
     gFlipY = bottomLeftOrigin ? 0 : 1;
 
     gTriangleCoords[0] = 0.0F;

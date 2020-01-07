@@ -45,7 +45,25 @@ private:
 
 private:
     GLfloat gTriangleVertices[12];
-    GLfloat gTriangleCoords[12];
+    GLfloat gTriangleCoords[12] = {
+        0.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        0.0F,
+
+        1.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        1.0F,
+    };
 
     bool bottomLeftOrigin = false;
     int screenWidth = 0;
