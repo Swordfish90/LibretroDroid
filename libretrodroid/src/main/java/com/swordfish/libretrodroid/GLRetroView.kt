@@ -22,6 +22,7 @@ import android.opengl.GLSurfaceView
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.PublishRelay
 import io.reactivex.Observable
 import javax.microedition.khronos.egl.EGLConfig
@@ -38,6 +39,7 @@ class GLRetroView(context: Context,
     private val gamepadsManager = GamepadsManager(context.applicationContext)
     private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
     private val motionEventSubject = PublishRelay.create<GameMotionEvent>()
+    private val surfaceEvents = BehaviorRelay.createDefault<SurfaceEvent>(SurfaceEvent.Empty)
 
     init {
         preserveEGLContextOnPause = true
@@ -110,6 +112,10 @@ class GLRetroView(context: Context,
         return motionEventSubject
     }
 
+    fun getSurfaceEvents(): Observable<SurfaceEvent> {
+        return surfaceEvents;
+    }
+
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
@@ -144,22 +150,30 @@ class GLRetroView(context: Context,
         return super.onGenericMotionEvent(event)
     }
 
-    private class Renderer : GLSurfaceView.Renderer {
+    private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
             LibretroDroid.step()
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
             LibretroDroid.onSurfaceChanged(width, height)
+            surfaceEvents.accept(SurfaceEvent.Changed)
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
             LibretroDroid.onSurfaceCreated()
+            surfaceEvents.accept(SurfaceEvent.Created)
         }
     }
 
     data class GameKeyEvent(val action: Int, val keyCode: Int, val port: Int)
     data class GameMotionEvent(val source: Int, val xAxis: Float, val yAxis: Float, val port: Int)
+
+    sealed class SurfaceEvent {
+        object Empty: SurfaceEvent()
+        object Created: SurfaceEvent()
+        object Changed: SurfaceEvent()
+    }
 
     companion object {
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
