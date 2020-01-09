@@ -39,8 +39,6 @@ public:
     };
 
 private:
-    void updateCoords(unsigned width, unsigned height, size_t pitch);
-
     void updateVertices();
 
 private:
@@ -65,7 +63,6 @@ private:
         1.0F,
     };
 
-    bool bottomLeftOrigin = false;
     int screenWidth = 0;
     int screenHeight = 0;
     float aspectRatio = 1.0F;
@@ -75,11 +72,9 @@ private:
     GLint gvCoordinateHandle = 0;
     GLint gTextureHandle = 0;
     GLint gTextureSizeHandle = 0;
-    GLint gPaddingHandle = 0;
     GLint gFlipYHandle = 0;
 
-    float gPadding = 1.0;
-    float gFlipY = 0.0;
+    float gFlipY = 1.0;
 
     Renderer* renderer;
 };

@@ -28,11 +28,10 @@ LibretroDroid::ImageRenderer::ImageRenderer() {
 }
 
 void LibretroDroid::ImageRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
-    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
-
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, pitch / bytesPerPixel, height, 0, glFormat, glType, data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, pitch / bytesPerPixel);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, glSwizzle[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, glSwizzle[1]);
@@ -43,7 +42,18 @@ void LibretroDroid::ImageRenderer::onNewFrame(const void *data, unsigned width, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    if (lastFrameSize.first != width || lastFrameSize.second != height) {
+        glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data);
+    } else {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
+    }
+
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
 }
 
 uintptr_t LibretroDroid::ImageRenderer::getTexture() {
@@ -74,10 +84,6 @@ void LibretroDroid::ImageRenderer::setPixelFormat(int pixelFormat) {
             this->glSwizzle = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
             break;
     }
-}
-
-uint LibretroDroid::ImageRenderer::getBytesPerPixel() {
-    return bytesPerPixel;
 }
 
 LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
@@ -123,10 +129,6 @@ uintptr_t LibretroDroid::FramebufferRenderer::getFramebuffer() {
 
 void LibretroDroid::FramebufferRenderer::setPixelFormat(int pixelFormat) {
     // TODO... Here we should handle 32bit framebuffers.
-}
-
-uint LibretroDroid::FramebufferRenderer::getBytesPerPixel() {
-    return 2; // TODO... Here we could also handle 32bits framebuffers.
 }
 
 void LibretroDroid::Renderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {

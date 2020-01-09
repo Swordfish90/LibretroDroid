@@ -31,7 +31,6 @@ public:
     virtual uintptr_t getFramebuffer() = 0;
     virtual uintptr_t getTexture() = 0;
     virtual void setPixelFormat(int pixelFormat) = 0;
-    virtual uint getBytesPerPixel() = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     std::pair<int, int> lastFrameSize;
 };
@@ -43,12 +42,11 @@ public:
     uintptr_t getFramebuffer();
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     void setPixelFormat(int pixelFormat);
-    uint getBytesPerPixel();
 
 private:
     uint bytesPerPixel = 1;
-    GLuint glType = 0;
 
+    GLuint glType = 0;
     GLuint glInternalFormat = 0;
     GLuint glFormat = 0;
     std::vector<GLint> glSwizzle = {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
@@ -63,7 +61,6 @@ public:
     uintptr_t getFramebuffer();
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     void setPixelFormat(int pixelFormat);
-    uint getBytesPerPixel();
 
 private:
     GLuint currentFramebuffer = 0;
