@@ -20,6 +20,7 @@
 #include <EGL/egl.h>
 #include <cstdlib>
 #include <string>
+#include <cmath>
 
 #include "log.h"
 
@@ -40,13 +41,16 @@ const char* gVertexShader =
         "attribute vec4 vPosition;\n"
         "attribute vec2 vCoordinate;\n"
         "uniform mediump float vFlipY;\n"
+        "uniform mediump float screenDensity;\n"
         "uniform lowp sampler2D texture;\n"
-        "varying vec2 coords;"
+        "varying mediump float screenMaskStrength;\n"
+        "varying vec2 coords;\n"
         "varying vec2 origCoords;\n"
         "void main() {\n"
         "  origCoords = vCoordinate;\n"
         "  coords.x = vCoordinate.x;\n"
         "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
+        "  screenMaskStrength = smoothstep(2.0, 6.0, screenDensity);\n"
         "  gl_Position = vPosition;\n"
         "}\n";
 
@@ -145,6 +149,9 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::str
     gTextureSizeHandle = glGetUniformLocation(gProgram, "textureSize");
     checkGlError("glGetUniformLocation");
 
+    gScreenDensityHandle = glGetUniformLocation(gProgram, "screenDensity");
+    checkGlError("glGetUniformLocation");
+
     gFlipYHandle = glGetUniformLocation(gProgram, "vFlipY");
     checkGlError("glGetUniformLocation");
 
@@ -186,8 +193,11 @@ void LibretroDroid::Video::renderFrame() {
     glUniform1i(gTextureHandle, 0);
     checkGlError("glUniform1i");
 
-    glUniform2f(gTextureSizeHandle, renderer->lastFrameSize.first, renderer->lastFrameSize.second);
+    glUniform2f(gTextureSizeHandle, getTextureWidth(), getTextureHeight());
     checkGlError("glUniform2f");
+
+    glUniform1f(gScreenDensityHandle, getScreenDensity());
+    checkGlError("glUniform1f");
 
     glUniform1f(gFlipYHandle, gFlipY);
     checkGlError("glUniform1f");
@@ -199,6 +209,18 @@ void LibretroDroid::Video::renderFrame() {
     checkGlError("glBindTexture");
 
     glUseProgram(0);
+}
+
+float LibretroDroid::Video::getScreenDensity() {
+    return std::min(finalScreenWidth / getTextureWidth(), finalScreenHeight / getTextureHeight());
+}
+
+float LibretroDroid::Video::getTextureWidth() {
+    return renderer->lastFrameSize.first;
+}
+
+float LibretroDroid::Video::getTextureHeight() {
+    return renderer->lastFrameSize.second;
 }
 
 void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
@@ -217,7 +239,10 @@ void LibretroDroid::Video::updateVertices() {
         scaleX = aspectRatio / screenAspectRatio;
     }
 
-    LOGD("Updating vertices position with %f %f %f %f", scaleX, scaleY, screenAspectRatio, aspectRatio);
+    finalScreenWidth = screenWidth * scaleX;
+    finalScreenHeight = screenHeight * scaleY;
+
+    LOGI("Updating vertices position with %f %f %f %f", scaleX, scaleY, screenAspectRatio, aspectRatio);
 
     gTriangleVertices[0] = -1.0F * scaleX;
     gTriangleVertices[1] = -1.0F * scaleY;

@@ -40,6 +40,9 @@ public:
 
 private:
     void updateVertices();
+    float getScreenDensity();
+    float getTextureWidth();
+    float getTextureHeight();
 
 private:
     GLfloat gTriangleVertices[12];
@@ -67,10 +70,14 @@ private:
     int screenHeight = 0;
     float aspectRatio = 1.0F;
 
+    float finalScreenWidth = 0;
+    float finalScreenHeight = 0;
+
     GLuint gProgram = 0;
     GLint gvPositionHandle = 0;
     GLint gvCoordinateHandle = 0;
     GLint gTextureHandle = 0;
+    GLint gScreenDensityHandle = 0;
     GLint gTextureSizeHandle = 0;
     GLint gFlipYHandle = 0;
 

@@ -27,6 +27,7 @@ const std::string LibretroDroid::ShaderManager::crtShader =
         "uniform lowp sampler2D texture;\n"
         "varying HIGHP vec2 coords;\n"
         "varying HIGHP vec2 origCoords;\n"
+        "varying mediump float screenMaskStrength;\n"
         "\n"
         "#define INTENSITY 0.30\n"
         "#define BRIGHTBOOST 0.30\n"
@@ -40,7 +41,7 @@ const std::string LibretroDroid::ShaderManager::crtShader =
         "\n"
         "   lowp float mask = 1.0 - abs(coords.y);\n"
         "\n"
-        "   gl_FragColor = vec4(mix(pixelLow, pixelHigh, mask), 1.0);\n"
+        "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
         "}\n";
 
 const std::string LibretroDroid::ShaderManager::lcdShader =
@@ -56,6 +57,7 @@ const std::string LibretroDroid::ShaderManager::lcdShader =
         "uniform lowp sampler2D texture;\n"
         "varying HIGHP vec2 coords;\n"
         "varying HIGHP vec2 origCoords;\n"
+        "varying mediump float screenMaskStrength;\n"
         "\n"
         "#define INTENSITY 0.25\n"
         "#define BRIGHTBOOST 0.25\n"
@@ -70,7 +72,7 @@ const std::string LibretroDroid::ShaderManager::lcdShader =
         "\n"
         "   lowp float mask = 1.0 - coords.x - coords.y;\n"
         "\n"
-        "   gl_FragColor = vec4(mix(pixelLow, pixelHigh, mask), 1.0);\n"
+        "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
         "}\n";
 
 std::string LibretroDroid::ShaderManager::getShader(Type type) {
