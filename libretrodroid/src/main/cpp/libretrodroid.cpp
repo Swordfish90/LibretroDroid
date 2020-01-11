@@ -118,7 +118,7 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 }
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
-    LOGI("%s", requested->key);
+    LOGD("Variable requested %s", requested->key);
     for (auto& variable : variables) {
         if (variable.key == requested->key) {
             requested->value = variable.value.c_str();
@@ -211,6 +211,10 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
             LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+            return false;
+
+        case RETRO_ENVIRONMENT_GET_LANGUAGE:
+            LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
             return false;
     }
 

@@ -242,7 +242,7 @@ void LibretroDroid::Video::updateVertices() {
     finalScreenWidth = screenWidth * scaleX;
     finalScreenHeight = screenHeight * scaleY;
 
-    LOGI("Updating vertices position with %f %f %f %f", scaleX, scaleY, screenAspectRatio, aspectRatio);
+    LOGD("Updating vertices position with %f %f %f %f", scaleX, scaleY, screenAspectRatio, aspectRatio);
 
     gTriangleVertices[0] = -1.0F * scaleX;
     gTriangleVertices[1] = -1.0F * scaleY;
