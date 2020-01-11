@@ -22,9 +22,9 @@
 
 #define MODULE_NAME "LibretroDroid"
 
-// Enable verbose logging.
+#define VERBOSE_LOGGING false
 
-#ifdef FALSE
+#if VERBOSE_LOGGING
 
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, MODULE_NAME, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, MODULE_NAME, __VA_ARGS__)
