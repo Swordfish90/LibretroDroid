@@ -48,10 +48,10 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
     /** The Android gamepad layout is different from RetroPad since X/Y and A/B buttons are inverted. */
     fun getGamepadKeyEvent(keyCode: Int): Int {
         return when (keyCode) {
-            KeyEvent.KEYCODE_B -> KeyEvent.KEYCODE_A
-            KeyEvent.KEYCODE_A -> KeyEvent.KEYCODE_B
-            KeyEvent.KEYCODE_X -> KeyEvent.KEYCODE_Y
-            KeyEvent.KEYCODE_Y -> KeyEvent.KEYCODE_X
+            KeyEvent.KEYCODE_BUTTON_B -> KeyEvent.KEYCODE_BUTTON_A
+            KeyEvent.KEYCODE_BUTTON_A -> KeyEvent.KEYCODE_BUTTON_B
+            KeyEvent.KEYCODE_BUTTON_X -> KeyEvent.KEYCODE_BUTTON_Y
+            KeyEvent.KEYCODE_BUTTON_Y -> KeyEvent.KEYCODE_BUTTON_X
             else -> keyCode
         }
     }
