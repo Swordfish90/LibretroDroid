@@ -29,11 +29,13 @@ class SampleActivity : Activity() {
 
         // Here we just have a bunch of preloaded roms used for testing. This are hardcoded path, so replace them.
         //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Super Mario 64/Super Mario 64.n64")
-        //retroView = GLRetroView(this, "snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc", GLRetroView.SHADER_CRT)
+        //retroView = GLRetroView(this, "snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc", filesDir.absolutePath, cacheDir.absolutePath)
         //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms Test/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64", GLRetroView.SHADER_CRT)
-        //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/gb/Pokemon Blue Version.gb", LibretroDroid.SHADER_LCD)
-        //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Super Mario Land/Super Mario Land.gb")
-        retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/Advance Wars/Advance Wars.gba", "", "", LibretroDroid.SHADER_LCD)
+        //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Pokemon Blue Version/Pokemon Blue Version.gb", filesDir.absolutePath, cacheDir.absolutePath)
+        //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/Advance Wars/Advance Wars.gba", "", "", LibretroDroid.SHADER_LCD)
+        //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/Patapon 2.iso", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
+        //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/1384 - God of War - Chains of Olympus (USA).iso", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
+        retroView = GLRetroView(this, "fbneo_libretro_android.so", "/storage/emulated/0/Roms/fbneo/mslug.zip", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
 
         setContentView(retroView)
 

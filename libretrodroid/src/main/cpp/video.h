@@ -39,29 +39,49 @@ public:
     };
 
 private:
-    void updateCoords(unsigned width, unsigned height, size_t pitch);
-
     void updateVertices();
+    float getScreenDensity();
+    float getTextureWidth();
+    float getTextureHeight();
 
 private:
     GLfloat gTriangleVertices[12];
-    GLfloat gTriangleCoords[12];
+    GLfloat gTriangleCoords[12] = {
+        0.0F,
+        0.0F,
 
-    bool bottomLeftOrigin = false;
+        0.0F,
+        1.0F,
+
+        1.0F,
+        0.0F,
+
+        1.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        1.0F,
+    };
+
     int screenWidth = 0;
     int screenHeight = 0;
     float aspectRatio = 1.0F;
+
+    float finalScreenWidth = 0;
+    float finalScreenHeight = 0;
 
     GLuint gProgram = 0;
     GLint gvPositionHandle = 0;
     GLint gvCoordinateHandle = 0;
     GLint gTextureHandle = 0;
+    GLint gScreenDensityHandle = 0;
     GLint gTextureSizeHandle = 0;
-    GLint gPaddingHandle = 0;
     GLint gFlipYHandle = 0;
 
-    float gPadding = 1.0;
-    float gFlipY = 0.0;
+    float gFlipY = 1.0;
 
     Renderer* renderer;
 };

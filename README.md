@@ -18,3 +18,8 @@ Tested working cores:
 * Mupen64Plus
 * Snes9x
 * QuickNES
+* fceumm
+* PPSSPP
+* fbneo
+* picodrive
+* Genesis Plus GX

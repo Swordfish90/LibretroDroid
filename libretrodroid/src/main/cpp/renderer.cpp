@@ -20,6 +20,7 @@
 #include "log.h"
 
 #include "renderer.h"
+#include "libretro/libretro.h"
 
 LibretroDroid::ImageRenderer::ImageRenderer() {
     glGenTextures(1, &currentTexture);
@@ -27,16 +28,32 @@ LibretroDroid::ImageRenderer::ImageRenderer() {
 }
 
 void LibretroDroid::ImageRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
-    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
-
-    // TODO We need to handle different texture types.
     glBindTexture(GL_TEXTURE_2D, currentTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, pitch / 2, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, data);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, pitch / bytesPerPixel);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, glSwizzle[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, glSwizzle[1]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, glSwizzle[2]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, glSwizzle[3]);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    if (lastFrameSize.first != width || lastFrameSize.second != height) {
+        glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data);
+    } else {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
+    }
+
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
 }
 
 uintptr_t LibretroDroid::ImageRenderer::getTexture() {
@@ -45,6 +62,28 @@ uintptr_t LibretroDroid::ImageRenderer::getTexture() {
 
 uintptr_t LibretroDroid::ImageRenderer::getFramebuffer() {
     return 0; // ImageRender does not really expose a framebuffer.
+}
+
+void LibretroDroid::ImageRenderer::setPixelFormat(int pixelFormat) {
+    switch (pixelFormat) {
+
+        case RETRO_PIXEL_FORMAT_XRGB8888:
+            this->glInternalFormat = GL_RGBA;
+            this->glFormat = GL_RGBA;
+            this->glType = GL_UNSIGNED_BYTE;
+            this->bytesPerPixel = 4;
+            this->glSwizzle = { GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA };
+            break;
+
+        default:
+        case RETRO_PIXEL_FORMAT_RGB565:
+            this->glInternalFormat = GL_RGB565;
+            this->glFormat = GL_RGB;
+            this->glType = GL_UNSIGNED_SHORT_5_6_5;
+            this->bytesPerPixel = 2;
+            this->glSwizzle = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
+            break;
+    }
 }
 
 LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
@@ -86,6 +125,10 @@ uintptr_t LibretroDroid::FramebufferRenderer::getTexture() {
 
 uintptr_t LibretroDroid::FramebufferRenderer::getFramebuffer() {
     return currentFramebuffer;
+}
+
+void LibretroDroid::FramebufferRenderer::setPixelFormat(int pixelFormat) {
+    // TODO... Here we should handle 32bit framebuffers.
 }
 
 void LibretroDroid::Renderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {

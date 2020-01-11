@@ -50,6 +50,7 @@ std::mutex retroStateMutex;
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 const char* savesDirectory = nullptr;
 const char* systemDirectory = nullptr;
+int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -117,7 +118,7 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 }
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
-    LOGI("%s", requested->key);
+    LOGD("Variable requested %s", requested->key);
     for (auto& variable : variables) {
         if (variable.key == requested->key) {
             requested->value = variable.value.c_str();
@@ -158,8 +159,8 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT: {
             LOGD("Called SET_PIXEL_FORMAT");
-            int requiredFormat = *static_cast<enum retro_pixel_format *>(data);
-            return requiredFormat == RETRO_PIXEL_FORMAT_RGB565;
+            pixelFormat = *static_cast<enum retro_pixel_format *>(data);
+            return pixelFormat == RETRO_PIXEL_FORMAT_RGB565 || pixelFormat == RETRO_PIXEL_FORMAT_XRGB8888;
         }
 
         case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
@@ -210,6 +211,10 @@ bool callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
             LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+            return false;
+
+        case RETRO_ENVIRONMENT_GET_LANGUAGE:
+            LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
             return false;
     }
 
@@ -389,6 +394,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
             bottomLeftOrigin,
             system_av_info.geometry.aspect_ratio
     );
+
+    renderer->setPixelFormat(pixelFormat);
 
     video = newVideo;
 
