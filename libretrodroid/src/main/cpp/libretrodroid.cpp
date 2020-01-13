@@ -119,6 +119,13 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGD("Variable requested %s", requested->key);
+
+    // TODO... We should find a proper place for hardcoded properties like this one.
+    if (strcmp(requested->key, "desmume_pointer_type") == 0) {
+        requested->value = "touch";
+        return true;
+    }
+
     for (auto& variable : variables) {
         if (variable.key == requested->key) {
             requested->value = variable.value.c_str();
@@ -261,6 +268,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
+    JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
 };
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {
@@ -387,12 +395,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
         renderer = new LibretroDroid::ImageRenderer();
     }
 
-    LibretroDroid::Video* newVideo = new LibretroDroid::Video();
+    auto newVideo = new LibretroDroid::Video();
     newVideo->initializeGraphics(
             renderer,
             LibretroDroid::ShaderManager::getShader(fragmentShaderType),
-            bottomLeftOrigin,
-            system_av_info.geometry.aspect_ratio
+            bottomLeftOrigin
     );
 
     renderer->setPixelFormat(pixelFormat);
@@ -556,6 +563,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
     if (fpsSync != nullptr) {
         fpsSync->sync();
     }
+}
+
+JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj) {
+    struct retro_system_av_info system_av_info;
+    core->retro_get_system_av_info(&system_av_info);
+    return (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
 }
 
 

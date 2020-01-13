@@ -118,14 +118,13 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float aspectRatio) {
+void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
     this->renderer = renderer;
-    this->aspectRatio = aspectRatio;
 
     gFlipY = bottomLeftOrigin ? 0 : 1;
 
@@ -229,6 +228,7 @@ void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned
 
 void LibretroDroid::Video::updateVertices() {
     float screenAspectRatio = (float) screenWidth / screenHeight;
+    float aspectRatio = (float) renderer->lastFrameSize.first / (float) renderer->lastFrameSize.second;
 
     float scaleX = 1.0F;
     float scaleY = 1.0F;

@@ -27,7 +27,7 @@ namespace LibretroDroid {
 
 class Video {
 public:
-    void initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float aspectRatio);
+    void initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin);
     void updateScreenSize(int screenWidth, int screenHeight);
 
     void renderFrame();
@@ -68,7 +68,6 @@ private:
 
     int screenWidth = 0;
     int screenHeight = 0;
-    float aspectRatio = 1.0F;
 
     float finalScreenWidth = 0;
     float finalScreenHeight = 0;
