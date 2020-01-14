@@ -92,16 +92,16 @@ class GLRetroView(context: Context,
                 sendTouchEvent(event)
             }
             MotionEvent.ACTION_UP -> {
-                LibretroDroid.onMotionEvent(0, MOTION_SOURCE_POINTER, -1f, -1f)
+                sendMotionEvent(MOTION_SOURCE_POINTER, -1f, -1f)
             }
         }
         return true
     }
 
     private fun sendTouchEvent(event: MotionEvent) {
-        val x = event.rawX / width
-        val y = event.rawY / height
-        LibretroDroid.onMotionEvent(0, MOTION_SOURCE_POINTER, x, y)
+        val x = event.x / width
+        val y = event.y / height
+        sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
     }
 
     fun serializeState(): ByteArray {
