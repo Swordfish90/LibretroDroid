@@ -38,8 +38,8 @@ class SampleActivity : Activity() {
         //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Pokemon Blue Version/Pokemon Blue Version.gb", filesDir.absolutePath, cacheDir.absolutePath)
         //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/Advance Wars/Advance Wars.gba", "", "", LibretroDroid.SHADER_LCD)
         //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/Patapon 2.iso", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
-        retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/God of War - Chains of Olympus (USA).iso", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
         //retroView = GLRetroView(this, "desmume_libretro_android.so", "/storage/emulated/0/Roms Test/ds/Pokemon Pearl Version.nds", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
+        retroView = GLRetroView(this, "fbneo_libretro_android.so", "/storage/emulated/0/Android/data/com.swordfish.lemuroid/files/roms/fbneo/arkanoid.zip", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
 
         val frameLayout = FrameLayout(this)
         setContentView(frameLayout)

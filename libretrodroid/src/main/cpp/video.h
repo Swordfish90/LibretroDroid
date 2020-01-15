@@ -27,7 +27,7 @@ namespace LibretroDroid {
 
 class Video {
 public:
-    void initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin);
+    void initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation);
     void updateScreenSize(int screenWidth, int screenHeight);
 
     void renderFrame();
@@ -39,13 +39,32 @@ public:
     };
 
 private:
-    void updateVertices();
+    void updateViewModelMatrix();
     float getScreenDensity();
     float getTextureWidth();
     float getTextureHeight();
 
 private:
-    GLfloat gTriangleVertices[12];
+    GLfloat gTriangleVertices[12] = {
+            -1.0F,
+            -1.0F,
+
+            -1.0F,
+             1.0F,
+
+             1.0F,
+            -1.0F,
+
+             1.0F,
+            -1.0F,
+
+            -1.0F,
+             1.0F,
+
+             1.0F,
+             1.0F,
+    };
+
     GLfloat gTriangleCoords[12] = {
         0.0F,
         0.0F,
@@ -66,11 +85,17 @@ private:
         1.0F,
     };
 
+    GLfloat gViewModelMatrix[16] = {
+        1.0F, 0.0F, 0.0F, 0.0F,
+        0.0F, 1.0F, 0.0F, 0.0F,
+        0.0F, 0.0F, 1.0F, 0.0F,
+        0.0F, 0.0F, 0.0F, 1.0F,
+    };
+
     int screenWidth = 0;
     int screenHeight = 0;
 
-    float finalScreenWidth = 0;
-    float finalScreenHeight = 0;
+    float rotation = 0;
 
     GLuint gProgram = 0;
     GLint gvPositionHandle = 0;
@@ -79,6 +104,7 @@ private:
     GLint gScreenDensityHandle = 0;
     GLint gTextureSizeHandle = 0;
     GLint gFlipYHandle = 0;
+    GLint gViewModelMatrixHandle = 0;
 
     float gFlipY = 1.0;
 

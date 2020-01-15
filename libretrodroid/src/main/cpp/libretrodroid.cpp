@@ -51,6 +51,7 @@ auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 const char* savesDirectory = nullptr;
 const char* systemDirectory = nullptr;
 int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
+float screenRotation = 0;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -205,8 +206,16 @@ bool callback_environment(unsigned cmd, void *data) {
             return savesDirectory != nullptr;
 
         case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+            LOGD("Called RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
             *(const char**) data = systemDirectory;
             return systemDirectory != nullptr;
+
+        case RETRO_ENVIRONMENT_SET_ROTATION: {
+            LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
+            unsigned screenRotationIndex = (*static_cast<unsigned*>(data));
+            screenRotation = screenRotationIndex * (float) (-0.5F * M_PI);
+            return true;
+        }
 
         case RETRO_ENVIRONMENT_GET_PERF_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
@@ -399,7 +408,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     newVideo->initializeGraphics(
             renderer,
             LibretroDroid::ShaderManager::getShader(fragmentShaderType),
-            bottomLeftOrigin
+            bottomLeftOrigin,
+            screenRotation
     );
 
     renderer->setPixelFormat(pixelFormat);
@@ -568,7 +578,13 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
 JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj) {
     struct retro_system_av_info system_av_info;
     core->retro_get_system_av_info(&system_av_info);
-    return (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    float aspectRatio = system_av_info.geometry.aspect_ratio;
+
+    if (aspectRatio <= 0.0) {
+        aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    }
+
+    return aspectRatio;
 }
 
 
