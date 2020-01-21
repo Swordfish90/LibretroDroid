@@ -33,7 +33,7 @@ class GLRetroView(context: Context,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
-) : GLSurfaceView(context) {
+) : AspectRatioGLSurfaceView(context) {
 
     private val gamepadsManager = GamepadsManager(context.applicationContext)
     private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
@@ -51,11 +51,16 @@ class GLRetroView(context: Context,
     fun onCreate() {
         LibretroDroid.create(coreFilePath, gameFilePath, systemDirectory, savesDirectory, shader)
         gamepadsManager.init()
+        setAspectRatio(LibretroDroid.getAspectRatio())
     }
 
     override fun onResume() {
         LibretroDroid.resume()
         super.onResume()
+    }
+
+    fun getAspectRatio(): Float {
+        return LibretroDroid.getAspectRatio()
     }
 
     override fun onPause() {
@@ -76,6 +81,27 @@ class GLRetroView(context: Context,
     fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
         motionEventSubject.accept(GameMotionEvent(source, xAxis, yAxis, port))
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        when (event?.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                sendTouchEvent(event)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                sendTouchEvent(event)
+            }
+            MotionEvent.ACTION_UP -> {
+                sendMotionEvent(MOTION_SOURCE_POINTER, -1f, -1f)
+            }
+        }
+        return true
+    }
+
+    private fun sendTouchEvent(event: MotionEvent) {
+        val x = event.x / width
+        val y = event.y / height
+        sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
     }
 
     fun serializeState(): ByteArray {
@@ -165,6 +191,7 @@ class GLRetroView(context: Context,
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
         const val MOTION_SOURCE_ANALOG_RIGHT = LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT
+        const val MOTION_SOURCE_POINTER = LibretroDroid.MOTION_SOURCE_POINTER
 
         const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
         const val SHADER_CRT = LibretroDroid.SHADER_CRT

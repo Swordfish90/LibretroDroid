@@ -51,6 +51,7 @@ auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 const char* savesDirectory = nullptr;
 const char* systemDirectory = nullptr;
 int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
+float screenRotation = 0;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -119,6 +120,13 @@ bool environment_handle_set_variables(const struct retro_variable* received) {
 
 bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGD("Variable requested %s", requested->key);
+
+    // TODO... We should find a proper place for hardcoded properties like this one.
+    if (strcmp(requested->key, "desmume_pointer_type") == 0) {
+        requested->value = "touch";
+        return true;
+    }
+
     for (auto& variable : variables) {
         if (variable.key == requested->key) {
             requested->value = variable.value.c_str();
@@ -198,8 +206,16 @@ bool callback_environment(unsigned cmd, void *data) {
             return savesDirectory != nullptr;
 
         case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+            LOGD("Called RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
             *(const char**) data = systemDirectory;
             return systemDirectory != nullptr;
+
+        case RETRO_ENVIRONMENT_SET_ROTATION: {
+            LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
+            unsigned screenRotationIndex = (*static_cast<unsigned*>(data));
+            screenRotation = screenRotationIndex * (float) (-0.5F * M_PI);
+            return true;
+        }
 
         case RETRO_ENVIRONMENT_GET_PERF_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
@@ -261,6 +277,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
+    JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
 };
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {
@@ -387,12 +404,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
         renderer = new LibretroDroid::ImageRenderer();
     }
 
-    LibretroDroid::Video* newVideo = new LibretroDroid::Video();
+    auto newVideo = new LibretroDroid::Video();
     newVideo->initializeGraphics(
             renderer,
             LibretroDroid::ShaderManager::getShader(fragmentShaderType),
             bottomLeftOrigin,
-            system_av_info.geometry.aspect_ratio
+            screenRotation
     );
 
     renderer->setPixelFormat(pixelFormat);
@@ -556,6 +573,18 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
     if (fpsSync != nullptr) {
         fpsSync->sync();
     }
+}
+
+JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj) {
+    struct retro_system_av_info system_av_info;
+    core->retro_get_system_av_info(&system_av_info);
+    float aspectRatio = system_av_info.geometry.aspect_ratio;
+
+    if (aspectRatio <= 0.0) {
+        aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    }
+
+    return aspectRatio;
 }
 
 

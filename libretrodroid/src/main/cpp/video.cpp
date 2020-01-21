@@ -43,6 +43,7 @@ const char* gVertexShader =
         "uniform mediump float vFlipY;\n"
         "uniform mediump float screenDensity;\n"
         "uniform lowp sampler2D texture;\n"
+        "uniform mat4 vViewModel;\n"
         "varying mediump float screenMaskStrength;\n"
         "varying vec2 coords;\n"
         "varying vec2 origCoords;\n"
@@ -51,7 +52,7 @@ const char* gVertexShader =
         "  coords.x = vCoordinate.x;\n"
         "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
         "  screenMaskStrength = smoothstep(2.0, 6.0, screenDensity);\n"
-        "  gl_Position = vPosition;\n"
+        "  gl_Position = vViewModel * vPosition;\n"
         "}\n";
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
@@ -118,14 +119,14 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float aspectRatio) {
+void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
     this->renderer = renderer;
-    this->aspectRatio = aspectRatio;
+    this->rotation = rotation;
 
     gFlipY = bottomLeftOrigin ? 0 : 1;
 
@@ -155,6 +156,9 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::str
     gFlipYHandle = glGetUniformLocation(gProgram, "vFlipY");
     checkGlError("glGetUniformLocation");
 
+    gViewModelMatrixHandle = glGetUniformLocation(gProgram, "vViewModel");
+    checkGlError("glGetUniformLocation");
+
     glViewport(0, 0, screenWidth, screenHeight);
     checkGlError("glViewport");
 
@@ -174,7 +178,7 @@ void LibretroDroid::Video::renderFrame() {
 
     glDisable(GL_DEPTH_TEST);
 
-    updateVertices();
+    updateViewModelMatrix();
     glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle);
@@ -202,6 +206,9 @@ void LibretroDroid::Video::renderFrame() {
     glUniform1f(gFlipYHandle, gFlipY);
     checkGlError("glUniform1f");
 
+    glUniformMatrix4fv(gViewModelMatrixHandle, 1, false, gViewModelMatrix);
+    checkGlError("glUniformMatrix4fv");
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     checkGlError("glDrawArrays");
 
@@ -212,7 +219,7 @@ void LibretroDroid::Video::renderFrame() {
 }
 
 float LibretroDroid::Video::getScreenDensity() {
-    return std::min(finalScreenWidth / getTextureWidth(), finalScreenHeight / getTextureHeight());
+    return std::min(screenWidth / getTextureWidth(), screenHeight / getTextureHeight());
 }
 
 float LibretroDroid::Video::getTextureWidth() {
@@ -227,40 +234,12 @@ void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned
     renderer->onNewFrame(data, width, height, pitch);
 }
 
-void LibretroDroid::Video::updateVertices() {
-    float screenAspectRatio = (float) screenWidth / screenHeight;
-
-    float scaleX = 1.0F;
-    float scaleY = 1.0F;
-
-    if (aspectRatio > screenAspectRatio) {
-        scaleY = screenAspectRatio / aspectRatio;
-    } else {
-        scaleX = aspectRatio / screenAspectRatio;
-    }
-
-    finalScreenWidth = screenWidth * scaleX;
-    finalScreenHeight = screenHeight * scaleY;
-
-    LOGD("Updating vertices position with %f %f %f %f", scaleX, scaleY, screenAspectRatio, aspectRatio);
-
-    gTriangleVertices[0] = -1.0F * scaleX;
-    gTriangleVertices[1] = -1.0F * scaleY;
-
-    gTriangleVertices[2] = -1.0F * scaleX;
-    gTriangleVertices[3] = 1.0F * scaleY;
-
-    gTriangleVertices[4] = 1.0F * scaleX;
-    gTriangleVertices[5] = -1.0F * scaleY;
-
-    gTriangleVertices[6] = 1.0F * scaleX;
-    gTriangleVertices[7] = -1.0F * scaleY;
-
-    gTriangleVertices[8] = -1.0F * scaleX;
-    gTriangleVertices[9] = 1.0F * scaleY;
-
-    gTriangleVertices[10] = 1.0F * scaleX;
-    gTriangleVertices[11] = 1.0F * scaleY;
+void LibretroDroid::Video::updateViewModelMatrix() {
+    // Apply simple rotation matrix
+    gViewModelMatrix[0] = cos(rotation);
+    gViewModelMatrix[1] = -sin(rotation);
+    gViewModelMatrix[4] = sin(rotation);
+    gViewModelMatrix[5] = cos(rotation);
 }
 
 void LibretroDroid::Video::updateScreenSize(int screenWidth, int screenHeight) {

@@ -26,7 +26,7 @@
 
 int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsigned index, unsigned id) {
     switch (device) {
-        case RETRO_DEVICE_JOYPAD:
+        case RETRO_DEVICE_JOYPAD: {
             switch (id) {
                 case RETRO_DEVICE_ID_JOYPAD_LEFT:
                     return pads[port].dpadXAxis == -1;
@@ -39,30 +39,56 @@ int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsi
                 default:
                     return pads[port].pressedKeys.count(id) > 0;
             }
+        }
 
-        case RETRO_DEVICE_ANALOG:
+        case RETRO_DEVICE_ANALOG: {
             switch (index) {
                 case RETRO_DEVICE_INDEX_ANALOG_LEFT:
                     switch (id) {
                         case RETRO_DEVICE_ID_ANALOG_X:
-                            return (int16_t) (pads[port].joypadLeftXAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadLeftXAxis * MAX_RANGE_MOTION);
                         case RETRO_DEVICE_ID_ANALOG_Y:
-                            return (int16_t) (pads[port].joypadLeftYAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadLeftYAxis * MAX_RANGE_MOTION);
                         default:
                             return 0;
                     }
                 case RETRO_DEVICE_INDEX_ANALOG_RIGHT:
                     switch (id) {
                         case RETRO_DEVICE_ID_ANALOG_X:
-                            return (int16_t) (pads[port].joypadRightXAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadRightXAxis * MAX_RANGE_MOTION);
                         case RETRO_DEVICE_ID_ANALOG_Y:
-                            return (int16_t) (pads[port].joypadRightYAxis * ANALOG_MAX_RANGE);
+                            return (int16_t) (pads[port].joypadRightYAxis * MAX_RANGE_MOTION);
                         default:
                             return 0;
                     }
                 default:
                     return 0;
             }
+        }
+
+        case RETRO_DEVICE_POINTER: {
+            // TODO... Here we should hanlde multitouch...
+            if (index > 0) {
+                return 0;
+            }
+
+            switch (id) {
+                case RETRO_DEVICE_ID_POINTER_PRESSED: {
+                    bool isXActive = pads[port].pointerScreenXAxis >= 0;
+                    bool isYActive = pads[port].pointerScreenYAxis >= 0;
+                    return (int16_t) (isXActive && isYActive ? 1 : 0);
+                }
+
+                case RETRO_DEVICE_ID_POINTER_X:
+                    return (int16_t) (2.0 * (pads[port].pointerScreenXAxis - 0.5f) * MAX_RANGE_MOTION);
+
+                case RETRO_DEVICE_ID_POINTER_Y:
+                    return (int16_t) (2.0 * (pads[port].pointerScreenYAxis - 0.5f) * MAX_RANGE_MOTION);
+
+                default:
+                    return 0;
+            }
+        }
 
         default:
             return 0;
@@ -127,6 +153,11 @@ void LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis
         case LibretroDroid::Input::MOTION_SOURCE_ANALOG_RIGHT:
             pads[port].joypadRightXAxis = xAxis;
             pads[port].joypadRightYAxis = yAxis;
+            break;
+
+        case LibretroDroid::Input::MOTION_SOURCE_POINTER:
+            pads[port].pointerScreenXAxis = xAxis;
+            pads[port].pointerScreenYAxis = yAxis;
             break;
     }
 }
