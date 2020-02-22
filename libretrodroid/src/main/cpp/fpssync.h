@@ -25,15 +25,20 @@ namespace LibretroDroid {
 
 class FPSSync {
 public:
-    FPSSync(double framerate);
+    FPSSync(double contentRefreshRate, double screenRefreshRate);
     ~FPSSync() { }
 
     void sync();
     void start();
 
+    double getTimeStretchFactor();
+
 private:
-    double framerate;
+    double screenRefreshRate;
+    double contentRefreshRate;
     bool useVSync;
+
+    const double FPS_TOLERANCE = 5;
 
     std::chrono::time_point<std::chrono::steady_clock> lastFrame;
     std::chrono::duration<long, std::micro> sampleInterval;

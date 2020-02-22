@@ -32,9 +32,11 @@ static void printGLString(const char *name, GLenum s) {
 }
 
 static void checkGlError(const char* op) {
+#if VERBOSE_LOGGING
     for (GLint error = glGetError(); error; error = glGetError()) {
         LOGE("after %s() glError (0x%x)\n", op, error);
     }
+#endif
 }
 
 const char* gVertexShader =
