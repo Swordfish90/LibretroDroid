@@ -26,15 +26,19 @@ void LibretroDroid::FPSSync::sync() {
     }
 }
 
-LibretroDroid::FPSSync::FPSSync(double framerate) {
-    // We rely on vsync if framerate is close to 60fps.
-    this->framerate = framerate;
-    useVSync = std::fabs(60.0 - framerate) < 1.0;
-    sampleInterval = std::chrono::microseconds((long) ((1000000L / framerate)));
+LibretroDroid::FPSSync::FPSSync(double contentRefreshRate, double screenRefreshRate) {
+    this->contentRefreshRate = contentRefreshRate;
+    this->screenRefreshRate = screenRefreshRate;
+    this->useVSync = contentRefreshRate > screenRefreshRate - FPS_TOLERANCE;
+    this->sampleInterval = std::chrono::microseconds((long) ((1000000L / contentRefreshRate)));
 }
 
 void LibretroDroid::FPSSync::start() {
-    LOGI("Starting game with fps: %f. Using vsync: %d", framerate, !useVSync);
+    LOGI("Starting game with fps %f on a screen with refresh rate %f. Using vsync: %d", contentRefreshRate, screenRefreshRate, useVSync);
 
     lastFrame = lastFrame = std::chrono::steady_clock::now();
+}
+
+double LibretroDroid::FPSSync::getTimeStretchFactor() {
+    return useVSync ? contentRefreshRate / screenRefreshRate : 1.0;
 }

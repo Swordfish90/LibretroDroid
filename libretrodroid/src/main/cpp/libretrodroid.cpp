@@ -52,6 +52,7 @@ const char* savesDirectory = nullptr;
 const char* systemDirectory = nullptr;
 int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
 float screenRotation = 0;
+float screenRefreshRate = 60.0;
 
 void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
@@ -122,8 +123,16 @@ bool environment_handle_get_variable(struct retro_variable* requested) {
     LOGD("Variable requested %s", requested->key);
 
     // TODO... We should find a proper place for hardcoded properties like this one.
+    // Desmume by defaults assumes a mouse pointer. We are forcing touchscreen which works best on Android.
     if (strcmp(requested->key, "desmume_pointer_type") == 0) {
         requested->value = "touch";
+        return true;
+    }
+
+    // PCSXRearmed now uses Lightrec (which is awesome) but sadly this still doesn't work with HLE bioses,
+    // so we are disabling it for now.
+    if (strcmp(requested->key, "pcsx_rearmed_drc") == 0) {
+        requested->value = "disabled";
         return true;
     }
 
@@ -273,7 +282,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
@@ -442,7 +451,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jstring gameFilePath,
     jstring systemDir,
     jstring savesDir,
-    jint shaderType
+    jint shaderType,
+    jfloat refreshRate
 ) {
     LOGD("Performing LibretroDroid create");
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
@@ -451,6 +461,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     try {
         systemDirectory = env->GetStringUTFChars(systemDir, nullptr);
         savesDirectory = env->GetStringUTFChars(savesDir, nullptr);
+        screenRefreshRate = refreshRate;
 
         core = new LibretroDroid::Core(corePath);
 
@@ -528,10 +539,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
         struct retro_system_av_info system_av_info;
         core->retro_get_system_av_info(&system_av_info);
 
-        audio = new LibretroDroid::Audio(std::lround(system_av_info.timing.sample_rate));
-        audio->start();
+        fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps, screenRefreshRate);
 
-        fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps);
+        double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
+        audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
+
+        audio->start();
         fpsSync->start();
 
     } catch (std::exception& exception) {

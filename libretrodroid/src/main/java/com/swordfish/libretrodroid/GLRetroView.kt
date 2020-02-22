@@ -19,13 +19,12 @@ package com.swordfish.libretrodroid
 
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.view.InputDevice
-import android.view.KeyEvent
-import android.view.MotionEvent
+import android.view.*
 import com.jakewharton.rxrelay2.PublishRelay
 import io.reactivex.Observable
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+
 
 class GLRetroView(context: Context,
     private val coreFilePath: String,
@@ -49,9 +48,20 @@ class GLRetroView(context: Context,
     }
 
     fun onCreate() {
-        LibretroDroid.create(coreFilePath, gameFilePath, systemDirectory, savesDirectory, shader)
+        LibretroDroid.create(
+            coreFilePath,
+            gameFilePath,
+            systemDirectory,
+            savesDirectory,
+            shader,
+            getScreenRefreshRate())
+
         gamepadsManager.init()
         setAspectRatio(LibretroDroid.getAspectRatio())
+    }
+
+    private fun getScreenRefreshRate(): Float {
+        return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
     }
 
     override fun onResume() {
