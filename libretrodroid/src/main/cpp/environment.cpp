@@ -42,11 +42,13 @@ namespace Environment {
     float screenRotation = 0;
 
     std::vector<struct Variable> variables;
+    bool dirtyVariables = false;
 
     struct Variable {
     public:
         std::string key;
         std::string value;
+        std::string description;
     };
 
     void initialize(const char* systemDirectory, const char* savesDirectory, retro_hw_get_current_framebuffer_t callback_get_current_framebuffer) {
@@ -63,6 +65,16 @@ namespace Environment {
         hw_context_destroy = nullptr;
     }
 
+    void updateVariable(std::string key, std::string value) {
+        for (auto& variable : variables) {
+            if (variable.key == key) {
+                variable.value = value;
+                dirtyVariables = true;
+                break;
+            }
+        }
+    }
+
     bool environment_handle_set_variables(const struct retro_variable* received) {
         variables.clear();
 
@@ -71,14 +83,14 @@ namespace Environment {
             LOGD("Received variable %s: %s", received[count].key, received[count].value);
 
             std::string currentKey(received[count].key);
+            std::string currentDescription(received[count].value);
             std::string currentValue(received[count].value);
 
             auto firstValueStart = currentValue.find(';') + 2;
             auto firstValueEnd = currentValue.find('|', firstValueStart);
-
             currentValue = currentValue.substr(firstValueStart, firstValueEnd - firstValueStart);
 
-            auto variable = Variable { currentKey, currentValue };
+            auto variable = Variable { currentKey, currentValue, currentDescription };
             variables.push_back(variable);
 
             LOGD("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
@@ -176,9 +188,12 @@ namespace Environment {
                 LOGD("Called RETRO_ENVIRONMENT_SET_VARIABLES");
                 return environment_handle_set_variables(static_cast<const struct retro_variable*>(data));
 
-            case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
-                LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
-                return false;
+            case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE: {
+                LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE. Is dirty?: %d", dirtyVariables);
+                *((bool*) data) = dirtyVariables;
+                dirtyVariables = false;
+                return true;
+            }
 
             case RETRO_ENVIRONMENT_SET_HW_RENDER:
                 LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");

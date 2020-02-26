@@ -146,6 +146,16 @@ class GLRetroView(context: Context,
         return motionEventSubject
     }
 
+    fun getVariables(): Array<Variable> {
+        return LibretroDroid.getVariables()
+    }
+
+    fun updateVariables(vararg variables: Variable) {
+        variables.forEach {
+            LibretroDroid.updateVariable(it)
+        }
+    }
+
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)

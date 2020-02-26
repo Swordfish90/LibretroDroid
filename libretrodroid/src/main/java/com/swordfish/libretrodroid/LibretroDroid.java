@@ -19,9 +19,9 @@ package com.swordfish.libretrodroid;
 
 class LibretroDroid {
 
-     static {
-         System.loadLibrary("libretrodroid");
-     }
+    static {
+        System.loadLibrary("libretrodroid");
+    }
 
     public static final int MOTION_SOURCE_DPAD = 0;
     public static final int MOTION_SOURCE_ANALOG_LEFT = 1;
@@ -50,6 +50,9 @@ class LibretroDroid {
 
     public static native byte[] serializeSRAM();
     public static native boolean unserializeSRAM(byte[] sram);
+
+    public static native void updateVariable(Variable variable);
+    public static native Variable[] getVariables();
 
     /** Send motion events. Analog events in range [-1, +1] and touch events in range [0,1] */
     public static native void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);

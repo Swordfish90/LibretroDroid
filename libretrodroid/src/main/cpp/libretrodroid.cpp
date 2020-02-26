@@ -102,7 +102,49 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
     JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
+    JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable);
 };
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable) {
+    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+
+    jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+    jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+
+    auto jKeyObject = (jstring) env->GetObjectField(variable, jKeyField);
+    auto jValueObject = (jstring) env->GetObjectField(variable, jValueField);
+
+    jboolean isCopy = JNI_TRUE;
+
+    Environment::updateVariable(
+        env->GetStringUTFChars(jKeyObject, &isCopy),
+        env->GetStringUTFChars(jValueObject, &isCopy)
+    );
+}
+
+JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj) {
+    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+    jmethodID variableMethod = env->GetMethodID(variableClass, "<init>", "()V");
+
+    auto variables = Environment::variables;
+    jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
+
+    for (int i = 0; i < variables.size(); i++) {
+        jobject jVariable = env->NewObject(variableClass, variableMethod);
+
+        jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+        jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+        jfieldID jDescriptionField = env->GetFieldID(variableClass, "description", "Ljava/lang/String;");
+
+        env->SetObjectField(jVariable, jKeyField, env->NewStringUTF(variables[i].key.data()));
+        env->SetObjectField(jVariable, jValueField, env->NewStringUTF(variables[i].value.data()));
+        env->SetObjectField(jVariable, jDescriptionField, env->NewStringUTF(variables[i].description.data()));
+
+        env->SetObjectArrayElement(result, i, jVariable);
+    }
+    return result;
+}
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {
     std::lock_guard<std::mutex> lock(retroStateMutex);
