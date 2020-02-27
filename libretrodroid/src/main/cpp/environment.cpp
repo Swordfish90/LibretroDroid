@@ -103,21 +103,6 @@ namespace Environment {
 
     bool environment_handle_get_variable(struct retro_variable* requested) {
         LOGD("Variable requested %s", requested->key);
-
-        // TODO... We should find a proper place for hardcoded properties like this one.
-        // Desmume by defaults assumes a mouse pointer. We are forcing touchscreen which works best on Android.
-        if (strcmp(requested->key, "desmume_pointer_type") == 0) {
-            requested->value = "touch";
-            return true;
-        }
-
-        // PCSXRearmed now uses Lightrec (which is awesome) but sadly this still doesn't work with HLE bioses,
-        // so we are disabling it for now.
-        if (strcmp(requested->key, "pcsx_rearmed_drc") == 0) {
-            requested->value = "disabled";
-            return true;
-        }
-
         for (auto& variable : variables) {
             if (variable.key == requested->key) {
                 requested->value = variable.value.c_str();
