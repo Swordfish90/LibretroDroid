@@ -1,6 +1,6 @@
 # LibretroDroid
 
-LibretroDroid is a simple C++ libretro frontend library for Android. It's usable, but still very young so expect a bumpy road.
+LibretroDroid is a simple C++ libretro frontend library for Android. It's powering [Lemuroid](https://github.com/Swordfish90/Lemuroid).
 
 Supported features:
 * 2D Cores
@@ -11,8 +11,10 @@ Supported features:
 * Serialization and Deserialization of SaveRAM
 * Simple shader effects (CRT and LCD)
 * Touchscreen
+* Multiple disk support
 
 Tested working cores:
+* Stella
 * Gambatte
 * mGBA
 * Mupen64Plus
@@ -24,3 +26,4 @@ Tested working cores:
 * picodrive
 * Genesis Plus GX
 * DeSmuME
+* PCSXReARMed
