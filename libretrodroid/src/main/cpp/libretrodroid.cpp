@@ -15,16 +15,14 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define MODULE_NAME_CORE "Libretro Core"
-
 #include <jni.h>
 
 #include <EGL/egl.h>
 
 #include <string>
 #include <vector>
-#include <cmath>
 #include <unordered_set>
+#include <mutex>
 
 #include "log.h"
 #include "core.h"
@@ -35,6 +33,7 @@
 #include "input.h"
 #include "shadermanager.h"
 #include "javautils.h"
+#include "environment.cpp"
 
 extern "C" {
 #include "utils.h"
@@ -47,204 +46,20 @@ LibretroDroid::Video* video = nullptr;
 LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
 std::mutex retroStateMutex;
+
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
-const char* savesDirectory = nullptr;
-const char* systemDirectory = nullptr;
-int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
-float screenRotation = 0;
 float screenRefreshRate = 60.0;
 
-void callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
-    va_list argptr;
-    va_start(argptr, fmt);
-
-    switch (level) {
-        case RETRO_LOG_DEBUG:
-            __android_log_vprint(ANDROID_LOG_DEBUG, MODULE_NAME_CORE, fmt, argptr);
-            break;
-        case RETRO_LOG_INFO:
-            __android_log_vprint(ANDROID_LOG_INFO, MODULE_NAME_CORE, fmt, argptr);
-            break;
-        case RETRO_LOG_WARN:
-            __android_log_vprint(ANDROID_LOG_WARN, MODULE_NAME_CORE, fmt, argptr);
-            break;
-        case RETRO_LOG_ERROR:
-            __android_log_vprint(ANDROID_LOG_ERROR, MODULE_NAME_CORE, fmt, argptr);
-            break;
-        default:
-            // Log nothing in here.
-            break;
+uintptr_t callback_get_current_framebuffer() {
+    if (video != nullptr) {
+        return video->getCurrentFramebuffer();
     }
+    return 0;
 }
 
 void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
     LOGD("hw video refresh callback called %i %i", width, height);
     video->onNewFrame(data, width, height, pitch);
-}
-
-std::vector<struct Variable> variables;
-
-struct Variable {
-public:
-    std::string key;
-    std::string value;
-};
-
-retro_hw_context_reset_t hw_context_reset = nullptr;
-retro_hw_context_reset_t hw_context_destroy = nullptr;
-
-bool environment_handle_set_variables(const struct retro_variable* received) {
-    variables.clear();
-
-    unsigned count = 0;
-    while (received[count].key != nullptr) {
-        LOGD("Received variable %s: %s", received[count].key, received[count].value);
-
-        std::string currentKey(received[count].key);
-        std::string currentValue(received[count].value);
-
-        auto firstValueStart = currentValue.find(';') + 2;
-        auto firstValueEnd = currentValue.find('|', firstValueStart);
-
-        currentValue = currentValue.substr(firstValueStart, firstValueEnd - firstValueStart);
-
-        auto variable = Variable { currentKey, currentValue };
-        variables.push_back(variable);
-
-        LOGD("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
-
-        count++;
-    }
-
-    return true;
-}
-
-bool environment_handle_get_variable(struct retro_variable* requested) {
-    LOGD("Variable requested %s", requested->key);
-
-    // TODO... We should find a proper place for hardcoded properties like this one.
-    // Desmume by defaults assumes a mouse pointer. We are forcing touchscreen which works best on Android.
-    if (strcmp(requested->key, "desmume_pointer_type") == 0) {
-        requested->value = "touch";
-        return true;
-    }
-
-    // PCSXRearmed now uses Lightrec (which is awesome) but sadly this still doesn't work with HLE bioses,
-    // so we are disabling it for now.
-    if (strcmp(requested->key, "pcsx_rearmed_drc") == 0) {
-        requested->value = "disabled";
-        return true;
-    }
-
-    for (auto& variable : variables) {
-        if (variable.key == requested->key) {
-            requested->value = variable.value.c_str();
-            return true;
-        }
-    }
-    return false;
-}
-
-bool useHWAcceleration = false;
-bool useDepth = false;
-bool useStencil = false;
-bool bottomLeftOrigin = false;
-
-bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
-    useHWAcceleration = true;
-    useDepth = hw_render_callback->depth;
-    useStencil = hw_render_callback->stencil;
-    bottomLeftOrigin = hw_render_callback->bottom_left_origin;
-
-    hw_context_destroy = hw_render_callback->context_destroy;
-    hw_context_reset = hw_render_callback->context_reset;
-
-    hw_render_callback->get_current_framebuffer = []() -> uintptr_t {
-        return video->getCurrentFramebuffer();
-    };
-
-    hw_render_callback->get_proc_address = &eglGetProcAddress;
-
-    return true;
-}
-
-bool callback_environment(unsigned cmd, void *data) {
-    switch (cmd) {
-        case RETRO_ENVIRONMENT_GET_CAN_DUPE:
-            *((bool*) data) = true;
-            return true;
-
-        case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT: {
-            LOGD("Called SET_PIXEL_FORMAT");
-            pixelFormat = *static_cast<enum retro_pixel_format *>(data);
-            return pixelFormat == RETRO_PIXEL_FORMAT_RGB565 || pixelFormat == RETRO_PIXEL_FORMAT_XRGB8888;
-        }
-
-        case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
-            LOGD("Called SET_INPUT_DESCRIPTORS");
-            return false;
-
-        case RETRO_ENVIRONMENT_GET_VARIABLE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE");
-            return environment_handle_get_variable(static_cast<struct retro_variable*>(data));
-
-        case RETRO_ENVIRONMENT_SET_VARIABLES:
-            LOGD("Called RETRO_ENVIRONMENT_SET_VARIABLES");
-            return environment_handle_set_variables(static_cast<const struct retro_variable*>(data));
-
-        case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
-            return false;
-
-        case RETRO_ENVIRONMENT_SET_HW_RENDER:
-            LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
-            return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
-
-        case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
-            return false;
-
-        case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
-            ((struct retro_log_callback*) data)->log = &callback_retro_log;
-            return true;
-
-        case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
-            LOGD("Called RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
-            *(const char**) data = savesDirectory;
-            return savesDirectory != nullptr;
-
-        case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
-            LOGD("Called RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
-            *(const char**) data = systemDirectory;
-            return systemDirectory != nullptr;
-
-        case RETRO_ENVIRONMENT_SET_ROTATION: {
-            LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
-            unsigned screenRotationIndex = (*static_cast<unsigned*>(data));
-            screenRotation = screenRotationIndex * (float) (-0.5F * M_PI);
-            return true;
-        }
-
-        case RETRO_ENVIRONMENT_GET_PERF_INTERFACE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
-            return false;
-
-        case RETRO_ENVIRONMENT_SET_GEOMETRY:
-            LOGD("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
-            return false;
-
-        case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
-            LOGD("Called RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
-            return false;
-
-        case RETRO_ENVIRONMENT_GET_LANGUAGE:
-            LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
-            return false;
-    }
-
-    LOGI("callback environment has been called: %u", cmd);
-    return false;
 }
 
 void callback_audio_sample(int16_t left, int16_t right) {
@@ -287,7 +102,49 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
     JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
+    JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable);
 };
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable) {
+    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+
+    jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+    jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+
+    auto jKeyObject = (jstring) env->GetObjectField(variable, jKeyField);
+    auto jValueObject = (jstring) env->GetObjectField(variable, jValueField);
+
+    jboolean isCopy = JNI_TRUE;
+
+    Environment::updateVariable(
+        env->GetStringUTFChars(jKeyObject, &isCopy),
+        env->GetStringUTFChars(jValueObject, &isCopy)
+    );
+}
+
+JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj) {
+    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+    jmethodID variableMethod = env->GetMethodID(variableClass, "<init>", "()V");
+
+    auto variables = Environment::variables;
+    jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
+
+    for (int i = 0; i < variables.size(); i++) {
+        jobject jVariable = env->NewObject(variableClass, variableMethod);
+
+        jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+        jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+        jfieldID jDescriptionField = env->GetFieldID(variableClass, "description", "Ljava/lang/String;");
+
+        env->SetObjectField(jVariable, jKeyField, env->NewStringUTF(variables[i].key.data()));
+        env->SetObjectField(jVariable, jValueField, env->NewStringUTF(variables[i].value.data()));
+        env->SetObjectField(jVariable, jDescriptionField, env->NewStringUTF(variables[i].description.data()));
+
+        env->SetObjectArrayElement(result, i, jVariable);
+    }
+    return result;
+}
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {
     std::lock_guard<std::mutex> lock(retroStateMutex);
@@ -402,12 +259,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     }
 
     LibretroDroid::Renderer* renderer;
-    if (useHWAcceleration) {
+    if (Environment::useHWAcceleration) {
         renderer = new LibretroDroid::FramebufferRenderer(
                 system_av_info.geometry.base_width,
                 system_av_info.geometry.base_height,
-                useDepth,
-                useStencil
+                Environment::useDepth,
+                Environment::useStencil
         );
     } else {
         renderer = new LibretroDroid::ImageRenderer();
@@ -417,16 +274,16 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     newVideo->initializeGraphics(
             renderer,
             LibretroDroid::ShaderManager::getShader(fragmentShaderType),
-            bottomLeftOrigin,
-            screenRotation
+            Environment::bottomLeftOrigin,
+            Environment::screenRotation
     );
 
-    renderer->setPixelFormat(pixelFormat);
+    renderer->setPixelFormat(Environment::pixelFormat);
 
     video = newVideo;
 
-    if (hw_context_reset != nullptr) {
-        hw_context_reset();
+    if (Environment::hw_context_reset != nullptr) {
+        Environment::hw_context_reset();
     }
 }
 
@@ -459,14 +316,18 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
 
     try {
-        systemDirectory = env->GetStringUTFChars(systemDir, nullptr);
-        savesDirectory = env->GetStringUTFChars(savesDir, nullptr);
+        Environment::initialize(
+            env->GetStringUTFChars(systemDir, nullptr),
+            env->GetStringUTFChars(savesDir, nullptr),
+            &callback_get_current_framebuffer
+        );
+
         screenRefreshRate = refreshRate;
 
         core = new LibretroDroid::Core(corePath);
 
         core->retro_set_video_refresh(&callback_hw_video_refresh);
-        core->retro_set_environment(&callback_environment);
+        core->retro_set_environment(&Environment::callback_environment);
         core->retro_set_audio_sample(&callback_audio_sample);
         core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
         core->retro_set_input_poll(&callback_retro_set_input_poll);
@@ -510,8 +371,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
     LOGD("Performing LibretroDroid destroy");
 
     try {
-        if (hw_context_destroy != nullptr) {
-            hw_context_destroy();
+        if (Environment::hw_context_destroy != nullptr) {
+            Environment::hw_context_destroy();
         }
 
         core->retro_deinit();
@@ -522,8 +383,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
         delete core;
         core = nullptr;
 
-        hw_context_destroy = nullptr;
-        hw_context_reset = nullptr;
+        Environment::deinitialize();
 
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
