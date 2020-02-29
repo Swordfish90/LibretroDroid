@@ -49,7 +49,7 @@ class LibretroDroid {
     public static native boolean unserializeState(byte[] state);
 
     public static native byte[] serializeSRAM();
-    public static native boolean unserializeSRAM(byte[] sram);
+    public static native void unserializeSRAM(byte[] sram);
 
     public static native void updateVariable(Variable variable);
     public static native Variable[] getVariables();

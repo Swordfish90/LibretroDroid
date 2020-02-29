@@ -64,11 +64,7 @@ namespace Environment {
         Environment::savesDirectory = nullptr;
         hw_context_reset = nullptr;
         hw_context_destroy = nullptr;
-
-        if (retro_disk_control_callback != nullptr) {
-            free(retro_disk_control_callback);
-            retro_disk_control_callback = nullptr;
-        }
+        retro_disk_control_callback = nullptr;
     }
 
     void updateVariable(std::string key, std::string value) {
