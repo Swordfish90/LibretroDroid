@@ -156,6 +156,10 @@ class GLRetroView(context: Context,
         }
     }
 
+    fun getAvailableDisks() = LibretroDroid.availableDisks()
+    fun getCurrentDisk() = LibretroDroid.currentDisk()
+    fun changeDisk(index: Int) = LibretroDroid.changeDisk(index)
+
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)

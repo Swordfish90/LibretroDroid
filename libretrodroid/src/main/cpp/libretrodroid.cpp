@@ -104,7 +104,40 @@ extern "C" {
     JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
     JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable);
+    JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj);
+    JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index);
 };
+
+JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj) {
+    return Environment::retro_disk_control_callback != nullptr
+        ? Environment::retro_disk_control_callback->get_num_images()
+        : 0;
+}
+
+JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj) {
+    return Environment::retro_disk_control_callback != nullptr
+           ? Environment::retro_disk_control_callback->get_image_index()
+           : 0;
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index) {
+    if (Environment::retro_disk_control_callback == nullptr) {
+        LOGE("Cannot swap disk. This platform does not support it.");
+        return;
+    }
+
+    if (index < 0 || index >= Environment::retro_disk_control_callback->get_num_images()) {
+        LOGE("Requested image index is not valid.");
+        return;
+    }
+
+    if (Environment::retro_disk_control_callback->get_image_index() != index) {
+        Environment::retro_disk_control_callback->set_eject_state(true);
+        Environment::retro_disk_control_callback->set_image_index((unsigned) index);
+        Environment::retro_disk_control_callback->set_eject_state(false);
+    }
+}
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable) {
     jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
