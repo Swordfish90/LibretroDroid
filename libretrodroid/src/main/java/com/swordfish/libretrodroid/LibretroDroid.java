@@ -54,6 +54,10 @@ class LibretroDroid {
     public static native void updateVariable(Variable variable);
     public static native Variable[] getVariables();
 
+    public static native int availableDisks();
+    public static native int currentDisk();
+    public static native void changeDisk(int index);
+
     /** Send motion events. Analog events in range [-1, +1] and touch events in range [0,1] */
     public static native void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
 

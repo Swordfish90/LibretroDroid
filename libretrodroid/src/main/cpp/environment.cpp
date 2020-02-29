@@ -29,6 +29,7 @@
 namespace Environment {
     retro_hw_context_reset_t hw_context_reset = nullptr;
     retro_hw_context_reset_t hw_context_destroy = nullptr;
+    struct retro_disk_control_callback* retro_disk_control_callback = nullptr;
 
     const char* savesDirectory = nullptr;
     const char* systemDirectory = nullptr;
@@ -63,6 +64,11 @@ namespace Environment {
         Environment::savesDirectory = nullptr;
         hw_context_reset = nullptr;
         hw_context_destroy = nullptr;
+
+        if (retro_disk_control_callback != nullptr) {
+            free(retro_disk_control_callback);
+            retro_disk_control_callback = nullptr;
+        }
     }
 
     void updateVariable(std::string key, std::string value) {
@@ -207,6 +213,12 @@ namespace Environment {
                 LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
                 unsigned screenRotationIndex = (*static_cast<unsigned*>(data));
                 screenRotation = screenRotationIndex * (float) (-M_PI / 2.0);
+                return true;
+            }
+
+            case RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE: {
+                LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
+                retro_disk_control_callback = static_cast<struct retro_disk_control_callback*>(data);
                 return true;
             }
 
