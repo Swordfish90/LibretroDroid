@@ -12,6 +12,7 @@ Supported features:
 * Simple shader effects (CRT and LCD)
 * Touchscreen
 * Multiple disk support
+* Core variables
 
 Tested working cores:
 * Stella
