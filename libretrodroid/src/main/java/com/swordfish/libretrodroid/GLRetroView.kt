@@ -40,7 +40,7 @@ class GLRetroView(context: Context,
 
     init {
         preserveEGLContextOnPause = true
-        setEGLConfigChooser(5, 6, 5, 0, 0, 0)
+        //setEGLConfigChooser(5, 6, 5, 0, 0, 0)
         setEGLContextClientVersion(3)
         setRenderer(Renderer())
         keepScreenOn = true
