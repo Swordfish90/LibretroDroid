@@ -110,18 +110,21 @@ extern "C" {
 };
 
 JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
     return Environment::retro_disk_control_callback != nullptr
         ? Environment::retro_disk_control_callback->get_num_images()
         : 0;
 }
 
 JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
     return Environment::retro_disk_control_callback != nullptr
            ? Environment::retro_disk_control_callback->get_image_index()
            : 0;
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
     if (Environment::retro_disk_control_callback == nullptr) {
         LOGE("Cannot swap disk. This platform does not support it.");
         return;
