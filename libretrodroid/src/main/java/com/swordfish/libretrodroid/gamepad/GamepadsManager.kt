@@ -15,7 +15,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.swordfish.libretrodroid
+package com.swordfish.libretrodroid.gamepad
 
 import android.content.Context
 import android.hardware.input.InputManager
@@ -28,7 +28,7 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
     private val devicePortMap: MutableMap<Int, Int> = mutableMapOf()
     private val inputManager = appContext.getSystemService(Context.INPUT_SERVICE) as InputManager
 
-    private val countSubject = BehaviorRelay.createDefault(0)
+    private val infosSubject = BehaviorRelay.createDefault<List<GamepadInfo>>(listOf())
 
     override fun onInputDeviceAdded(p0: Int) = updateDevicePortMap()
 
@@ -60,8 +60,8 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
         return devicePortMap.getOrElse(deviceId) { 0 }
     }
 
-    fun getConnectedGamepads(): Observable<Int> {
-        return countSubject.distinctUntilChanged()
+    fun getGamepadInfos(): Observable<List<GamepadInfo>> {
+        return infosSubject.distinctUntilChanged()
     }
 
     private fun updateDevicePortMap() {
@@ -73,7 +73,15 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
             .filter { it.controllerNumber > 0 }
             .forEach { devicePortMap[it.id] = it.controllerNumber - 1 }
 
-        countSubject.accept(devicePortMap.count())
+        infosSubject.accept(buildGamepadInfos())
+    }
+
+    private fun buildGamepadInfos(): List<GamepadInfo> {
+        return devicePortMap.entries
+            .sortedBy { (_, value) -> value }
+            .map { (key, _) -> InputDevice.getDevice(key) }
+            .map { device -> GamepadInfo.GAMEPAD_KEYS.filter { device.hasKeys(it)[0] } }
+            .map { GamepadInfo(it.toSet()) }
     }
 
     private fun isGamePad(it: InputDevice): Boolean {
