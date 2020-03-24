@@ -17,6 +17,7 @@
 
 package com.swordfish.libretrodroid
 
+import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.*
@@ -35,13 +36,15 @@ class GLRetroView(context: Context,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : AspectRatioGLSurfaceView(context) {
 
+    private val openGLESVersion: Int
     private val gamepadsManager = GamepadsManager(context.applicationContext)
     private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
     private val motionEventSubject = PublishRelay.create<GameMotionEvent>()
 
     init {
+        openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
-        setEGLContextClientVersion(3)
+        setEGLContextClientVersion(openGLESVersion)
         setRenderer(Renderer())
         keepScreenOn = true
         isFocusable = true
@@ -49,12 +52,14 @@ class GLRetroView(context: Context,
 
     fun onCreate() {
         LibretroDroid.create(
+            openGLESVersion,
             coreFilePath,
             gameFilePath,
             systemDirectory,
             savesDirectory,
             shader,
-            getScreenRefreshRate())
+            getScreenRefreshRate()
+        )
 
         gamepadsManager.init()
         setAspectRatio(LibretroDroid.getAspectRatio())
@@ -159,6 +164,11 @@ class GLRetroView(context: Context,
     fun getAvailableDisks() = LibretroDroid.availableDisks()
     fun getCurrentDisk() = LibretroDroid.currentDisk()
     fun changeDisk(index: Int) = LibretroDroid.changeDisk(index)
+
+    private fun getGLESVersion(context: Context): Int {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) { 3 } else { 2 }
+    }
 
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)

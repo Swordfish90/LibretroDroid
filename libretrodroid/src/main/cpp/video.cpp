@@ -15,8 +15,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <GLES3/gl3.h>
-#include <GLES3/gl3ext.h>
+#include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <cstdlib>
 #include <string>
@@ -233,7 +232,9 @@ float LibretroDroid::Video::getTextureHeight() {
 }
 
 void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
-    renderer->onNewFrame(data, width, height, pitch);
+    if (data != nullptr) {
+        renderer->onNewFrame(data, width, height, pitch);
+    }
 }
 
 void LibretroDroid::Video::updateViewModelMatrix() {

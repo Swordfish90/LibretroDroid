@@ -28,12 +28,15 @@
 #include "core.h"
 #include "audio.h"
 #include "video.h"
-#include "renderer.h"
+#include "renderers/renderer.h"
 #include "fpssync.h"
 #include "input.h"
 #include "shadermanager.h"
 #include "javautils.h"
 #include "environment.cpp"
+#include "renderers/es3/framebufferrenderer.h"
+#include "renderers/es2/imagerendereres2.h"
+#include "renderers/es3/imagerendereres3.h"
 
 extern "C" {
 #include "utils.h"
@@ -49,6 +52,7 @@ std::mutex retroStateMutex;
 
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 float screenRefreshRate = 60.0;
+int openglESVersion = 2;
 
 uintptr_t callback_get_current_framebuffer() {
     if (video != nullptr) {
@@ -97,7 +101,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
@@ -303,7 +307,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
                 Environment::useStencil
         );
     } else {
-        renderer = new LibretroDroid::ImageRenderer();
+        if (openglESVersion >= 3) {
+            renderer = new LibretroDroid::ImageRendererES3();
+        } else {
+            renderer = new LibretroDroid::ImageRendererES2();
+        }
     }
 
     auto newVideo = new LibretroDroid::Video();
@@ -340,6 +348,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     JNIEnv * env,
     jobject obj,
+    jint GLESVersion,
     jstring soFilePath,
     jstring gameFilePath,
     jstring systemDir,
@@ -358,6 +367,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             &callback_get_current_framebuffer
         );
 
+        openglESVersion = GLESVersion;
         screenRefreshRate = refreshRate;
 
         core = new LibretroDroid::Core(corePath);
@@ -391,6 +401,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
         if (!result) {
             LOGE("Cannot load game. Leaving.");
             throw std::runtime_error("Cannot load game");
+        }
+
+        // HW accelerated cores are only supported on opengles 3.
+        if (Environment::useHWAcceleration && openglESVersion < 3) {
+            throw std::runtime_error("This device doesn't support opengles 3");
         }
 
         env->ReleaseStringUTFChars(soFilePath, corePath);
