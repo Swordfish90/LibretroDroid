@@ -38,7 +38,7 @@ void LibretroDroid::ImageRendererES2::onNewFrame(const void *data, unsigned widt
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     if (lastFrameSize.first != width || lastFrameSize.second != height) {
-        glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, NULL);
     }
 
     // If the given texture has the correct size we just upload it.
@@ -89,7 +89,7 @@ void LibretroDroid::ImageRendererES2::setPixelFormat(int pixelFormat) {
 
         default:
         case RETRO_PIXEL_FORMAT_RGB565:
-            this->glInternalFormat = GL_RGB;
+            this->glInternalFormat = GL_RGB565;
             this->glFormat = GL_RGB;
             this->glType = GL_UNSIGNED_SHORT_5_6_5;
             this->bytesPerPixel = 2;

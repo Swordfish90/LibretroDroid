@@ -22,6 +22,7 @@
 #include <cmath>
 
 #include "log.h"
+
 #include "video.h"
 
 static void printGLString(const char *name, GLenum s) {
@@ -38,7 +39,6 @@ static void checkGlError(const char* op) {
 }
 
 const char* gVertexShader =
-        "#version 100\n"
         "attribute vec4 vPosition;\n"
         "attribute vec2 vCoordinate;\n"
         "uniform mediump float vFlipY;\n"
@@ -139,6 +139,12 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::str
         throw std::runtime_error("Cannot create gl program");
     }
 
+    gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
+    checkGlError("glGetAttribLocation");
+
+    gvCoordinateHandle = glGetAttribLocation(gProgram, "vCoordinate");
+    checkGlError("glGetAttribLocation");
+
     gTextureHandle = glGetUniformLocation(gProgram, "texture");
     checkGlError("glGetUniformLocation");
 
@@ -164,13 +170,9 @@ void LibretroDroid::Video::renderFrame() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, screenWidth, screenHeight);
-    checkGlError("glViewport");
 
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
-    checkGlError("glClearColor");
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    checkGlError("glClear");
 
     glUseProgram(gProgram);
     checkGlError("glUseProgram");
@@ -178,16 +180,15 @@ void LibretroDroid::Video::renderFrame() {
     glDisable(GL_DEPTH_TEST);
 
     updateViewModelMatrix();
-
-    glEnableVertexAttribArray(0);
-    checkGlError("glEnableVertexAttribArray");
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
+    glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
     checkGlError("glVertexAttribPointer");
-
-    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(gvPositionHandle);
     checkGlError("glEnableVertexAttribArray");
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
+
+    glVertexAttribPointer(gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
     checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvCoordinateHandle);
+    checkGlError("glEnableVertexAttribArray");
 
     glActiveTexture(GL_TEXTURE0);
     checkGlError("glActiveTexture");

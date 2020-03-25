@@ -5,7 +5,6 @@
 #include "shadermanager.h"
 
 const std::string LibretroDroid::ShaderManager::defaultShader =
-        "#version 100\n"
         "precision mediump float;\n"
         "uniform lowp sampler2D texture;\n"
         "varying vec2 coords;\n"
@@ -16,7 +15,6 @@ const std::string LibretroDroid::ShaderManager::defaultShader =
         "}\n";
 
 const std::string LibretroDroid::ShaderManager::crtShader =
-        "#version 100\n"
         "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
         "#define HIGHP highp\n"
         "#else\n"
