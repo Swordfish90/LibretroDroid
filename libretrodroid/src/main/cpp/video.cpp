@@ -180,6 +180,7 @@ void LibretroDroid::Video::renderFrame() {
     glDisable(GL_DEPTH_TEST);
 
     updateViewModelMatrix();
+
     glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle);
@@ -212,6 +213,9 @@ void LibretroDroid::Video::renderFrame() {
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     checkGlError("glDrawArrays");
+
+    glDisableVertexAttribArray(gvPositionHandle);
+    glDisableVertexAttribArray(gvCoordinateHandle);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     checkGlError("glBindTexture");
