@@ -45,23 +45,23 @@ private:
 
 private:
     GLfloat gTriangleVertices[12] = {
-            -1.0F,
-            -1.0F,
+        -1.0F,
+        -1.0F,
 
-            -1.0F,
-             1.0F,
+        -1.0F,
+        1.0F,
 
-             1.0F,
-            -1.0F,
+        1.0F,
+        -1.0F,
 
-             1.0F,
-            -1.0F,
+        1.0F,
+        -1.0F,
 
-            -1.0F,
-             1.0F,
+        -1.0F,
+        1.0F,
 
-             1.0F,
-             1.0F,
+        1.0F,
+        1.0F,
     };
 
     GLfloat gTriangleCoords[12] = {
@@ -97,8 +97,6 @@ private:
     float rotation = 0;
 
     GLuint gProgram = 0;
-    GLint gvPositionHandle = 0;
-    GLint gvCoordinateHandle = 0;
     GLint gTextureHandle = 0;
     GLint gScreenDensityHandle = 0;
     GLint gTextureSizeHandle = 0;
