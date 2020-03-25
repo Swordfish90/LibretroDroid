@@ -210,10 +210,12 @@ class GLRetroView(context: Context,
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceChanged(width, height)
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceCreated()
         }
     }
