@@ -101,7 +101,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate, jstring language);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
@@ -354,11 +354,13 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jstring systemDir,
     jstring savesDir,
     jint shaderType,
-    jfloat refreshRate
+    jfloat refreshRate,
+    jstring language
 ) {
     LOGD("Performing LibretroDroid create");
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
     const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
+    const char* deviceLanguage = env->GetStringUTFChars(language, nullptr);
 
     try {
         Environment::initialize(
@@ -366,6 +368,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             env->GetStringUTFChars(savesDir, nullptr),
             &callback_get_current_framebuffer
         );
+
+        Environment::setLanguage(std::string(deviceLanguage));
 
         openglESVersion = GLESVersion;
         screenRefreshRate = refreshRate;
@@ -410,6 +414,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         env->ReleaseStringUTFChars(soFilePath, corePath);
         env->ReleaseStringUTFChars(gameFilePath, gamePath);
+        env->ReleaseStringUTFChars(language, deviceLanguage);
 
         fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
 

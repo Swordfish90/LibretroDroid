@@ -22,6 +22,7 @@
 #include <cstring>
 #include <cmath>
 #include <EGL/egl.h>
+#include <unordered_map>
 
 #include "libretro/libretro.h"
 #include "log.h"
@@ -34,6 +35,7 @@ namespace Environment {
     const char* savesDirectory = nullptr;
     const char* systemDirectory = nullptr;
     retro_hw_get_current_framebuffer_t callback_get_current_framebuffer = nullptr;
+    unsigned language = RETRO_LANGUAGE_ENGLISH;
 
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
     bool useHWAcceleration = false;
@@ -236,10 +238,37 @@ namespace Environment {
 
             case RETRO_ENVIRONMENT_GET_LANGUAGE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
+                *((unsigned*) data) = language;
                 return false;
         }
 
         LOGI("callback environment has been called: %u", cmd);
         return false;
+    }
+
+    void setLanguage(const std::string& androidLanguage) {
+        std::unordered_map<std::string, unsigned> languages {
+                { "en", RETRO_LANGUAGE_ENGLISH },
+                { "jp", RETRO_LANGUAGE_JAPANESE },
+                { "fr", RETRO_LANGUAGE_FRENCH },
+                { "es", RETRO_LANGUAGE_SPANISH },
+                { "de", RETRO_LANGUAGE_GERMAN },
+                { "it", RETRO_LANGUAGE_ITALIAN },
+                { "nl", RETRO_LANGUAGE_DUTCH },
+                { "pt", RETRO_LANGUAGE_PORTUGUESE_PORTUGAL },
+                { "ru", RETRO_LANGUAGE_RUSSIAN },
+                { "ko", RETRO_LANGUAGE_KOREAN },
+                { "zh", RETRO_LANGUAGE_CHINESE_TRADITIONAL },
+                { "eo", RETRO_LANGUAGE_ESPERANTO },
+                { "pl", RETRO_LANGUAGE_POLISH },
+                { "vi", RETRO_LANGUAGE_VIETNAMESE },
+                { "ar", RETRO_LANGUAGE_ARABIC },
+                { "el", RETRO_LANGUAGE_GREEK },
+                { "tr", RETRO_LANGUAGE_TURKISH }
+        };
+
+        if (languages.find(androidLanguage) != languages.end()) {
+            language = languages[androidLanguage];
+        }
     }
 }

@@ -25,6 +25,7 @@ import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.gamepad.GamepadInfo
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
+import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -58,12 +59,15 @@ class GLRetroView(context: Context,
             systemDirectory,
             savesDirectory,
             shader,
-            getScreenRefreshRate()
+            getScreenRefreshRate(),
+            getDeviceLanguage()
         )
 
         gamepadsManager.init()
         setAspectRatio(LibretroDroid.getAspectRatio())
     }
+
+    private fun getDeviceLanguage() = Locale.getDefault().language
 
     private fun getScreenRefreshRate(): Float {
         return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
