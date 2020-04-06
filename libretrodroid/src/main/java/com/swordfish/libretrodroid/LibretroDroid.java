@@ -32,7 +32,7 @@ class LibretroDroid {
     public static final int SHADER_CRT = 1;
     public static final int SHADER_LCD = 2;
 
-    public static native void create(String coreFilePath, String gameFilePath, String systemDir, String savesDir, int shaderType, float refreshRate);
+    public static native void create(int GLESVersion, String coreFilePath, String gameFilePath, String systemDir, String savesDir, int shaderType, float refreshRate, String language);
     public static native void resume();
 
     public static native void onSurfaceCreated();

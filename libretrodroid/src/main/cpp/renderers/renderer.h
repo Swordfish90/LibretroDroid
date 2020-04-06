@@ -18,8 +18,6 @@
 #ifndef LIBRETRODROID_RENDERER_H
 #define LIBRETRODROID_RENDERER_H
 
-#include <GLES3/gl3.h>
-#include <GLES3/gl3ext.h>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -33,38 +31,6 @@ public:
     virtual void setPixelFormat(int pixelFormat) = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     std::pair<int, int> lastFrameSize;
-};
-
-class ImageRenderer: public Renderer {
-public:
-    explicit ImageRenderer();
-    uintptr_t getTexture();
-    uintptr_t getFramebuffer();
-    void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
-    void setPixelFormat(int pixelFormat);
-
-private:
-    uint bytesPerPixel = 1;
-
-    GLuint glType = 0;
-    GLuint glInternalFormat = 0;
-    GLuint glFormat = 0;
-    std::vector<GLint> glSwizzle = {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
-
-    GLuint currentTexture = 0;
-};
-
-class FramebufferRenderer: public Renderer {
-public:
-    FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil);
-    uintptr_t getTexture();
-    uintptr_t getFramebuffer();
-    void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
-    void setPixelFormat(int pixelFormat);
-
-private:
-    GLuint currentFramebuffer = 0;
-    GLuint currentTexture = 0;
 };
 
 }

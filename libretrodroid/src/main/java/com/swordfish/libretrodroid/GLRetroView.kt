@@ -17,14 +17,17 @@
 
 package com.swordfish.libretrodroid
 
+import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.*
 import com.jakewharton.rxrelay2.PublishRelay
+import com.swordfish.libretrodroid.gamepad.GamepadInfo
+import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
+import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-
 
 class GLRetroView(context: Context,
     private val coreFilePath: String,
@@ -34,13 +37,15 @@ class GLRetroView(context: Context,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : AspectRatioGLSurfaceView(context) {
 
+    private val openGLESVersion: Int
     private val gamepadsManager = GamepadsManager(context.applicationContext)
     private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
     private val motionEventSubject = PublishRelay.create<GameMotionEvent>()
 
     init {
+        openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
-        setEGLContextClientVersion(3)
+        setEGLContextClientVersion(openGLESVersion)
         setRenderer(Renderer())
         keepScreenOn = true
         isFocusable = true
@@ -48,16 +53,21 @@ class GLRetroView(context: Context,
 
     fun onCreate() {
         LibretroDroid.create(
+            openGLESVersion,
             coreFilePath,
             gameFilePath,
             systemDirectory,
             savesDirectory,
             shader,
-            getScreenRefreshRate())
+            getScreenRefreshRate(),
+            getDeviceLanguage()
+        )
 
         gamepadsManager.init()
         setAspectRatio(LibretroDroid.getAspectRatio())
     }
+
+    private fun getDeviceLanguage() = Locale.getDefault().language
 
     private fun getScreenRefreshRate(): Float {
         return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
@@ -133,8 +143,8 @@ class GLRetroView(context: Context,
         LibretroDroid.reset()
     }
 
-    fun getConnectedGamepads(): Observable<Int> {
-        return gamepadsManager.getConnectedGamepads()
+    fun getGamepadInfos(): Observable<List<GamepadInfo>> {
+        return gamepadsManager.getGamepadInfos()
     }
 
     fun getGameKeyEvents(): Observable<GameKeyEvent> {
@@ -159,11 +169,16 @@ class GLRetroView(context: Context,
     fun getCurrentDisk() = LibretroDroid.currentDisk()
     fun changeDisk(index: Int) = LibretroDroid.changeDisk(index)
 
+    private fun getGLESVersion(context: Context): Int {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) { 3 } else { 2 }
+    }
+
     override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
 
-        if (keyCode in GAMEPAD_KEYS) {
+        if (keyCode in GamepadInfo.GAMEPAD_KEYS) {
             sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
             return true
         }
@@ -174,7 +189,7 @@ class GLRetroView(context: Context,
         val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
         val port = gamepadsManager.getGamepadPort(event.deviceId)
 
-        if (keyCode in GAMEPAD_KEYS) {
+        if (keyCode in GamepadInfo.GAMEPAD_KEYS) {
             sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
             return true
         }
@@ -199,10 +214,12 @@ class GLRetroView(context: Context,
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceChanged(width, height)
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceCreated()
         }
     }
@@ -219,20 +236,5 @@ class GLRetroView(context: Context,
         const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
-
-        private val GAMEPAD_KEYS = setOf(
-                KeyEvent.KEYCODE_BUTTON_SELECT,
-                KeyEvent.KEYCODE_BUTTON_START,
-                KeyEvent.KEYCODE_BUTTON_A,
-                KeyEvent.KEYCODE_BUTTON_X,
-                KeyEvent.KEYCODE_BUTTON_Y,
-                KeyEvent.KEYCODE_BUTTON_B,
-                KeyEvent.KEYCODE_BUTTON_L1,
-                KeyEvent.KEYCODE_BUTTON_L2,
-                KeyEvent.KEYCODE_BUTTON_R1,
-                KeyEvent.KEYCODE_BUTTON_R2,
-                KeyEvent.KEYCODE_BUTTON_THUMBL,
-                KeyEvent.KEYCODE_BUTTON_THUMBR
-        )
     }
 }

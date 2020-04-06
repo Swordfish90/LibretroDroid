@@ -18,10 +18,9 @@
 #ifndef LIBRETRODROID_VIDEO_H
 #define LIBRETRODROID_VIDEO_H
 
-#include <GLES3/gl3.h>
-#include <GLES3/gl3ext.h>
+#include <GLES2/gl2.h>
 
-#include "renderer.h"
+#include "renderers/renderer.h"
 
 namespace LibretroDroid {
 
