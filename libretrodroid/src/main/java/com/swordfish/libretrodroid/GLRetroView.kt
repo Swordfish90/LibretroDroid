@@ -21,6 +21,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.*
+import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.gamepad.GamepadInfo
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
@@ -39,6 +40,8 @@ class GLRetroView(context: Context,
 
     private val openGLESVersion: Int
     private val gamepadsManager = GamepadsManager(context.applicationContext)
+
+    private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
     private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
     private val motionEventSubject = PublishRelay.create<GameMotionEvent>()
 
@@ -155,6 +158,10 @@ class GLRetroView(context: Context,
         return motionEventSubject
     }
 
+    fun getGLRetroEvents(): Observable<GLRetroEvents> {
+        return retroGLEventsSubject
+    }
+
     fun getVariables(): Array<Variable> {
         return LibretroDroid.getVariables()
     }
@@ -208,9 +215,10 @@ class GLRetroView(context: Context,
         return super.onGenericMotionEvent(event)
     }
 
-    private class Renderer : GLSurfaceView.Renderer {
+    inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
             LibretroDroid.step()
+            retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
@@ -221,7 +229,13 @@ class GLRetroView(context: Context,
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceCreated()
+            retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
         }
+    }
+
+    sealed class GLRetroEvents {
+        object FrameRendered: GLRetroEvents()
+        object SurfaceCreated: GLRetroEvents()
     }
 
     data class GameKeyEvent(val action: Int, val keyCode: Int, val port: Int)
