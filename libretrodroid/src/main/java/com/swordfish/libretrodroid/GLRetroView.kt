@@ -22,8 +22,6 @@ import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.*
 import com.jakewharton.rxrelay2.BehaviorRelay
-import com.jakewharton.rxrelay2.PublishRelay
-import com.swordfish.libretrodroid.gamepad.GamepadInfo
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
@@ -39,11 +37,8 @@ class GLRetroView(context: Context,
 ) : AspectRatioGLSurfaceView(context) {
 
     private val openGLESVersion: Int
-    private val gamepadsManager = GamepadsManager(context.applicationContext)
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
-    private val keyEventSubject = PublishRelay.create<GameKeyEvent>()
-    private val motionEventSubject = PublishRelay.create<GameMotionEvent>()
 
     init {
         openGLESVersion = getGLESVersion(context)
@@ -51,7 +46,6 @@ class GLRetroView(context: Context,
         setEGLContextClientVersion(openGLESVersion)
         setRenderer(Renderer())
         keepScreenOn = true
-        isFocusable = true
     }
 
     fun onCreate() {
@@ -66,7 +60,6 @@ class GLRetroView(context: Context,
             getDeviceLanguage()
         )
 
-        gamepadsManager.init()
         setAspectRatio(LibretroDroid.getAspectRatio())
     }
 
@@ -92,17 +85,14 @@ class GLRetroView(context: Context,
 
     fun onDestroy() {
         LibretroDroid.destroy()
-        gamepadsManager.deinit()
     }
 
     fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
         queueEvent { LibretroDroid.onKeyEvent(port, action, keyCode) }
-        keyEventSubject.accept(GameKeyEvent(action, keyCode, port))
     }
 
     fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
-        motionEventSubject.accept(GameMotionEvent(source, xAxis, yAxis, port))
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -146,18 +136,6 @@ class GLRetroView(context: Context,
         LibretroDroid.reset()
     }
 
-    fun getGamepadInfos(): Observable<List<GamepadInfo>> {
-        return gamepadsManager.getGamepadInfos()
-    }
-
-    fun getGameKeyEvents(): Observable<GameKeyEvent> {
-        return keyEventSubject
-    }
-
-    fun getGameMotionEvents(): Observable<GameMotionEvent> {
-        return motionEventSubject
-    }
-
     fun getGLRetroEvents(): Observable<GLRetroEvents> {
         return retroGLEventsSubject
     }
@@ -181,35 +159,37 @@ class GLRetroView(context: Context,
         return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) { 3 } else { 2 }
     }
 
-    override fun onKeyDown(originalKeyCode: Int, event: KeyEvent): Boolean {
-        val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
-        val port = gamepadsManager.getGamepadPort(event.deviceId)
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        val mappedKey = GamepadsManager.getGamepadKeyEvent(keyCode)
+        val port = (event?.device?.controllerNumber ?: 0) - 1
 
-        if (keyCode in GamepadInfo.GAMEPAD_KEYS) {
-            sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, port)
+        if (event != null && port >= 0 && keyCode in GamepadsManager.GAMEPAD_KEYS) {
+            sendKeyEvent(KeyEvent.ACTION_DOWN, mappedKey, port)
             return true
         }
-        return false
+        return super.onKeyDown(keyCode, event)
     }
 
-    override fun onKeyUp(originalKeyCode: Int, event: KeyEvent): Boolean {
-        val keyCode = gamepadsManager.getGamepadKeyEvent(originalKeyCode)
-        val port = gamepadsManager.getGamepadPort(event.deviceId)
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        val mappedKey = GamepadsManager.getGamepadKeyEvent(keyCode)
+        val port = (event?.device?.controllerNumber ?: 0) - 1
 
-        if (keyCode in GamepadInfo.GAMEPAD_KEYS) {
-            sendKeyEvent(KeyEvent.ACTION_UP, keyCode, port)
+        if (event != null && port >= 0 && keyCode in GamepadsManager.GAMEPAD_KEYS) {
+            sendKeyEvent(KeyEvent.ACTION_UP, mappedKey, port)
             return true
         }
-        return false
+        return super.onKeyUp(keyCode, event)
     }
 
-    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        val port = gamepadsManager.getGamepadPort(event.deviceId)
-        when (event.source) {
-            InputDevice.SOURCE_JOYSTICK -> {
-                sendMotionEvent(MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y), port)
-                sendMotionEvent(MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y), port)
-                sendMotionEvent(MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ), port)
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        val port = (event?.device?.controllerNumber ?: 0) - 1
+        if (port >= 0) {
+            when (event?.source) {
+                InputDevice.SOURCE_JOYSTICK -> {
+                    sendMotionEvent(MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y), port)
+                    sendMotionEvent(MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y), port)
+                    sendMotionEvent(MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ), port)
+                }
             }
         }
         return super.onGenericMotionEvent(event)
@@ -237,9 +217,6 @@ class GLRetroView(context: Context,
         object FrameRendered: GLRetroEvents()
         object SurfaceCreated: GLRetroEvents()
     }
-
-    data class GameKeyEvent(val action: Int, val keyCode: Int, val port: Int)
-    data class GameMotionEvent(val source: Int, val xAxis: Float, val yAxis: Float, val port: Int)
 
     companion object {
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD

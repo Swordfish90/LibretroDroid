@@ -17,33 +17,24 @@
 
 package com.swordfish.libretrodroid.gamepad
 
-import android.content.Context
-import android.hardware.input.InputManager
-import android.view.InputDevice
 import android.view.KeyEvent
-import com.jakewharton.rxrelay2.BehaviorRelay
-import io.reactivex.Observable
 
-internal class GamepadsManager(appContext: Context): InputManager.InputDeviceListener {
-    private val devicePortMap: MutableMap<Int, Int> = mutableMapOf()
-    private val inputManager = appContext.getSystemService(Context.INPUT_SERVICE) as InputManager
+internal object GamepadsManager {
 
-    private val infosSubject = BehaviorRelay.createDefault<List<GamepadInfo>>(listOf())
-
-    override fun onInputDeviceAdded(p0: Int) = updateDevicePortMap()
-
-    override fun onInputDeviceChanged(p0: Int) = updateDevicePortMap()
-
-    override fun onInputDeviceRemoved(p0: Int) = updateDevicePortMap()
-
-    fun init() {
-        inputManager.registerInputDeviceListener(this, null)
-        updateDevicePortMap()
-    }
-
-    fun deinit() {
-        inputManager.unregisterInputDeviceListener(this)
-    }
+    val GAMEPAD_KEYS = setOf(
+            KeyEvent.KEYCODE_BUTTON_SELECT,
+            KeyEvent.KEYCODE_BUTTON_START,
+            KeyEvent.KEYCODE_BUTTON_A,
+            KeyEvent.KEYCODE_BUTTON_X,
+            KeyEvent.KEYCODE_BUTTON_Y,
+            KeyEvent.KEYCODE_BUTTON_B,
+            KeyEvent.KEYCODE_BUTTON_L1,
+            KeyEvent.KEYCODE_BUTTON_L2,
+            KeyEvent.KEYCODE_BUTTON_R1,
+            KeyEvent.KEYCODE_BUTTON_R2,
+            KeyEvent.KEYCODE_BUTTON_THUMBL,
+            KeyEvent.KEYCODE_BUTTON_THUMBR
+    )
 
     /** The Android gamepad layout is different from RetroPad since X/Y and A/B buttons are inverted. */
     fun getGamepadKeyEvent(keyCode: Int): Int {
@@ -54,42 +45,5 @@ internal class GamepadsManager(appContext: Context): InputManager.InputDeviceLis
             KeyEvent.KEYCODE_BUTTON_Y -> KeyEvent.KEYCODE_BUTTON_X
             else -> keyCode
         }
-    }
-
-    fun getGamepadPort(deviceId: Int): Int {
-        return devicePortMap.getOrElse(deviceId) { 0 }
-    }
-
-    fun getGamepadInfos(): Observable<List<GamepadInfo>> {
-        return infosSubject.distinctUntilChanged()
-    }
-
-    private fun updateDevicePortMap() {
-        devicePortMap.clear()
-
-        InputDevice.getDeviceIds()
-            .map { InputDevice.getDevice(it) }
-            .filter { isGamePad(it) }
-            .filter { it.controllerNumber > 0 }
-            .forEach { devicePortMap[it.id] = it.controllerNumber - 1 }
-
-        infosSubject.accept(buildGamepadInfos())
-    }
-
-    private fun buildGamepadInfos(): List<GamepadInfo> {
-        return devicePortMap.entries
-            .sortedBy { (_, value) -> value }
-            .map { (key, _) -> InputDevice.getDevice(key) }
-            .map { device -> GamepadInfo.GAMEPAD_KEYS.filter { device.hasKeys(it)[0] } }
-            .map { GamepadInfo(it.toSet()) }
-    }
-
-    private fun isGamePad(it: InputDevice): Boolean {
-        val conditions = listOf(
-                it.sources and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD,
-                it.sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-        )
-
-        return conditions.any()
     }
 }
