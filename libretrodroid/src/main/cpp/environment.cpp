@@ -242,7 +242,7 @@ namespace Environment {
                 return false;
         }
 
-        LOGI("callback environment has been called: %u", cmd);
+        LOGD("callback environment has been called: %u", cmd);
         return false;
     }
 
