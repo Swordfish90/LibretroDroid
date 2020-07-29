@@ -53,17 +53,31 @@ const std::string LibretroDroid::ShaderManager::lcdShader =
         "#endif\n"
         "\n"
         "uniform HIGHP vec2 textureSize;\n"
+        "uniform mediump float screenDensity;\n"
         "\n"
         "uniform lowp sampler2D texture;\n"
         "varying HIGHP vec2 coords;\n"
         "varying HIGHP vec2 origCoords;\n"
         "varying mediump float screenMaskStrength;\n"
-        "\n"
+        "\n"        "vec2 sharpCoords(vec2 x) {\n"
+        "  HIGHP vec2 fullCoords = coords * textureSize;\n"
+        "  mediump vec2 threshold = vec2(2.0 / screenDensity);\n"
+        "  mediump vec2 x = fract(fullCoords);\n"
+        "  mediump vec2 x_ = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
+        "  return (floor(fullCoords) + x_) / textureSize;\n"
+        "}\n"
         "#define INTENSITY 0.25\n"
         "#define BRIGHTBOOST 0.25\n"
         "\n"
+        "vec2 sharpCoords(vec2 x) {\n"
+        "  HIGHP vec2 fullCoords = coords * textureSize;\n"
+        "  mediump vec2 threshold = vec2(2.0 / screenDensity);\n"
+        "  mediump vec2 x = fract(fullCoords);\n"
+        "  mediump vec2 x_ = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
+        "  return (floor(fullCoords) + x_) / textureSize;\n"
+        "}\n"
         "void main() {\n"
-        "   lowp vec3 texel = texture2D(texture, coords).rgb;\n"
+        "   lowp vec3 texel = texture2D(texture, sharpCoords(coords)).rgb;\n"
         "   lowp vec3 pixelHigh = ((1.0 + BRIGHTBOOST) - (0.2 * texel)) * texel;\n"
         "   lowp vec3 pixelLow  = ((1.0 - INTENSITY) + (0.1 * texel)) * texel;\n"
         "\n"
@@ -73,6 +87,33 @@ const std::string LibretroDroid::ShaderManager::lcdShader =
         "   lowp float mask = 1.0 - coords.x - coords.y;\n"
         "\n"
         "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
+        "}\n";
+
+const std::string LibretroDroid::ShaderManager::defaultSharp =
+        "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+        "#define HIGHP highp\n"
+        "#else\n"
+        "#define HIGHP mediump\n"
+        "precision mediump float;\n"
+        "#endif\n"
+        "\n"
+        "precision mediump float;\n"
+        "uniform lowp sampler2D texture;\n"
+        "uniform HIGHP vec2 textureSize;\n"
+        "uniform mediump float screenDensity;\n"
+        "\n"
+        "varying vec2 coords;\n"
+        "varying vec2 origCoords;\n"
+        "vec2 sharpCoords(vec2 x) {\n"
+        "  HIGHP vec2 fullCoords = coords * textureSize;\n"
+        "  mediump vec2 threshold = vec2(1.0 / screenDensity);\n"
+        "  mediump vec2 x = fract(fullCoords);\n"
+        "  mediump vec2 x_ = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
+        "  return (floor(fullCoords) + x_) / textureSize;\n"
+        "}\n"
+        "void main() {\n"
+        "  vec4 tex = texture2D(texture, sharpCoords(coords));"
+        "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
         "}\n";
 
 std::string LibretroDroid::ShaderManager::getShader(Type type) {
@@ -85,5 +126,8 @@ std::string LibretroDroid::ShaderManager::getShader(Type type) {
 
         case Type::SHADER_LCD:
             return lcdShader;
+
+        case Type::SHADER_SHARP:
+            return defaultSharp;
     }
 }
