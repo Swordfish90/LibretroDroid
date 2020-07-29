@@ -227,6 +227,5 @@ class GLRetroView(context: Context,
         const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
-        const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
     }
 }

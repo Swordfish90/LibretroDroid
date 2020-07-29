@@ -75,19 +75,15 @@ const std::string LibretroDroid::ShaderManager::lcdShader =
         "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
         "}\n";
 
-
-LibretroDroid::Shader LibretroDroid::ShaderManager::getShader(Type type) {
+std::string LibretroDroid::ShaderManager::getShader(Type type) {
     switch (type) {
         case Type::SHADER_DEFAULT:
-            return Shader { defaultShader, true };
-
-        case Type::SHADER_SHARP:
-            return Shader { defaultShader, false };
+            return defaultShader;
 
         case Type::SHADER_CRT:
-            return Shader { crtShader, true };
+            return crtShader;
 
         case Type::SHADER_LCD:
-            return Shader { lcdShader, false };
+            return lcdShader;
     }
 }
