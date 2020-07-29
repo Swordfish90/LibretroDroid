@@ -298,26 +298,29 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
         video = nullptr;
     }
 
+    auto shader = LibretroDroid::ShaderManager::getShader(fragmentShaderType);
+
     LibretroDroid::Renderer* renderer;
     if (Environment::useHWAcceleration) {
         renderer = new LibretroDroid::FramebufferRenderer(
                 system_av_info.geometry.base_width,
                 system_av_info.geometry.base_height,
                 Environment::useDepth,
-                Environment::useStencil
+                Environment::useStencil,
+                shader.bilinearFiltering
         );
     } else {
         if (openglESVersion >= 3) {
-            renderer = new LibretroDroid::ImageRendererES3();
+            renderer = new LibretroDroid::ImageRendererES3(shader.bilinearFiltering);
         } else {
-            renderer = new LibretroDroid::ImageRendererES2();
+            renderer = new LibretroDroid::ImageRendererES2(shader.bilinearFiltering);
         }
     }
 
     auto newVideo = new LibretroDroid::Video();
     newVideo->initializeGraphics(
             renderer,
-            LibretroDroid::ShaderManager::getShader(fragmentShaderType),
+            shader.fragmentShader,
             Environment::bottomLeftOrigin,
             Environment::screenRotation
     );

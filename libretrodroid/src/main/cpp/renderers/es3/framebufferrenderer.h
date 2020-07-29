@@ -27,7 +27,7 @@ namespace LibretroDroid {
 
 class FramebufferRenderer: public LibretroDroid::Renderer {
 public:
-    FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil);
+    FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil, bool bilinearFiltering);
     uintptr_t getTexture() override;
     uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;

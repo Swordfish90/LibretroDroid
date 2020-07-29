@@ -9,12 +9,18 @@
 
 namespace LibretroDroid {
 
+struct Shader {
+    std::string fragmentShader;
+    bool bilinearFiltering;
+};
+
 class ShaderManager {
 public:
     enum class Type {
         SHADER_DEFAULT = 0,
         SHADER_CRT = 1,
-        SHADER_LCD = 2
+        SHADER_LCD = 2,
+        SHADER_SHARP = 3,
     };
 
 private:
@@ -23,7 +29,7 @@ private:
     static const std::string lcdShader;
 
 public:
-    static std::string getShader(Type type);
+    static Shader getShader(Type type);
 
 };
 

@@ -18,15 +18,15 @@
 #include "framebufferrenderer.h"
 #include "../../log.h"
 
-LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
+LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil, bool bilinearFiltering) {
     glGenFramebuffers(1, &currentFramebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, currentFramebuffer);
 
     glGenTextures(1, &currentTexture);
     glBindTexture(GL_TEXTURE_2D, currentTexture);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, bilinearFiltering ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, bilinearFiltering ? GL_LINEAR : GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, currentTexture, 0);
 
     if (depth) {

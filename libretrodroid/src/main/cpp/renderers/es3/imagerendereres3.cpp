@@ -18,7 +18,8 @@
 #include "imagerendereres3.h"
 #include "../../libretro/libretro.h"
 
-LibretroDroid::ImageRendererES3::ImageRendererES3() {
+LibretroDroid::ImageRendererES3::ImageRendererES3(bool bilinearFiltering)
+: bilinearFiltering(bilinearFiltering) {
     glGenTextures(1, &currentTexture);
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 }
@@ -35,8 +36,8 @@ void LibretroDroid::ImageRendererES3::onNewFrame(const void *data, unsigned widt
         applyGLSwizzle(GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA);
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, bilinearFiltering ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, bilinearFiltering ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

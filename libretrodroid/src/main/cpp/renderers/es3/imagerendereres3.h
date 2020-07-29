@@ -29,7 +29,7 @@ namespace LibretroDroid {
 
 class ImageRendererES3: public LibretroDroid::Renderer {
 public:
-    explicit ImageRendererES3();
+    explicit ImageRendererES3(bool bilinearFiltering);
     uintptr_t getTexture() override;
     uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
@@ -39,6 +39,8 @@ private:
     void applyGLSwizzle(int r, int g, int b, int a);
 
 private:
+    bool bilinearFiltering = true;
+
     unsigned int bytesPerPixel = 1;
     bool swapRedAndBlueChannels = false;
 
