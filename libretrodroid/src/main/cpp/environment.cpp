@@ -71,6 +71,17 @@ namespace Environment {
             free(retro_disk_control_callback);
             retro_disk_control_callback = nullptr;
         }
+
+        savesDirectory = nullptr;
+        systemDirectory = nullptr;
+        language = RETRO_LANGUAGE_ENGLISH;
+
+        pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
+        useHWAcceleration = false;
+        useDepth = false;
+        useStencil = false;
+        bottomLeftOrigin = false;
+        screenRotation = 0;
     }
 
     void updateVariable(std::string key, std::string value) {
