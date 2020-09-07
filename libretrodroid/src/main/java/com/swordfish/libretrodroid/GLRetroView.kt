@@ -20,6 +20,8 @@ package com.swordfish.libretrodroid
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
@@ -60,8 +62,6 @@ class GLRetroView(context: Context,
             getScreenRefreshRate(),
             getDeviceLanguage()
         )
-
-        setAspectRatio(LibretroDroid.getAspectRatio())
     }
 
     private fun getDeviceLanguage() = Locale.getDefault().language
@@ -212,6 +212,8 @@ class GLRetroView(context: Context,
             loadGameIfNeeded()
             LibretroDroid.onSurfaceCreated()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
+
+            runOnUIThread { setAspectRatio(LibretroDroid.getAspectRatio()) }
         }
     }
 
@@ -219,6 +221,10 @@ class GLRetroView(context: Context,
         if (gameLoaded) return
         LibretroDroid.loadGame(gameFilePath)
         gameLoaded = true
+    }
+
+    private fun runOnUIThread(runnable: () -> Unit) {
+        Handler(Looper.getMainLooper()).post(runnable)
     }
 
     sealed class GLRetroEvents {
