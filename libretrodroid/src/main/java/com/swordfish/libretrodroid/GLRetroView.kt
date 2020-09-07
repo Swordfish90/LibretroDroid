@@ -40,6 +40,8 @@ class GLRetroView(context: Context,
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
 
+    private var gameLoaded: Boolean = false
+
     init {
         openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
@@ -52,7 +54,6 @@ class GLRetroView(context: Context,
         LibretroDroid.create(
             openGLESVersion,
             coreFilePath,
-            gameFilePath,
             systemDirectory,
             savesDirectory,
             shader,
@@ -207,10 +208,17 @@ class GLRetroView(context: Context,
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
-            Thread.currentThread().priority = Thread.MAX_PRIORITY
+            // retro_load_game can use gl context. It needs to be called from the gl thread.
+            loadGameIfNeeded()
             LibretroDroid.onSurfaceCreated()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
         }
+    }
+
+    private fun loadGameIfNeeded() {
+        if (gameLoaded) return
+        LibretroDroid.loadGame(gameFilePath)
+        gameLoaded = true
     }
 
     sealed class GLRetroEvents {

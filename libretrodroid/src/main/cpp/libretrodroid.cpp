@@ -101,7 +101,8 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring gameFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate, jstring language);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate, jstring language);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(JNIEnv * env, jobject obj, jstring gameFilePath);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
@@ -350,7 +351,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jobject obj,
     jint GLESVersion,
     jstring soFilePath,
-    jstring gameFilePath,
     jstring systemDir,
     jstring savesDir,
     jint shaderType,
@@ -359,7 +359,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 ) {
     LOGD("Performing LibretroDroid create");
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
-    const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
     const char* deviceLanguage = env->GetStringUTFChars(language, nullptr);
 
     try {
@@ -385,6 +384,32 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         core->retro_init();
 
+        fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
+
+        // HW accelerated cores are only supported on opengles 3.
+        if (Environment::useHWAcceleration && openglESVersion < 3) {
+            throw std::runtime_error("This device doesn't support opengles 3");
+        }
+
+        env->ReleaseStringUTFChars(soFilePath, corePath);
+        env->ReleaseStringUTFChars(language, deviceLanguage);
+
+        fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
+
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(
+    JNIEnv * env,
+    jobject obj,
+    jstring gameFilePath
+) {
+    LOGD("Performing LibretroDroid loadGame");
+    const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
+
+    try {
         struct retro_system_info system_info;
         core->retro_get_system_info(&system_info);
 
@@ -407,16 +432,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             throw std::runtime_error("Cannot load game");
         }
 
-        // HW accelerated cores are only supported on opengles 3.
-        if (Environment::useHWAcceleration && openglESVersion < 3) {
-            throw std::runtime_error("This device doesn't support opengles 3");
-        }
-
-        env->ReleaseStringUTFChars(soFilePath, corePath);
         env->ReleaseStringUTFChars(gameFilePath, gamePath);
-        env->ReleaseStringUTFChars(language, deviceLanguage);
-
-        fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
 
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
