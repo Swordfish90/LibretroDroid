@@ -168,6 +168,10 @@ namespace Environment {
         }
     }
 
+    bool set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
+        return true;
+    }
+
     bool callback_environment(unsigned cmd, void *data) {
         switch (cmd) {
             case RETRO_ENVIRONMENT_GET_CAN_DUPE:
@@ -205,7 +209,8 @@ namespace Environment {
 
             case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
-                return false;
+                ((struct retro_rumble_interface*) data)->set_rumble_state = &set_rumble_state;
+                return true;
 
             case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_LOG_INTERFACE");

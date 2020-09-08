@@ -17,13 +17,13 @@
 
 package com.swordfish.libretrodroid
 
-import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
 import android.widget.FrameLayout
+import androidx.appcompat.app.AppCompatActivity
 
-class SampleActivity : Activity() {
+class SampleActivity : AppCompatActivity() {
 
     private lateinit var retroView: GLRetroView
 
@@ -36,11 +36,13 @@ class SampleActivity : Activity() {
         //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64", filesDir.absolutePath, cacheDir.absolutePath)
         //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Pokemon Blue Version/Pokemon Blue Version.gb", filesDir.absolutePath, cacheDir.absolutePath)
         //retroView = GLRetroView(this, "fceumm_libretro_android.so", "/storage/emulated/0/Roms Test/Prince of Persia/Prince of Persia.nes", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/Advance Wars/Advance Wars.gba", "", "", LibretroDroid.SHADER_LCD)
+        retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Drill Dozer.gba", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
         //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/MediEvil Resurrection.cso", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
         //retroView = GLRetroView(this, "desmume_libretro_android.so", "/storage/emulated/0/Roms Test/ds/Pokemon Pearl Version.nds", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
         //retroView = GLRetroView(this, "fbneo_libretro_android.so", "/storage/emulated/0/Android/data/com.swordfish.lemuroid/files/roms/fbneo/arkanoid.zip", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
-        retroView = GLRetroView(this, "pcsx_rearmed_libretro_android.so", "/storage/emulated/0/Roms/pxx/Final Fantasy VII.pbp", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
+        //retroView = GLRetroView(this, "libppsspp_libretro_android.so", "sdcard/Roms/psp/Ridge Racer.cso", getExternalFilesDir(null).absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
+
+        lifecycle.addObserver(retroView)
 
         val frameLayout = FrameLayout(this)
         setContentView(frameLayout)
@@ -50,26 +52,9 @@ class SampleActivity : Activity() {
             this.gravity = Gravity.CENTER_HORIZONTAL
         }
 
-        retroView.onCreate()
-
         // Let's print out core variables.
         retroView.getVariables().forEach {
             Log.i("Retro variable: ", it.toString())
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        retroView.onDestroy()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        retroView.onPause()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        retroView.onResume()
     }
 }
