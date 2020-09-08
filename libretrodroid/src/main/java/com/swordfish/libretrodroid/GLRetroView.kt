@@ -34,11 +34,8 @@ import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
-import java.util.concurrent.FutureTask
-import java.util.concurrent.RunnableFuture
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-
 
 class GLRetroView(
     context: Context,
@@ -46,8 +43,8 @@ class GLRetroView(
     private val gameFilePath: String,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
-    private val shader: Int = LibretroDroid.SHADER_DEFAULT,
-    private val saveRAMState: ByteArray? = null
+    private val saveRAMState: ByteArray? = null,
+    private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     private val openGLESVersion: Int
@@ -190,25 +187,19 @@ class GLRetroView(
                     sendMotionEvent(
                         MOTION_SOURCE_DPAD,
                         event.getAxisValue(MotionEvent.AXIS_HAT_X),
-                        event.getAxisValue(
-                            MotionEvent.AXIS_HAT_Y
-                        ),
+                        event.getAxisValue(MotionEvent.AXIS_HAT_Y),
                         port
                     )
                     sendMotionEvent(
                         MOTION_SOURCE_ANALOG_LEFT,
                         event.getAxisValue(MotionEvent.AXIS_X),
-                        event.getAxisValue(
-                            MotionEvent.AXIS_Y
-                        ),
+                        event.getAxisValue(MotionEvent.AXIS_Y),
                         port
                     )
                     sendMotionEvent(
                         MOTION_SOURCE_ANALOG_RIGHT,
                         event.getAxisValue(MotionEvent.AXIS_Z),
-                        event.getAxisValue(
-                            MotionEvent.AXIS_RZ
-                        ),
+                        event.getAxisValue(MotionEvent.AXIS_RZ),
                         port
                     )
                 }
@@ -217,7 +208,8 @@ class GLRetroView(
         return super.onGenericMotionEvent(event)
     }
 
-    inner class RenderLifecycleObserver : LifecycleObserver {
+    // These functions are called only after the GLSurfaceView has been created.
+    private inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
         private fun resume() {
             LibretroDroid.resume()
@@ -243,16 +235,20 @@ class GLRetroView(
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
-            // retro_load_game can use gl context. It needs to be called from the gl thread.
-            loadGameIfNeeded()
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
+            initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
-
-            val aspectRatio = LibretroDroid.getAspectRatio()
-            runOnUIThread { setAspectRatio(aspectRatio) }
+            refreshAspectRatio()
         }
     }
 
-    private fun loadGameIfNeeded() {
+    private fun refreshAspectRatio() {
+        val aspectRatio = LibretroDroid.getAspectRatio()
+        runOnUIThread { setAspectRatio(aspectRatio) }
+    }
+
+    // These functions are called from the GL thread.
+    private fun initializeCore() {
         if (gameLoaded) return
         LibretroDroid.loadGame(gameFilePath)
         saveRAMState?.let { LibretroDroid.unserializeSRAM(saveRAMState) }
