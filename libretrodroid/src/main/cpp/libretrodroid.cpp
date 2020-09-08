@@ -447,6 +447,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
             Environment::hw_context_destroy();
         }
 
+        core->retro_unload_game();
         core->retro_deinit();
 
         delete video;
