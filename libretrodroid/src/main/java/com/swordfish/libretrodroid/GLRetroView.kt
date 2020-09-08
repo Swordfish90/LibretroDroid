@@ -34,6 +34,8 @@ import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
+import java.util.concurrent.FutureTask
+import java.util.concurrent.RunnableFuture
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -44,7 +46,8 @@ class GLRetroView(
     private val gameFilePath: String,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
-    private val shader: Int = LibretroDroid.SHADER_DEFAULT
+    private val shader: Int = LibretroDroid.SHADER_DEFAULT,
+    private val saveRAMState: ByteArray? = null
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     private val openGLESVersion: Int
@@ -128,10 +131,6 @@ class GLRetroView(
 
     fun serializeSRAM(): ByteArray {
         return LibretroDroid.serializeSRAM()
-    }
-
-    fun unserializeSRAM(data: ByteArray): Boolean {
-        return LibretroDroid.unserializeSRAM(data)
     }
 
     fun reset() {
@@ -218,14 +217,16 @@ class GLRetroView(
         return super.onGenericMotionEvent(event)
     }
 
-    class RenderLifecycleObserver : LifecycleObserver {
+    inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-        private fun onCreate() {
+        private fun resume() {
             LibretroDroid.resume()
+            onResume()
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-        private fun onDestroy() {
+        private fun pause() {
+            onPause()
             LibretroDroid.pause()
         }
     }
@@ -254,6 +255,7 @@ class GLRetroView(
     private fun loadGameIfNeeded() {
         if (gameLoaded) return
         LibretroDroid.loadGame(gameFilePath)
+        saveRAMState?.let { LibretroDroid.unserializeSRAM(saveRAMState) }
         LibretroDroid.onSurfaceCreated()
         lifecycle?.addObserver(RenderLifecycleObserver())
         gameLoaded = true
