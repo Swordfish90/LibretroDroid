@@ -22,6 +22,7 @@ import android.content.Context
 import android.opengl.GLSurfaceView
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -66,6 +67,7 @@ class GLRetroView(
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     private fun onCreate(lifecycleOwner: LifecycleOwner) {
         lifecycle = lifecycleOwner.lifecycle
+        Log.e("GLRetroView", "Starting LibretroDroid.create()")
         LibretroDroid.create(
             openGLESVersion,
             coreFilePath,
@@ -75,11 +77,14 @@ class GLRetroView(
             getScreenRefreshRate(),
             getDeviceLanguage()
         )
+        Log.e("GLRetroView", "Completed LibretroDroid.create()")
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     private fun onDestroy() {
+        Log.e("GLRetroView", "Starting LibretroDroid.destroy()")
         LibretroDroid.destroy()
+        Log.e("GLRetroView", "Completed LibretroDroid.destroy()")
         lifecycle = null
     }
 
@@ -212,14 +217,18 @@ class GLRetroView(
     private inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
         private fun resume() {
+            Log.e("GLRetroView", "Starting LibretroDroid.resume()")
             LibretroDroid.resume()
+            Log.e("GLRetroView", "Completed LibretroDroid.resume()")
             onResume()
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         private fun pause() {
             onPause()
+            Log.e("GLRetroView", "Starting LibretroDroid.pause()")
             LibretroDroid.pause()
+            Log.e("GLRetroView", "Completed LibretroDroid.pause()")
         }
     }
 
@@ -231,28 +240,42 @@ class GLRetroView(
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
+            Log.e("GLRetroView", "Started LibretroDroid.surfaceChanged()")
             LibretroDroid.onSurfaceChanged(width, height)
+            Log.e("GLRetroView", "Completed LibretroDroid.surfaceChanged()")
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
-            refreshAspectRatio()
+            //refreshAspectRatio()
         }
     }
 
     private fun refreshAspectRatio() {
         val aspectRatio = LibretroDroid.getAspectRatio()
-        runOnUIThread { setAspectRatio(aspectRatio) }
+        runOnUIThread {
+            Log.e("GLRetroView", "Started setAspectRatio")
+            setAspectRatio(aspectRatio)
+            Log.e("GLRetroView", "Completed setAspectRatio")
+        }
     }
 
     // These functions are called from the GL thread.
     private fun initializeCore() {
         if (gameLoaded) return
+        Log.e("GLRetroView", "Started LibretroDroid.loadGame()")
         LibretroDroid.loadGame(gameFilePath)
+        Log.e("GLRetroView", "Completed LibretroDroid.loadGame()")
+
+        Log.e("GLRetroView", "Started LibretroDroid.unserializeSRAM()")
         saveRAMState?.let { LibretroDroid.unserializeSRAM(saveRAMState) }
+        Log.e("GLRetroView", "Completed LibretroDroid.serializeSRAM()")
+
+        Log.e("GLRetroView", "Started LibretroDroid.surfaceCreated()")
         LibretroDroid.onSurfaceCreated()
+        Log.e("GLRetroView", "Completed LibretroDroid.surfaceCreated()")
         lifecycle?.addObserver(RenderLifecycleObserver())
         gameLoaded = true
     }
