@@ -35,7 +35,7 @@ open class AspectRatioGLSurfaceView(context: Context) : GLSurfaceView(context) {
      */
     private val MAX_ASPECT_RATIO_DEFORMATION_FRACTION = 0.01f
 
-    private var videoAspectRatio = 1f
+    private var videoAspectRatio = 0f
     private var resizeMode = 0
 
     /**
