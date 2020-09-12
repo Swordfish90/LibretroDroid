@@ -23,14 +23,15 @@
 
 namespace LibretroDroid {
 
+typedef std::chrono::steady_clock::time_point TimePoint;
+typedef std::chrono::duration<long, std::micro> Duration;
+
 class FPSSync {
 public:
     FPSSync(double contentRefreshRate, double screenRefreshRate);
     ~FPSSync() { }
 
     void sync();
-    void start();
-
     double getTimeStretchFactor();
 
 private:
@@ -39,9 +40,12 @@ private:
     bool useVSync;
 
     const double FPS_TOLERANCE = 5;
+    const TimePoint MIN_TIME = TimePoint::min();
 
-    std::chrono::time_point<std::chrono::steady_clock> lastFrame;
-    std::chrono::duration<long, std::micro> sampleInterval;
+    void start();
+
+    TimePoint lastFrame = MIN_TIME;
+    Duration sampleInterval;
 };
 
 }

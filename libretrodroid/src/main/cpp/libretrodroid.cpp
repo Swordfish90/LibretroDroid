@@ -478,7 +478,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
         audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
 
         audio->start();
-        fpsSync->start();
 
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());

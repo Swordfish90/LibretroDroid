@@ -20,10 +20,14 @@
 #include "log.h"
 
 void LibretroDroid::FPSSync::sync() {
-    if (!useVSync) {
-        std::this_thread::sleep_until(lastFrame + sampleInterval);
-        lastFrame = lastFrame + sampleInterval;
+    if (useVSync) return;
+
+    if (lastFrame == MIN_TIME) {
+        start();
     }
+
+    std::this_thread::sleep_until(lastFrame + sampleInterval);
+    lastFrame = lastFrame + sampleInterval;
 }
 
 LibretroDroid::FPSSync::FPSSync(double contentRefreshRate, double screenRefreshRate) {
