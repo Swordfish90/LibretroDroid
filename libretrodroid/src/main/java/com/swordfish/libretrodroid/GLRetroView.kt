@@ -253,7 +253,10 @@ class GLRetroView(
     private fun initializeCore() {
         if (gameLoaded) return
         LibretroDroid.loadGame(gameFilePath)
-        saveRAMState?.let { LibretroDroid.unserializeSRAM(saveRAMState) }
+        saveRAMState?.let {
+            LibretroDroid.unserializeSRAM(saveRAMState)
+            saveRAMState = null
+        }
         LibretroDroid.onSurfaceCreated()
         lifecycle?.addObserver(RenderLifecycleObserver())
         gameLoaded = true
