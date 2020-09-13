@@ -43,7 +43,8 @@ class GLRetroView(
     private val gameFilePath: String,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
-    private val saveRAMState: ByteArray? = null,
+    private val variables: Array<Variable> = arrayOf(),
+    private var saveRAMState: ByteArray? = null,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
@@ -71,6 +72,7 @@ class GLRetroView(
             coreFilePath,
             systemDirectory,
             savesDirectory,
+            variables,
             shader,
             getScreenRefreshRate(),
             getDeviceLanguage()

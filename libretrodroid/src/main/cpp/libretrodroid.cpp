@@ -101,7 +101,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jint shaderType, jfloat refreshRate, jstring language);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jint shaderType, jfloat refreshRate, jstring language);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(JNIEnv * env, jobject obj, jstring gameFilePath);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
@@ -353,6 +353,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jstring soFilePath,
     jstring systemDir,
     jstring savesDir,
+    jobjectArray variables,
     jint shaderType,
     jfloat refreshRate,
     jstring language
@@ -381,6 +382,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
         core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
         core->retro_set_input_poll(&callback_retro_set_input_poll);
         core->retro_set_input_state(&callback_set_input_state);
+
+        int size = env->GetArrayLength(variables);
+        for (int i = 0; i < size; i++) {
+            auto variable = (jobject) env->GetObjectArrayElement(variables, i);
+            Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(env, obj, variable);
+        }
 
         core->retro_init();
 
