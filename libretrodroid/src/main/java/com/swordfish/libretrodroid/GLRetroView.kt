@@ -34,7 +34,6 @@ import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
-import java.util.concurrent.FutureTask
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -245,7 +244,7 @@ class GLRetroView(
 
     private fun refreshAspectRatio() {
         val aspectRatio = LibretroDroid.getAspectRatio()
-        runOnUIThreadAndWait { setAspectRatio(aspectRatio) }
+        runOnUIThread { setAspectRatio(aspectRatio) }
     }
 
     // These functions are called from the GL thread.
@@ -258,10 +257,8 @@ class GLRetroView(
         gameLoaded = true
     }
 
-    private fun runOnUIThreadAndWait(runnable: () -> Unit) {
-        val futureTask = FutureTask<Unit>(runnable)
-        Handler(Looper.getMainLooper()).post(futureTask)
-        futureTask.get()
+    private fun runOnUIThread(runnable: () -> Unit) {
+        Handler(Looper.getMainLooper()).post(runnable)
     }
 
     sealed class GLRetroEvents {
