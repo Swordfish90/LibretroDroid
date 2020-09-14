@@ -46,7 +46,7 @@ namespace Environment {
 
     uint16_t vibrationStrengthWeak = 0;
     uint16_t vibrationStrengthStrong = 0;
-    uint16_t vibrationStrength = 0;
+    uint16_t lastRumbleStrength = 0;
 
     std::vector<struct Variable> variables;
     bool dirtyVariables = false;
@@ -176,12 +176,12 @@ namespace Environment {
         LOGI("Setting rumble strength to %i", strength);
 
         if (effect == RETRO_RUMBLE_STRONG) {
-            vibrationStrength = strength | vibrationStrengthWeak;
+            lastRumbleStrength = strength | vibrationStrengthWeak;
             vibrationStrengthStrong = strength;
         }
 
         if (effect == RETRO_RUMBLE_WEAK) {
-            vibrationStrength = strength | vibrationStrengthStrong;
+            lastRumbleStrength = strength | vibrationStrengthStrong;
             vibrationStrengthWeak = strength;
         }
 

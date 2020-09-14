@@ -20,12 +20,8 @@ package com.swordfish.libretrodroid
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -37,13 +33,12 @@ import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.math.roundToInt
 
-// TODO FILIPPO... Just for testing purposes...
-open class GLRetroView(
+class GLRetroView(
     context: Context,
     private val coreFilePath: String,
     private val gameFilePath: String,
@@ -51,12 +46,14 @@ open class GLRetroView(
     private val savesDirectory: String = context.filesDir.absolutePath,
     private val variables: Array<Variable> = arrayOf(),
     private var saveRAMState: ByteArray? = null,
-    private val shader: Int = LibretroDroid.SHADER_DEFAULT
+    private val shader: Int = LibretroDroid.SHADER_DEFAULT,
+    private val rumbleEventsEnabled: Boolean = true
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     private val openGLESVersion: Int
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
+    private val rumbleEventsSubject = PublishSubject.create<Float>()
 
     private var gameLoaded: Boolean = false
 
@@ -233,7 +230,7 @@ open class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
-            LibretroDroid.step(this@GLRetroView)
+            LibretroDroid.step(this@GLRetroView, rumbleEventsEnabled)
             retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 
@@ -272,8 +269,8 @@ open class GLRetroView(
         Handler(Looper.getMainLooper()).post(runnable)
     }
 
-    open fun doVibrate(strength: Float) {
-
+    private fun sendRumbleStrength(strength: Float) {
+        rumbleEventsSubject.onNext(strength)
     }
 
     sealed class GLRetroEvents {

@@ -43,7 +43,7 @@ class LibretroDroid {
     public static native void pause();
     public static native void destroy();
 
-    public static native void step(GLRetroView retroView);
+    public static native void step(GLRetroView retroView, boolean sendRumble);
 
     public static native void reset();
 
