@@ -42,8 +42,8 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.roundToInt
 
-
-class GLRetroView(
+// TODO FILIPPO... Just for testing purposes...
+open class GLRetroView(
     context: Context,
     private val coreFilePath: String,
     private val gameFilePath: String,
@@ -273,7 +273,7 @@ class GLRetroView(
     }
 
     open fun doVibrate(strength: Float) {
-        
+
     }
 
     sealed class GLRetroEvents {
