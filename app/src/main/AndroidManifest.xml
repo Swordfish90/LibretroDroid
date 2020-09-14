@@ -3,7 +3,6 @@
           package="com.android.libretrodroid">
   <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
-
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
   <application

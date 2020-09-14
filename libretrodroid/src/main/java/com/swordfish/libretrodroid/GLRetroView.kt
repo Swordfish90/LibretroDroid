@@ -33,7 +33,6 @@ import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -53,7 +52,7 @@ class GLRetroView(
     private val openGLESVersion: Int
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
-    private val rumbleEventsSubject = PublishSubject.create<Float>()
+    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var gameLoaded: Boolean = false
 
@@ -141,6 +140,10 @@ class GLRetroView(
 
     fun getGLRetroEvents(): Observable<GLRetroEvents> {
         return retroGLEventsSubject
+    }
+
+    fun getRumbleEvents(): Observable<Float> {
+        return rumbleEventsSubject
     }
 
     fun getVariables(): Array<Variable> {
@@ -270,7 +273,7 @@ class GLRetroView(
     }
 
     private fun sendRumbleStrength(strength: Float) {
-        rumbleEventsSubject.onNext(strength)
+        rumbleEventsSubject.accept(strength)
     }
 
     sealed class GLRetroEvents {
