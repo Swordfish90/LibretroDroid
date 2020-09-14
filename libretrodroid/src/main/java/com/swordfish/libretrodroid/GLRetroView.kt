@@ -20,8 +20,12 @@ package com.swordfish.libretrodroid
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -36,6 +40,8 @@ import io.reactivex.Observable
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.roundToInt
+
 
 class GLRetroView(
     context: Context,
@@ -227,7 +233,7 @@ class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
-            LibretroDroid.step()
+            LibretroDroid.step(this@GLRetroView)
             retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 
@@ -264,6 +270,10 @@ class GLRetroView(
 
     private fun runOnUIThread(runnable: () -> Unit) {
         Handler(Looper.getMainLooper()).post(runnable)
+    }
+
+    open fun doVibrate(strength: Float) {
+        
     }
 
     sealed class GLRetroEvents {

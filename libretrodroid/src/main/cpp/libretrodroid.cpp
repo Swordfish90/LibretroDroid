@@ -53,6 +53,7 @@ std::mutex retroStateMutex;
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 float screenRefreshRate = 60.0;
 int openglESVersion = 2;
+uint16_t currentVibration = 0;
 
 uintptr_t callback_get_current_framebuffer() {
     if (video != nullptr) {
@@ -100,7 +101,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jint shaderType, jfloat refreshRate, jstring language);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(JNIEnv * env, jobject obj, jstring gameFilePath);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
@@ -510,7 +511,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj)
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView)
 {
     LOGD("Stepping into retro_run()");
 
@@ -524,6 +525,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
 
     if (fpsSync != nullptr) {
         fpsSync->sync();
+    }
+
+    if (currentVibration != Environment::vibrationStrength) {
+        currentVibration = Environment::vibrationStrength;
+        jclass cls = env->GetObjectClass(glRetroView);
+        jmethodID mid = env->GetMethodID(cls, "doVibrate", "(F)V");
+        float finalVibration = (float) currentVibration / 0xFFFF;
+        env->CallVoidMethod(glRetroView, mid, finalVibration);
     }
 }
 
