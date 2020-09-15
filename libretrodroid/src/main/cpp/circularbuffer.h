@@ -15,33 +15,32 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_AUDIO_H
-#define LIBRETRODROID_AUDIO_H
-
-#include <unistd.h>
-#include <oboe/Oboe.h>
-#include "circularbuffer.h"
+#ifndef LIBRETRODROID_CIRCULAR_BUFFER_H
+#define LIBRETRODROID_CIRCULAR_BUFFER_H
 
 namespace LibretroDroid {
 
-class Audio: public oboe::AudioStreamCallback {
+class CircularBuffer
+{
 public:
-    Audio(int32_t sampleRate);
-    ~Audio();
+    CircularBuffer(size_t size);
+    ~CircularBuffer();
 
-    void start();
-    void stop();
+    size_t size();
+    size_t capacity() const { return dataCapacity; }
 
-    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
-
-    void write(const int16_t *data, size_t frames);
+    size_t write(const char *data, size_t bytes);
+    size_t read(char *data, size_t bytes);
+    size_t drop(size_t bytes);
 
 private:
-    void initializeAudio(int32_t sampleRate);
-    CircularBuffer circularBuffer { 1L * 1024 };
-    oboe::AudioStream* stream = nullptr;
+    size_t readIndex;
+    size_t writeIndex;
+    size_t dataCapacity;
+
+    char* data;
 };
 
 }
 
-#endif //LIBRETRODROID_AUDIO_H
+#endif LIBRETRODROID_CIRCULAR_BUFFER_H

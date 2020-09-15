@@ -31,6 +31,7 @@ public:
     FPSSync(double contentRefreshRate, double screenRefreshRate);
     ~FPSSync() { }
 
+    void reset();
     void sync();
     double getTimeStretchFactor();
 

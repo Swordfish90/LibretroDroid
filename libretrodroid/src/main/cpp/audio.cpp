@@ -27,11 +27,14 @@ void LibretroDroid::Audio::initializeAudio(int32_t sampleRate) {
     builder.setSampleRate(sampleRate);
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
+    builder.setCallback(this);
 
     oboe::Result result = builder.openStream(&stream);
     if (result != oboe::Result::OK) {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
     }
+
+    circularBuffer = CircularBuffer(sampleRate);
 }
 
 LibretroDroid::Audio::Audio(int32_t sampleRate) {
@@ -51,5 +54,21 @@ void LibretroDroid::Audio::stop() {
 }
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
-    stream->write(data, frames, oboe::kDefaultTimeoutNanos);
+    size_t size = frames * 2 * sizeof(int16_t);
+    circularBuffer.write((const char *) data, size);
+}
+
+oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+    size_t size = numFrames * 2 * sizeof(int16_t);
+    size_t circularBufferSize = circularBuffer.size();
+    if (size > circularBufferSize) {
+        memset(audioData, 0, numFrames * 2 * sizeof(int16_t));
+        return oboe::DataCallbackResult::Continue;
+    }
+    if (circularBufferSize + size > circularBuffer.capacity()) {
+        circularBuffer.drop(size);
+    }
+    circularBuffer.read((char*) audioData, size);
+    LOGI("FILIPPO %d / %d ... Requested %d", circularBuffer.size(), circularBuffer.capacity(), size);
+    return oboe::DataCallbackResult::Continue;
 }

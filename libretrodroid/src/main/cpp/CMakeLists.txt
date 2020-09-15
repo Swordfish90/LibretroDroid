@@ -35,6 +35,8 @@ add_library(libretrodroid SHARED
         javautils.cpp
         utils.cpp
         utils.h
+        circularbuffer.h
+        circularbuffer.cpp
         libretro/libretro.h)
 
 # add lib dependencies

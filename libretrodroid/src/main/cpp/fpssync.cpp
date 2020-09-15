@@ -43,6 +43,10 @@ void LibretroDroid::FPSSync::start() {
     lastFrame = lastFrame = std::chrono::steady_clock::now();
 }
 
+void LibretroDroid::FPSSync::reset() {
+    lastFrame = MIN_TIME;
+}
+
 double LibretroDroid::FPSSync::getTimeStretchFactor() {
     return useVSync ? contentRefreshRate / screenRefreshRate : 1.0;
 }
