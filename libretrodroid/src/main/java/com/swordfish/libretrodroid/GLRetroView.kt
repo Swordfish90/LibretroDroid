@@ -46,7 +46,8 @@ class GLRetroView(
     private val variables: Array<Variable> = arrayOf(),
     private var saveRAMState: ByteArray? = null,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT,
-    private val rumbleEventsEnabled: Boolean = true
+    private val rumbleEventsEnabled: Boolean = true,
+    private val screenRefreshRate: Float? = null
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     private val openGLESVersion: Int
@@ -76,7 +77,7 @@ class GLRetroView(
             savesDirectory,
             variables,
             shader,
-            getScreenRefreshRate(),
+            screenRefreshRate ?: getDefaultRefreshRate(),
             getDeviceLanguage()
         )
     }
@@ -89,7 +90,7 @@ class GLRetroView(
 
     private fun getDeviceLanguage() = Locale.getDefault().language
 
-    private fun getScreenRefreshRate(): Float {
+    private fun getDefaultRefreshRate(): Float {
         return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
     }
 
