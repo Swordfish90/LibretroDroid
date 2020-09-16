@@ -22,63 +22,52 @@
 
 LibretroDroid::CircularBuffer::CircularBuffer(size_t size):
     readIndex(0),
-    writeIndex(0),
-    dataCapacity(size)
+    writeIndex(0)
 {
-    data = new char[size];
+    dataCapacity = std::min(size, (size_t)(44L * 1000L));
 }
 
-LibretroDroid::CircularBuffer::~CircularBuffer() {
-    delete[] data;
+size_t LibretroDroid::CircularBuffer::availableSize() {
+    return (dataCapacity - writeIndex + readIndex - 1) % dataCapacity;
 }
 
-size_t LibretroDroid::CircularBuffer::size() {
-    long currentWriteIndex = writeIndex;
-    long currentReadIndex = readIndex;
-    return std::min(
-        std::abs(currentWriteIndex - currentReadIndex),
-        std::abs(currentReadIndex - currentWriteIndex)
-    );
+size_t LibretroDroid::CircularBuffer::usedSize() {
+    return dataCapacity - availableSize();
 }
 
-size_t LibretroDroid::CircularBuffer::write(const char* inputData, size_t bytes) {
-    if (bytes == 0)
-        return 0;
+size_t LibretroDroid::CircularBuffer::write(const unsigned char* inputData, size_t bytes) {
+    if (bytes == 0) return 0;
 
-    size_t bytesToWrite = std::min(bytes, dataCapacity - size());
+    size_t bytesToWrite = std::min(bytes, availableSize());
 
     if (bytesToWrite <= dataCapacity - writeIndex) {
         memcpy(data + writeIndex, inputData, bytesToWrite);
-        writeIndex = (writeIndex + bytesToWrite) % dataCapacity;
     } else {
         size_t size1 = dataCapacity - writeIndex;
         memcpy(data + writeIndex, inputData, size1);
         size_t size2 = bytesToWrite - size1;
         memcpy(data, inputData + size1, size2);
-        writeIndex = size2;
     }
 
+    writeIndex = (writeIndex + bytesToWrite) % dataCapacity;
     return bytesToWrite;
 }
 
-size_t LibretroDroid::CircularBuffer::read(char *outputData, size_t bytes) {
-    if (bytes == 0)
-        return 0;
+size_t LibretroDroid::CircularBuffer::read(unsigned char* outputData, size_t bytes) {
+    if (bytes == 0) return 0;
 
-    size_t capacity = dataCapacity;
-    size_t bytesToRead = std::min(bytes, size());
+    size_t bytesToRead = std::min(bytes, usedSize());
 
-    if (bytesToRead <= capacity - readIndex) {
+    if (bytesToRead <= dataCapacity - readIndex) {
         memcpy(outputData, data + readIndex, bytesToRead);
-        readIndex = (readIndex + bytesToRead) % capacity;
     } else {
-        size_t size1 = capacity - readIndex;
+        size_t size1 = dataCapacity - readIndex;
         memcpy(outputData, data + readIndex, size1);
         size_t size2 = bytesToRead - size1;
         memcpy(outputData + size1, data, size2);
-        readIndex = size2;
     }
 
+    readIndex = (readIndex + bytesToRead) % dataCapacity;
     return bytesToRead;
 }
 
@@ -86,6 +75,8 @@ size_t LibretroDroid::CircularBuffer::drop(size_t bytes) {
     if (bytes == 0)
         return 0;
 
-    readIndex += bytes;
+    size_t bytesToRead = std::min(bytes, usedSize());
+
+    readIndex = (readIndex + bytesToRead) % dataCapacity;
     return bytes;
 }

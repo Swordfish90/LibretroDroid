@@ -443,14 +443,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(
             throw std::runtime_error("Cannot load game");
         }
 
-        struct retro_system_av_info system_av_info;
-        core->retro_get_system_av_info(&system_av_info);
-
-        fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps, screenRefreshRate);
-
-        double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
-        audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
-
         env->ReleaseStringUTFChars(gameFilePath, gamePath);
 
     } catch (std::exception& exception) {
@@ -468,12 +460,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
 
         core->retro_unload_game();
         core->retro_deinit();
-
-        delete audio;
-        audio = nullptr;
-
-        delete fpsSync;
-        fpsSync = nullptr;
 
         delete video;
         video = nullptr;
@@ -497,9 +483,15 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
     try {
         input = new LibretroDroid::Input();
 
-        fpsSync->reset();
+        struct retro_system_av_info system_av_info;
+        core->retro_get_system_av_info(&system_av_info);
 
+        fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps, screenRefreshRate);
+
+        double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
+        audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
         audio->start();
+
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
     }
@@ -513,6 +505,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
         input = nullptr;
 
         audio->stop();
+        delete audio;
+        audio = nullptr;
+
+        delete fpsSync;
+        fpsSync = nullptr;
 
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());

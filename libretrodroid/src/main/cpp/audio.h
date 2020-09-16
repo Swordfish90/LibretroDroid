@@ -27,7 +27,7 @@ namespace LibretroDroid {
 class Audio: public oboe::AudioStreamCallback {
 public:
     Audio(int32_t sampleRate);
-    ~Audio();
+    ~Audio() = default;
 
     void start();
     void stop();
@@ -39,7 +39,7 @@ public:
 private:
     void initializeAudio(int32_t sampleRate);
     CircularBuffer circularBuffer { 1L * 1024 };
-    oboe::AudioStream* stream = nullptr;
+    oboe::ManagedStream stream = nullptr;
 };
 
 }

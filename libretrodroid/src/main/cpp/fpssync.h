@@ -31,19 +31,19 @@ public:
     FPSSync(double contentRefreshRate, double screenRefreshRate);
     ~FPSSync() { }
 
-    void reset();
     void sync();
     double getTimeStretchFactor();
-
 private:
+
     double screenRefreshRate;
     double contentRefreshRate;
     bool useVSync;
-
     const double FPS_TOLERANCE = 5;
-    const TimePoint MIN_TIME = TimePoint::min();
 
+    const TimePoint MIN_TIME = TimePoint::min();
     void start();
+
+    void reset();
 
     TimePoint lastFrame = MIN_TIME;
     Duration sampleInterval;

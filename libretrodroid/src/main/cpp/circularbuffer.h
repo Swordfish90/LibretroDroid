@@ -23,14 +23,16 @@ namespace LibretroDroid {
 class CircularBuffer
 {
 public:
+    static const size_t MAXIMUM_BUFFER_SIZE = 44L * 1024L;
     CircularBuffer(size_t size);
-    ~CircularBuffer();
+    ~CircularBuffer() = default;
 
-    size_t size();
+    size_t usedSize();
+    size_t availableSize();
     size_t capacity() const { return dataCapacity; }
 
-    size_t write(const char *data, size_t bytes);
-    size_t read(char *data, size_t bytes);
+    size_t write(const unsigned char* data, size_t bytes);
+    size_t read(unsigned char* data, size_t bytes);
     size_t drop(size_t bytes);
 
 private:
@@ -38,7 +40,8 @@ private:
     size_t writeIndex;
     size_t dataCapacity;
 
-    char* data;
+    // We're allocating a static array, since some cores (mupen64plus) are for some reason corrupting heap memory.
+    unsigned char data[MAXIMUM_BUFFER_SIZE];
 };
 
 }
