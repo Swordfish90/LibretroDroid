@@ -51,7 +51,7 @@ LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
 LibretroDroid::Rumble* rumble = nullptr;
 
-bool fastForwardEnabled = true;
+bool fastForwardEnabled = false;
 bool audioEnabled = true;
 
 std::mutex retroStateMutex;
@@ -77,7 +77,7 @@ void callback_audio_sample(int16_t left, int16_t right) {
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    if (audio != nullptr && audioEnabled) {
+    if (audio != nullptr && audioEnabled && !fastForwardEnabled) {
         audio->write(data, frames);
     }
     return frames;
