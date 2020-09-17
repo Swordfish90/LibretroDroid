@@ -46,8 +46,7 @@ class GLRetroView(
     private val variables: Array<Variable> = arrayOf(),
     private var saveRAMState: ByteArray? = null,
     private val shader: Int = LibretroDroid.SHADER_DEFAULT,
-    private val rumbleEventsEnabled: Boolean = true,
-    private val screenRefreshRate: Float? = null
+    private val rumbleEventsEnabled: Boolean = true
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     private val openGLESVersion: Int
@@ -77,9 +76,10 @@ class GLRetroView(
             savesDirectory,
             variables,
             shader,
-            screenRefreshRate ?: getDefaultRefreshRate(),
+            getDefaultRefreshRate(),
             getDeviceLanguage()
         )
+        LibretroDroid.setRumbleEnabled(rumbleEventsEnabled)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -234,7 +234,7 @@ class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
-            LibretroDroid.step(this@GLRetroView, rumbleEventsEnabled)
+            LibretroDroid.step(this@GLRetroView)
             retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 

@@ -86,6 +86,10 @@ namespace Environment {
         useStencil = false;
         bottomLeftOrigin = false;
         screenRotation = 0;
+
+        vibrationStrengthWeak = 0;
+        vibrationStrengthStrong = 0;
+        lastRumbleStrength = 0;
     }
 
     void updateVariable(std::string key, std::string value) {
@@ -173,7 +177,7 @@ namespace Environment {
     }
 
     bool set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
-        LOGI("Setting rumble strength to %i", strength);
+        LOGV("Setting rumble strength to %i", strength);
 
         if (effect == RETRO_RUMBLE_STRONG) {
             lastRumbleStrength = strength | vibrationStrengthWeak;

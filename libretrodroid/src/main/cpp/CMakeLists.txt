@@ -34,6 +34,8 @@ add_library(libretrodroid SHARED
         shadermanager.cpp
         javautils.h
         javautils.cpp
+        rumble.h
+        rumble.cpp
         utils.cpp
         utils.h
         libretro/libretro.h)

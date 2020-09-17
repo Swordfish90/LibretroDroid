@@ -31,6 +31,7 @@
 #include "renderers/renderer.h"
 #include "fpssync.h"
 #include "input.h"
+#include "rumble.h"
 #include "shadermanager.h"
 #include "javautils.h"
 #include "environment.cpp"
@@ -48,15 +49,12 @@ LibretroDroid::Audio* audio = nullptr;
 LibretroDroid::Video* video = nullptr;
 LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
+LibretroDroid::Rumble* rumble = nullptr;
 std::mutex retroStateMutex;
 
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
 float screenRefreshRate = 60.0;
 int openglESVersion = 2;
-
-// Rumble parameters
-jmethodID rumbleMethodId = nullptr;
-uint16_t currentRumbleStrength = 0;
 
 uintptr_t callback_get_current_framebuffer() {
     if (video != nullptr) {
@@ -104,7 +102,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView, jboolean sendRumble);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jint shaderType, jfloat refreshRate, jstring language);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(JNIEnv * env, jobject obj, jstring gameFilePath);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
@@ -116,6 +114,7 @@ extern "C" {
     JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj);
     JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv * env, jobject obj, jboolean enabled);
 };
 
 JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj) {
@@ -407,6 +406,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
 
+        rumble = new LibretroDroid::Rumble();
+
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
     }
@@ -467,8 +468,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
         delete core;
         core = nullptr;
 
-        currentRumbleStrength = 0;
-        rumbleMethodId = nullptr;
+        delete rumble;
+        rumble = nullptr;
 
         Environment::deinitialize();
 
@@ -482,6 +483,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
 
     try {
         input = new LibretroDroid::Input();
+
+        rumble = new LibretroDroid::Rumble();
 
         struct retro_system_av_info system_av_info;
         core->retro_get_system_av_info(&system_av_info);
@@ -516,7 +519,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView, jboolean sendRumble)
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView)
 {
     LOGD("Stepping into retro_run()");
 
@@ -532,15 +535,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
         fpsSync->sync();
     }
 
-    if (sendRumble && currentRumbleStrength != Environment::lastRumbleStrength) {
-        if (rumbleMethodId == nullptr) {
-            jclass cls = env->GetObjectClass(glRetroView);
-            rumbleMethodId = env->GetMethodID(cls, "sendRumbleStrength", "(F)V");
-        }
-        currentRumbleStrength = Environment::lastRumbleStrength;
-
-        float finalVibration = (float) currentRumbleStrength / 0xFFFF;
-        env->CallVoidMethod(glRetroView, rumbleMethodId, finalVibration);
+    if (rumble != nullptr) {
+        rumble->updateAndDispatch(Environment::lastRumbleStrength, env, glRetroView);
     }
 }
 
@@ -554,6 +550,10 @@ JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspec
     }
 
     return aspectRatio;
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
+    rumble->setEnabled(enabled);
 }
 
 
