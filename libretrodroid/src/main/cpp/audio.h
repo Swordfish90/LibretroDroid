@@ -20,7 +20,7 @@
 
 #include <unistd.h>
 #include <oboe/Oboe.h>
-#include "circularbuffer.h"
+#include "oboe/src/fifo/FifoBuffer.h"
 
 namespace LibretroDroid {
 
@@ -37,8 +37,7 @@ public:
     void write(const int16_t *data, size_t frames);
 
 private:
-    void initializeAudio(int32_t sampleRate);
-    CircularBuffer circularBuffer { 1L * 1024 };
+    std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
     oboe::ManagedStream stream = nullptr;
 };
 

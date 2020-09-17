@@ -19,11 +19,11 @@
 
 #include "audio.h"
 
-void LibretroDroid::Audio::initializeAudio(int32_t sampleRate) {
+LibretroDroid::Audio::Audio(int32_t sampleRate) {
     LOGI("Audio initialization has been called with sample rate %d", sampleRate);
 
     // We are buffering a max of 125ms of audio.
-    circularBuffer = CircularBuffer(sampleRate / 2);
+    fifo = std::unique_ptr<oboe::FifoBuffer>(new oboe::FifoBuffer(2, sampleRate / 4));
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
@@ -36,10 +36,7 @@ void LibretroDroid::Audio::initializeAudio(int32_t sampleRate) {
     if (result != oboe::Result::OK) {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
     }
-}
 
-LibretroDroid::Audio::Audio(int32_t sampleRate) {
-    initializeAudio(sampleRate);
     stream->open();
 }
 
@@ -52,28 +49,12 @@ void LibretroDroid::Audio::stop() {
 }
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
-    size_t size = frames * 2 * sizeof(int16_t);
-    LOGV("Audio buffer write: %d bytes", size);
-    circularBuffer.write((const unsigned char *) data, size);
+    size_t size = frames * 2;
+    fifo->write(data, size);
 }
 
 oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    size_t size = numFrames * 2 * sizeof(int16_t);
-
-    if (circularBuffer.usedSize() < 0.2 * circularBuffer.capacity()) {
-        LOGV("Audio buffer is too empty. Skipping to fill it.");
-        memset(audioData, 0, size);
-        return oboe::DataCallbackResult::Continue;
-    }
-
-    if (circularBuffer.availableSize() < 0.2 * circularBuffer.capacity()) {
-        LOGV("Audio buffer is too full. Dropping oldest samples.");
-        circularBuffer.drop(size);
-    }
-
-    circularBuffer.read((unsigned char*) audioData, size);
-
-    LOGV("Audio buffer read of %d bytes", size);
-
+    size_t size = numFrames * 2;
+    fifo->readNow(audioData, size);
     return oboe::DataCallbackResult::Continue;
 }
