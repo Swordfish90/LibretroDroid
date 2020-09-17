@@ -50,6 +50,10 @@ LibretroDroid::Video* video = nullptr;
 LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
 LibretroDroid::Rumble* rumble = nullptr;
+
+bool fastForwardEnabled = true;
+bool audioEnabled = true;
+
 std::mutex retroStateMutex;
 
 auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
@@ -73,7 +77,7 @@ void callback_audio_sample(int16_t left, int16_t right) {
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    if (audio != nullptr) {
+    if (audio != nullptr && audioEnabled) {
         audio->write(data, frames);
     }
     return frames;
@@ -115,6 +119,8 @@ extern "C" {
     JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv * env, jobject obj, jboolean enabled);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFastForwardEnabled(JNIEnv * env, jobject obj, jboolean enabled);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled);
 };
 
 JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj) {
@@ -523,6 +529,9 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
 
     retroStateMutex.lock();
     core->retro_run();
+    if (fastForwardEnabled) {
+        core->retro_run();
+    }
     retroStateMutex.unlock();
 
     if (video != nullptr) {
@@ -554,4 +563,10 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleE
     rumble->setEnabled(enabled);
 }
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFastForwardEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
+    fastForwardEnabled = enabled;
+}
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
+    audioEnabled = enabled;
+}
