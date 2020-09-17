@@ -484,8 +484,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
     try {
         input = new LibretroDroid::Input();
 
-        rumble = new LibretroDroid::Rumble();
-
         struct retro_system_av_info system_av_info;
         core->retro_get_system_av_info(&system_av_info);
 

@@ -273,6 +273,7 @@ class GLRetroView(
         Handler(Looper.getMainLooper()).post(runnable)
     }
 
+    /** This function gets called from the jni side.*/
     private fun sendRumbleStrength(strength: Float) {
         rumbleEventsSubject.accept(strength)
     }
