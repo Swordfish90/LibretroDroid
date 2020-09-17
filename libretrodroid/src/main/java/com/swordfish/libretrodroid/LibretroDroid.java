@@ -43,9 +43,11 @@ class LibretroDroid {
     public static native void pause();
     public static native void destroy();
 
-    public static native void step();
+    public static native void step(GLRetroView retroView);
 
     public static native void reset();
+
+    public static native void setRumbleEnabled(boolean enabled);
 
     public static native byte[] serializeState();
     public static native boolean unserializeState(byte[] state);

@@ -44,6 +44,10 @@ namespace Environment {
     bool bottomLeftOrigin = false;
     float screenRotation = 0;
 
+    uint16_t vibrationStrengthWeak = 0;
+    uint16_t vibrationStrengthStrong = 0;
+    uint16_t lastRumbleStrength = 0;
+
     std::vector<struct Variable> variables;
     bool dirtyVariables = false;
 
@@ -82,6 +86,10 @@ namespace Environment {
         useStencil = false;
         bottomLeftOrigin = false;
         screenRotation = 0;
+
+        vibrationStrengthWeak = 0;
+        vibrationStrengthStrong = 0;
+        lastRumbleStrength = 0;
     }
 
     void updateVariable(std::string key, std::string value) {
@@ -169,6 +177,18 @@ namespace Environment {
     }
 
     bool set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
+        LOGV("Setting rumble strength to %i", strength);
+
+        if (effect == RETRO_RUMBLE_STRONG) {
+            lastRumbleStrength = strength | vibrationStrengthWeak;
+            vibrationStrengthStrong = strength;
+        }
+
+        if (effect == RETRO_RUMBLE_WEAK) {
+            lastRumbleStrength = strength | vibrationStrengthStrong;
+            vibrationStrengthWeak = strength;
+        }
+
         return true;
     }
 

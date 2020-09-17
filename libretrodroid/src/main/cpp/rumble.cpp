@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2020  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -15,32 +15,22 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_AUDIO_H
-#define LIBRETRODROID_AUDIO_H
+#include "rumble.h"
 
-#include <unistd.h>
-#include <oboe/Oboe.h>
-#include "oboe/src/fifo/FifoBuffer.h"
+void LibretroDroid::Rumble::updateAndDispatch(uint16_t currentStrength, JNIEnv* env, jobject glRetroView) {
+    if (!enabled || currentStrength == currentRumbleStrength) return;
 
-namespace LibretroDroid {
+    currentRumbleStrength = currentStrength;
 
-class Audio: public oboe::AudioStreamCallback {
-public:
-    Audio(int32_t sampleRate);
-    ~Audio() = default;
+    if (rumbleMethodId == nullptr) {
+        jclass cls = env->GetObjectClass(glRetroView);
+        rumbleMethodId = env->GetMethodID(cls, "sendRumbleStrength", "(F)V");
+    }
 
-    void start();
-    void stop();
-
-    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
-
-    void write(const int16_t *data, size_t frames);
-
-private:
-    std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
-    oboe::ManagedStream stream = nullptr;
-};
-
+    float finalVibration = (float) currentRumbleStrength / 0xFFFF;
+    env->CallVoidMethod(glRetroView, rumbleMethodId, finalVibration);
 }
 
-#endif //LIBRETRODROID_AUDIO_H
+void LibretroDroid::Rumble::setEnabled(bool enabled) {
+    this->enabled = enabled;
+}

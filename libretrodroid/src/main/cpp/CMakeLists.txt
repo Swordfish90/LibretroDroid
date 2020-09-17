@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 set (OBOE_DIR oboe)
 add_subdirectory (${OBOE_DIR} oboe)
 include_directories (${OBOE_DIR}/include)
+include_directories (${OBOE_DIR}/src)
 
 add_library(libretrodroid SHARED
         libretrodroid.cpp
@@ -33,6 +34,8 @@ add_library(libretrodroid SHARED
         shadermanager.cpp
         javautils.h
         javautils.cpp
+        rumble.h
+        rumble.cpp
         utils.cpp
         utils.h
         libretro/libretro.h)

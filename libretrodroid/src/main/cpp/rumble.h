@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2020  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -15,32 +15,25 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_AUDIO_H
-#define LIBRETRODROID_AUDIO_H
+#ifndef LIBRETRODROID_RUMBLE_H
+#define LIBRETRODROID_RUMBLE_H
 
-#include <unistd.h>
-#include <oboe/Oboe.h>
-#include "oboe/src/fifo/FifoBuffer.h"
+#include <jni.h>
 
 namespace LibretroDroid {
 
-class Audio: public oboe::AudioStreamCallback {
+class Rumble {
 public:
-    Audio(int32_t sampleRate);
-    ~Audio() = default;
-
-    void start();
-    void stop();
-
-    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
-
-    void write(const int16_t *data, size_t frames);
+    void setEnabled(bool enabled);
+    void updateAndDispatch(uint16_t currentStrength, JNIEnv* env, jobject glRetroView);
 
 private:
-    std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
-    oboe::ManagedStream stream = nullptr;
+    bool enabled;
+    jmethodID rumbleMethodId = nullptr;
+    uint16_t currentRumbleStrength = 0;
 };
 
 }
 
-#endif //LIBRETRODROID_AUDIO_H
+
+#endif //LIBRETRODROID_RUMBLE_H

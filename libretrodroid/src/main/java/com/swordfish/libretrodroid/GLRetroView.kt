@@ -45,12 +45,14 @@ class GLRetroView(
     private val savesDirectory: String = context.filesDir.absolutePath,
     private val variables: Array<Variable> = arrayOf(),
     private var saveRAMState: ByteArray? = null,
-    private val shader: Int = LibretroDroid.SHADER_DEFAULT
+    private val shader: Int = LibretroDroid.SHADER_DEFAULT,
+    private val rumbleEventsEnabled: Boolean = true
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     private val openGLESVersion: Int
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
+    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var gameLoaded: Boolean = false
 
@@ -74,9 +76,10 @@ class GLRetroView(
             savesDirectory,
             variables,
             shader,
-            getScreenRefreshRate(),
+            getDefaultRefreshRate(),
             getDeviceLanguage()
         )
+        LibretroDroid.setRumbleEnabled(rumbleEventsEnabled)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -87,7 +90,7 @@ class GLRetroView(
 
     private fun getDeviceLanguage() = Locale.getDefault().language
 
-    private fun getScreenRefreshRate(): Float {
+    private fun getDefaultRefreshRate(): Float {
         return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
     }
 
@@ -138,6 +141,10 @@ class GLRetroView(
 
     fun getGLRetroEvents(): Observable<GLRetroEvents> {
         return retroGLEventsSubject
+    }
+
+    fun getRumbleEvents(): Observable<Float> {
+        return rumbleEventsSubject
     }
 
     fun getVariables(): Array<Variable> {
@@ -227,7 +234,7 @@ class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
-            LibretroDroid.step()
+            LibretroDroid.step(this@GLRetroView)
             retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 
@@ -264,6 +271,11 @@ class GLRetroView(
 
     private fun runOnUIThread(runnable: () -> Unit) {
         Handler(Looper.getMainLooper()).post(runnable)
+    }
+
+    /** This function gets called from the jni side.*/
+    private fun sendRumbleStrength(strength: Float) {
+        rumbleEventsSubject.accept(strength)
     }
 
     sealed class GLRetroEvents {
