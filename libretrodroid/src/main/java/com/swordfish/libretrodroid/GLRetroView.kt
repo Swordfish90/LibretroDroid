@@ -36,6 +36,7 @@ import io.reactivex.Observable
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.properties.Delegates
 
 class GLRetroView(
     context: Context,
@@ -48,6 +49,14 @@ class GLRetroView(
     private val shader: Int = LibretroDroid.SHADER_DEFAULT,
     private val rumbleEventsEnabled: Boolean = true
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
+
+    var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
+        LibretroDroid.setAudioEnabled(value)
+    }
+
+    var fastForwardEnabled: Boolean by Delegates.observable(false) { _, _, value ->
+        LibretroDroid.setFastForwardEnabled(value)
+    }
 
     private val openGLESVersion: Int
 
