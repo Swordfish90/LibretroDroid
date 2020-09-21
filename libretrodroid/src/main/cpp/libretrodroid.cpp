@@ -382,6 +382,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         openglESVersion = GLESVersion;
         screenRefreshRate = refreshRate;
+        audioEnabled = true;
+        fastForwardEnabled = false;
 
         core = new LibretroDroid::Core(corePath);
 
