@@ -272,6 +272,10 @@ namespace Environment {
                 LOGD("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
                 return false;
 
+            case RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE:
+                LOGD("Called RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE");
+                return false;
+
             case RETRO_ENVIRONMENT_GET_LANGUAGE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
                 *((unsigned*) data) = language;
