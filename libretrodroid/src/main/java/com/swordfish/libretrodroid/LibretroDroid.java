@@ -33,7 +33,8 @@ class LibretroDroid {
     public static final int SHADER_LCD = 2;
     public static final int SHADER_SHARP = 3;
 
-    public static native void create(int GLESVersion, String coreFilePath, String gameFilePath, String systemDir, String savesDir, int shaderType, float refreshRate, String language);
+    public static native void create(int GLESVersion, String coreFilePath, String systemDir, String savesDir, Variable[] variables, int shaderType, float refreshRate, String language);
+    public static native void loadGame(String gameFilePath);
     public static native void resume();
 
     public static native void onSurfaceCreated();
@@ -42,9 +43,13 @@ class LibretroDroid {
     public static native void pause();
     public static native void destroy();
 
-    public static native void step();
+    public static native void step(GLRetroView retroView);
 
     public static native void reset();
+
+    public static native void setRumbleEnabled(boolean enabled);
+    public static native void setFastForwardEnabled(boolean enabled);
+    public static native void setAudioEnabled(boolean enabled);
 
     public static native byte[] serializeState();
     public static native boolean unserializeState(byte[] state);

@@ -19,37 +19,42 @@
 
 #include "audio.h"
 
-void LibretroDroid::Audio::initializeAudio(int32_t sampleRate) {
+LibretroDroid::Audio::Audio(int32_t sampleRate) {
     LOGI("Audio initialization has been called with sample rate %d", sampleRate);
+
+    // We are buffering a max of 125ms of audio.
+    fifo = std::unique_ptr<oboe::FifoBuffer>(new oboe::FifoBuffer(2, sampleRate / 4));
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
     builder.setSampleRate(sampleRate);
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
+    builder.setCallback(this);
 
-    oboe::Result result = builder.openStream(&stream);
+    oboe::Result result = builder.openManagedStream(stream);
     if (result != oboe::Result::OK) {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
     }
-}
 
-LibretroDroid::Audio::Audio(int32_t sampleRate) {
-    initializeAudio(sampleRate);
-}
-
-LibretroDroid::Audio::~Audio() {
-    stream->close();
+    stream->open();
 }
 
 void LibretroDroid::Audio::start() {
-    stream->start(oboe::kDefaultTimeoutNanos);
+    stream->requestStart();
 }
 
 void LibretroDroid::Audio::stop() {
-    stream->stop(oboe::kDefaultTimeoutNanos);
+    stream->requestStop();
 }
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
-    stream->write(data, frames, oboe::kDefaultTimeoutNanos);
+    size_t size = frames * 2;
+    fifo->write(data, size);
+}
+
+oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+    size_t size = numFrames * 2;
+    fifo->readNow(audioData, size);
+    return oboe::DataCallbackResult::Continue;
 }

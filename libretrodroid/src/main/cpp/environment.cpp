@@ -44,6 +44,10 @@ namespace Environment {
     bool bottomLeftOrigin = false;
     float screenRotation = 0;
 
+    uint16_t vibrationStrengthWeak = 0;
+    uint16_t vibrationStrengthStrong = 0;
+    uint16_t lastRumbleStrength = 0;
+
     std::vector<struct Variable> variables;
     bool dirtyVariables = false;
 
@@ -82,6 +86,10 @@ namespace Environment {
         useStencil = false;
         bottomLeftOrigin = false;
         screenRotation = 0;
+
+        vibrationStrengthWeak = 0;
+        vibrationStrengthStrong = 0;
+        lastRumbleStrength = 0;
     }
 
     void updateVariable(std::string key, std::string value) {
@@ -168,6 +176,22 @@ namespace Environment {
         }
     }
 
+    bool set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
+        LOGV("Setting rumble strength to %i", strength);
+
+        if (effect == RETRO_RUMBLE_STRONG) {
+            lastRumbleStrength = strength | vibrationStrengthWeak;
+            vibrationStrengthStrong = strength;
+        }
+
+        if (effect == RETRO_RUMBLE_WEAK) {
+            lastRumbleStrength = strength | vibrationStrengthStrong;
+            vibrationStrengthWeak = strength;
+        }
+
+        return true;
+    }
+
     bool callback_environment(unsigned cmd, void *data) {
         switch (cmd) {
             case RETRO_ENVIRONMENT_GET_CAN_DUPE:
@@ -205,7 +229,8 @@ namespace Environment {
 
             case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
-                return false;
+                ((struct retro_rumble_interface*) data)->set_rumble_state = &set_rumble_state;
+                return true;
 
             case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
@@ -245,6 +270,10 @@ namespace Environment {
 
             case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
                 LOGD("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
+                return false;
+
+            case RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE:
+                LOGD("Called RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE");
                 return false;
 
             case RETRO_ENVIRONMENT_GET_LANGUAGE:

@@ -20,25 +20,52 @@ package com.swordfish.libretrodroid
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.view.*
+import android.os.Handler
+import android.os.Looper
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.WindowManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.properties.Delegates
 
-class GLRetroView(context: Context,
+class GLRetroView(
+    context: Context,
     private val coreFilePath: String,
     private val gameFilePath: String,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
-    private val shader: Int = LibretroDroid.SHADER_DEFAULT
-) : AspectRatioGLSurfaceView(context) {
+    private val variables: Array<Variable> = arrayOf(),
+    private var saveRAMState: ByteArray? = null,
+    private val shader: Int = LibretroDroid.SHADER_DEFAULT,
+    private val rumbleEventsEnabled: Boolean = true
+) : AspectRatioGLSurfaceView(context), LifecycleObserver {
+
+    var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
+        LibretroDroid.setAudioEnabled(value)
+    }
+
+    var fastForwardEnabled: Boolean by Delegates.observable(false) { _, _, value ->
+        LibretroDroid.setFastForwardEnabled(value)
+    }
 
     private val openGLESVersion: Int
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
+    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
+
+    private var gameLoaded: Boolean = false
+
+    private var lifecycle: Lifecycle? = null
 
     init {
         openGLESVersion = getGLESVersion(context)
@@ -48,43 +75,32 @@ class GLRetroView(context: Context,
         keepScreenOn = true
     }
 
-    fun onCreate() {
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    private fun onCreate(lifecycleOwner: LifecycleOwner) {
+        lifecycle = lifecycleOwner.lifecycle
         LibretroDroid.create(
             openGLESVersion,
             coreFilePath,
-            gameFilePath,
             systemDirectory,
             savesDirectory,
+            variables,
             shader,
-            getScreenRefreshRate(),
+            getDefaultRefreshRate(),
             getDeviceLanguage()
         )
+        LibretroDroid.setRumbleEnabled(rumbleEventsEnabled)
+    }
 
-        setAspectRatio(LibretroDroid.getAspectRatio())
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    private fun onDestroy() {
+        LibretroDroid.destroy()
+        lifecycle = null
     }
 
     private fun getDeviceLanguage() = Locale.getDefault().language
 
-    private fun getScreenRefreshRate(): Float {
+    private fun getDefaultRefreshRate(): Float {
         return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
-    }
-
-    override fun onResume() {
-        LibretroDroid.resume()
-        super.onResume()
-    }
-
-    fun getAspectRatio(): Float {
-        return LibretroDroid.getAspectRatio()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        LibretroDroid.pause()
-    }
-
-    fun onDestroy() {
-        LibretroDroid.destroy()
     }
 
     fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
@@ -128,16 +144,16 @@ class GLRetroView(context: Context,
         return LibretroDroid.serializeSRAM()
     }
 
-    fun unserializeSRAM(data: ByteArray): Boolean {
-        return LibretroDroid.unserializeSRAM(data)
-    }
-
     fun reset() {
         LibretroDroid.reset()
     }
 
     fun getGLRetroEvents(): Observable<GLRetroEvents> {
         return retroGLEventsSubject
+    }
+
+    fun getRumbleEvents(): Observable<Float> {
+        return rumbleEventsSubject
     }
 
     fun getVariables(): Array<Variable> {
@@ -186,18 +202,48 @@ class GLRetroView(context: Context,
         if (port >= 0) {
             when (event?.source) {
                 InputDevice.SOURCE_JOYSTICK -> {
-                    sendMotionEvent(MOTION_SOURCE_DPAD, event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y), port)
-                    sendMotionEvent(MOTION_SOURCE_ANALOG_LEFT, event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y), port)
-                    sendMotionEvent(MOTION_SOURCE_ANALOG_RIGHT, event.getAxisValue(MotionEvent.AXIS_Z), event.getAxisValue(MotionEvent.AXIS_RZ), port)
+                    sendMotionEvent(
+                        MOTION_SOURCE_DPAD,
+                        event.getAxisValue(MotionEvent.AXIS_HAT_X),
+                        event.getAxisValue(MotionEvent.AXIS_HAT_Y),
+                        port
+                    )
+                    sendMotionEvent(
+                        MOTION_SOURCE_ANALOG_LEFT,
+                        event.getAxisValue(MotionEvent.AXIS_X),
+                        event.getAxisValue(MotionEvent.AXIS_Y),
+                        port
+                    )
+                    sendMotionEvent(
+                        MOTION_SOURCE_ANALOG_RIGHT,
+                        event.getAxisValue(MotionEvent.AXIS_Z),
+                        event.getAxisValue(MotionEvent.AXIS_RZ),
+                        port
+                    )
                 }
             }
         }
         return super.onGenericMotionEvent(event)
     }
 
+    // These functions are called only after the GLSurfaceView has been created.
+    private inner class RenderLifecycleObserver : LifecycleObserver {
+        @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        private fun resume() {
+            LibretroDroid.resume()
+            onResume()
+        }
+
+        @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+        private fun pause() {
+            onPause()
+            LibretroDroid.pause()
+        }
+    }
+
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) {
-            LibretroDroid.step()
+            LibretroDroid.step(this@GLRetroView)
             retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 
@@ -208,9 +254,37 @@ class GLRetroView(context: Context,
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
-            LibretroDroid.onSurfaceCreated()
+            initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
+            refreshAspectRatio()
         }
+    }
+
+    private fun refreshAspectRatio() {
+        val aspectRatio = LibretroDroid.getAspectRatio()
+        runOnUIThread { setAspectRatio(aspectRatio) }
+    }
+
+    // These functions are called from the GL thread.
+    private fun initializeCore() {
+        if (gameLoaded) return
+        LibretroDroid.loadGame(gameFilePath)
+        saveRAMState?.let {
+            LibretroDroid.unserializeSRAM(saveRAMState)
+            saveRAMState = null
+        }
+        LibretroDroid.onSurfaceCreated()
+        lifecycle?.addObserver(RenderLifecycleObserver())
+        gameLoaded = true
+    }
+
+    private fun runOnUIThread(runnable: () -> Unit) {
+        Handler(Looper.getMainLooper()).post(runnable)
+    }
+
+    /** This function gets called from the jni side.*/
+    private fun sendRumbleStrength(strength: Float) {
+        rumbleEventsSubject.accept(strength)
     }
 
     sealed class GLRetroEvents {

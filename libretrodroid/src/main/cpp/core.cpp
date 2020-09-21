@@ -34,7 +34,7 @@ void* get_symbol(void* handle, const char* symbol) {
 }
 
 void LibretroDroid::Core::open(const std::string& soCorePath) {
-    libHandle = dlopen(soCorePath.c_str(), RTLD_LOCAL);
+    libHandle = dlopen(soCorePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
     if (!libHandle) {
         LOGE("Cannot dlopen library, closing");
         throw std::runtime_error("Cannot dlopen library");

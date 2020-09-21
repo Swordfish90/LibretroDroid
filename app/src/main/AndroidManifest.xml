@@ -3,7 +3,6 @@
           package="com.android.libretrodroid">
   <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
-
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
   <application
@@ -13,7 +12,7 @@
       android:isGame="true"
       android:label="@string/activity_title">
     <activity android:name="com.swordfish.libretrodroid.SampleActivity"
-              android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+              android:theme="@style/Theme.AppCompat.NoActionBar"
               android:launchMode="singleTask"
               android:configChanges="orientation|screenSize|keyboardHidden">
       <intent-filter>

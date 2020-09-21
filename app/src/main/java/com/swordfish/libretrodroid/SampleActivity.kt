@@ -17,13 +17,15 @@
 
 package com.swordfish.libretrodroid
 
-import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.widget.FrameLayout
+import androidx.appcompat.app.AppCompatActivity
 
-class SampleActivity : Activity() {
+class SampleActivity : AppCompatActivity() {
 
     private lateinit var retroView: GLRetroView
 
@@ -33,14 +35,18 @@ class SampleActivity : Activity() {
         // Here we just have a bunch of preloaded roms used for testing. This are hardcoded path, so replace them.
         //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Super Mario 64/Super Mario 64.n64")
         //retroView = GLRetroView(this, "snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Pokemon Blue Version/Pokemon Blue Version.gb", filesDir.absolutePath, cacheDir.absolutePath)
+        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64", filesDir.absolutePath, cacheDir.absolutePath, arrayOf(Variable("mupen64plus-43screensize", "320x240")), null, LibretroDroid.SHADER_CRT)
+        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Paper Mario.z64", filesDir.absolutePath, cacheDir.absolutePath, arrayOf(Variable("mupen64plus-43screensize", "320x240")), null, LibretroDroid.SHADER_CRT)
+
+        retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Pokemon Blue Version/Pokemon Blue Version.gb", filesDir.absolutePath, cacheDir.absolutePath)
         //retroView = GLRetroView(this, "fceumm_libretro_android.so", "/storage/emulated/0/Roms Test/Prince of Persia/Prince of Persia.nes", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/Advance Wars/Advance Wars.gba", "", "", LibretroDroid.SHADER_LCD)
-        //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/MediEvil Resurrection.cso", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
-        //retroView = GLRetroView(this, "desmume_libretro_android.so", "/storage/emulated/0/Roms Test/ds/Pokemon Pearl Version.nds", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_LCD)
-        //retroView = GLRetroView(this, "fbneo_libretro_android.so", "/storage/emulated/0/Android/data/com.swordfish.lemuroid/files/roms/fbneo/arkanoid.zip", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
-        retroView = GLRetroView(this, "pcsx_rearmed_libretro_android.so", "/storage/emulated/0/Roms/pxx/Final Fantasy VII.pbp", filesDir.absolutePath, cacheDir.absolutePath, LibretroDroid.SHADER_CRT)
+        //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Drill Dozer.gba", filesDir.absolutePath, cacheDir.absolutePath)
+        //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/MediEvil Resurrection.cso", filesDir.absolutePath, cacheDir.absolutePath)
+        //retroView = GLRetroView(this, "desmume_libretro_android.so", "/storage/emulated/0/Roms Test/ds/Pokemon Pearl Version.nds", filesDir.absolutePath, cacheDir.absolutePath)
+        //retroView = GLRetroView(this, "fbneo_libretro_android.so", "/storage/emulated/0/Android/data/com.swordfish.lemuroid/files/roms/fbneo/arkanoid.zip", filesDir.absolutePath, cacheDir.absolutePath)
+        //retroView = GLRetroView(this, "libppsspp_libretro_android.so", "sdcard/Roms/psp/Coded Arms - Contagion (USA).cso", getExternalFilesDir(null).absolutePath, cacheDir.absolutePath)
+
+        lifecycle.addObserver(retroView)
 
         val frameLayout = FrameLayout(this)
         setContentView(frameLayout)
@@ -50,26 +56,67 @@ class SampleActivity : Activity() {
             this.gravity = Gravity.CENTER_HORIZONTAL
         }
 
-        retroView.onCreate()
-
         // Let's print out core variables.
         retroView.getVariables().forEach {
             Log.i("Retro variable: ", it.toString())
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        retroView.onDestroy()
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        if (event != null) {
+            sendMotionEvent(
+                event,
+                GLRetroView.MOTION_SOURCE_DPAD,
+                MotionEvent.AXIS_HAT_X,
+                MotionEvent.AXIS_HAT_Y,
+                0
+            )
+            sendMotionEvent(
+                event,
+                GLRetroView.MOTION_SOURCE_ANALOG_LEFT,
+                MotionEvent.AXIS_X,
+                MotionEvent.AXIS_Y,
+                0
+            )
+            sendMotionEvent(
+                event,
+                GLRetroView.MOTION_SOURCE_ANALOG_RIGHT,
+                MotionEvent.AXIS_Z,
+                MotionEvent.AXIS_RZ,
+                0
+            )
+        }
+        return super.onGenericMotionEvent(event)
     }
 
-    override fun onPause() {
-        super.onPause()
-        retroView.onPause()
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (event != null) {
+            retroView.sendKeyEvent(event.action, keyCode)
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
-    override fun onResume() {
-        super.onResume()
-        retroView.onResume()
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (event != null) {
+            retroView.sendKeyEvent(event.action, keyCode)
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
+    }
+
+    private fun sendMotionEvent(
+        event: MotionEvent,
+        source: Int,
+        xAxis: Int,
+        yAxis: Int,
+        port: Int
+    ) {
+        retroView.sendMotionEvent(
+            source,
+            event.getAxisValue(xAxis),
+            event.getAxisValue(yAxis),
+            port
+        )
     }
 }

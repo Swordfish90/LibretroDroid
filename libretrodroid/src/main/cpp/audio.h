@@ -20,23 +20,25 @@
 
 #include <unistd.h>
 #include <oboe/Oboe.h>
+#include "oboe/src/fifo/FifoBuffer.h"
 
 namespace LibretroDroid {
 
-class Audio {
+class Audio: public oboe::AudioStreamCallback {
 public:
     Audio(int32_t sampleRate);
-    ~Audio();
+    ~Audio() = default;
 
     void start();
     void stop();
 
+    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
+
     void write(const int16_t *data, size_t frames);
 
 private:
-    void initializeAudio(int32_t sampleRate);
-
-    oboe::AudioStream* stream = nullptr;
+    std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
+    oboe::ManagedStream stream = nullptr;
 };
 
 }
