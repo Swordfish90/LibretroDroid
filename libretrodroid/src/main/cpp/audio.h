@@ -18,6 +18,7 @@
 #ifndef LIBRETRODROID_AUDIO_H
 #define LIBRETRODROID_AUDIO_H
 
+#include <array>
 #include <unistd.h>
 #include <oboe/Oboe.h>
 #include "oboe/src/fifo/FifoBuffer.h"
@@ -34,11 +35,22 @@ public:
 
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
 
+    static float sinc(float x);
+    void resample_sinc(const int16_t* source, int32_t inputFrames, int16_t* sink, int32_t sinkFrames);
+    void resample_linear(const int16_t* source, int32_t inputFrames, int16_t* sink, int32_t sinkFrames);
+
     void write(const int16_t *data, size_t frames);
 
 private:
+    static constexpr float PI_F = 3.14159265358979f;
+    static constexpr float MAX_AUDIO_ACCELERATION = 0.02;
+    static constexpr int SINC_RESAMPLING_TAPS = 2;
+
     std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
+    std::unique_ptr<int16_t[]> audioBuffer = nullptr;
     oboe::ManagedStream stream = nullptr;
+
+    double defaultSampleRate;
 };
 
 }
