@@ -40,8 +40,8 @@ public:
     void write(const int16_t *data, size_t frames);
 
 private:
-    // We tolerate a 1% audio speedup or slowdown to avoid buffer overrun or underrun.
-    static constexpr float MAX_AUDIO_ACCELERATION = 0.01;
+    // We tolerate a 0.5% audio speedup or slowdown to avoid buffer overrun or underrun.
+    static constexpr float MAX_AUDIO_ACCELERATION = 0.005;
 
     std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
     std::unique_ptr<int16_t[]> audioBuffer = nullptr;
