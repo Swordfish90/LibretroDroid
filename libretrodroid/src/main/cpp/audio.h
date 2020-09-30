@@ -41,7 +41,8 @@ public:
 
 private:
     // We tolerate a 0.5% audio speedup or slowdown to avoid buffer overrun or underrun.
-    static constexpr float MAX_AUDIO_ACCELERATION = 0.005;
+    static constexpr double MAX_AUDIO_ACCELERATION_FAST = 0.005;
+    static constexpr double MAX_AUDIO_ACCELERATION_SLOW = 0.02;
 
     std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
     std::unique_ptr<int16_t[]> audioBuffer = nullptr;
@@ -49,6 +50,7 @@ private:
     LinearResampler resampler;
 
     double defaultSampleRate;
+    double errorIntegral = 0.0;
 };
 
 }

@@ -62,10 +62,16 @@ void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
 oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
     double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
     double framesAvailableInBuffer = fifo->getFullFramesAvailable();
-    double framesToMid = framesCapacityInBuffer - 2.0f * framesAvailableInBuffer;
+    double error = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
 
-    double sampleRateAdjustment = 1 - 2 * MAX_AUDIO_ACCELERATION * framesToMid / framesCapacityInBuffer;
-    double finalSampleRate = defaultSampleRate * sampleRateAdjustment;
+    errorIntegral += error;
+
+    double proportionalAdjustment = 0.003 * error;
+    double integralAdjustment = 0.00003 * errorIntegral;
+    double finalSampleRate = defaultSampleRate * (1 - 2 * (proportionalAdjustment + integralAdjustment));
+
+//    LOGE("FILIPPO Buffer final adjustment error=%f, errorIntegral=%f", error, errorIntegral);
+//    //LOGE("FILIPPO Buffer error=%f integral=%f proportional=%f integral=%f", error, errorIntegral, proportionalAdjustment, integralAdjustment);
 
     int32_t adjustedTotalFrames = numFrames * finalSampleRate;
 
