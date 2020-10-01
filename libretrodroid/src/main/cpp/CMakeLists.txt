@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 # now build app's shared lib
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 
 # Let's include oboe
 set (OBOE_DIR oboe)
@@ -26,6 +26,11 @@ add_library(libretrodroid SHARED
         renderers/es3/imagerendereres3.cpp
         audio.h
         audio.cpp
+        resamplers/resampler.h
+        resamplers/linearresampler.h
+        resamplers/linearresampler.cpp
+        resamplers/sincresampler.h
+        resamplers/sincresampler.cpp
         fpssync.h
         fpssync.cpp
         input.h
