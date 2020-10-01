@@ -25,7 +25,7 @@ LibretroDroid::Audio::Audio(int32_t sampleRate) {
     LOGI("Audio initialization has been called with sample rate %d", sampleRate);
 
     // We are buffering a max of 125ms of audio.
-    fifo = std::make_unique<oboe::FifoBuffer>(2, sampleRate / 4);
+    fifo = std::make_unique<oboe::FifoBuffer>(2, roundToEven(sampleRate / 4));
     audioBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleRate / 4]);
 
     oboe::AudioStreamBuilder builder;
@@ -54,44 +54,46 @@ void LibretroDroid::Audio::stop() {
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
     size_t size = frames * 2;
-    auto written = fifo->write(data, size);
-    if (written != size) {
-        LOGE("FILIPPO Buffer overrun detected");
-    }
+    fifo->write(data, size);
 }
 
 oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
-    double framesAvailableInBuffer = fifo->getFullFramesAvailable();
-
-    // Error here is in range [-1.0, 1.0]
-    double error = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
-    errorMeasure = errorMeasure * 0.8 + error * 0.2;
-
-    errorIntegral += errorMeasure * numFrames;
-
-    // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
-    // Just to be safe, Kp should not exceed this value.
-    double proportionalAdjustment = 0.005 * errorMeasure;
-
-    // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
-    // be slow enough to be not perceptible. We need to battle test this value.
-    double integralAdjustment = 0.000000005 * errorIntegral;//std::clamp( * errorIntegral, -0.005, 0.005);
-
-    double finalSampleRate = defaultSampleRate * (1 - (proportionalAdjustment + integralAdjustment));
-
-    //LOGE("FILIPPO numFrames=%d", numFrames);
-    //LOGE("FILIPPO final adjustment error=%f, errorIntegral=%f, proportionalAdjustment=%f, integralAdjustment=%f, finalAdjustment=%f", error, errorIntegral, proportionalAdjustment, integralAdjustment, proportionalAdjustment + integralAdjustment);
-    //LOGE("FILIPPO final adjustment=%f", proportionalAdjustment + integralAdjustment);
+    double finalSampleRate = defaultSampleRate * computeAudioSpeedCoefficient(0.001 * numFrames);
 
     int32_t adjustedTotalFrames = numFrames * finalSampleRate;
 
-    auto readFrames = fifo->readNow(audioBuffer.get(), adjustedTotalFrames * 2);
-    if (readFrames != adjustedTotalFrames * 2) {
-        LOGE("FILIPPO Buffer underrun detected");
-    }
+    fifo->readNow(audioBuffer.get(), adjustedTotalFrames * 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
     resampler.resample(audioBuffer.get(), adjustedTotalFrames, outputArray, numFrames);
     return oboe::DataCallbackResult::Continue;
+}
+
+// To prevent audio buffer overruns or underruns we set up a PI controller. The idea is to run the
+// audio slower when the buffer is empty and faster when it's full.
+double LibretroDroid::Audio::computeAudioSpeedCoefficient(double dt) {
+    double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
+    double framesAvailableInBuffer = fifo->getFullFramesAvailable();
+
+    // Error is represented by normalized distance to half buffer utilization. Range [-1.0, 1.0]
+    double error = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
+
+    // Low-pass filter to error measure since it's very noisy.
+    errorMeasure = errorMeasure * 0.8 + error * 0.2;
+
+    errorIntegral += errorMeasure * dt;
+
+    // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
+    // This changes continuously, so we should try to keep it a very low value.
+    double proportionalAdjustment = std::clamp(0.005 * errorMeasure, -MAX_AUDIO_SPEED_PROPORTIONAL, MAX_AUDIO_SPEED_PROPORTIONAL);
+
+    // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
+    // be slow enough to be not perceptible. We need to battle test this value.
+    double integralAdjustment = std::clamp(0.000005 * errorIntegral, -MAX_AUDIO_SPEED_INTEGRAL, MAX_AUDIO_SPEED_INTEGRAL);
+
+    return 1.0 - (proportionalAdjustment + integralAdjustment);
+}
+
+int32_t LibretroDroid::Audio::roundToEven(int32_t x) {
+    return (x / 2) * 2;
 }
