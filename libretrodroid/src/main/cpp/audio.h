@@ -50,6 +50,7 @@ private:
     LinearResampler resampler;
 
     double defaultSampleRate;
+    double errorMeasure = 0.0;
     double errorIntegral = 0.0;
 };
 

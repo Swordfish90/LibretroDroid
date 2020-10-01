@@ -19,12 +19,13 @@
 
 #include "audio.h"
 #include <cmath>
+#include <memory>
 
 LibretroDroid::Audio::Audio(int32_t sampleRate) {
     LOGI("Audio initialization has been called with sample rate %d", sampleRate);
 
     // We are buffering a max of 125ms of audio.
-    fifo = std::unique_ptr<oboe::FifoBuffer>(new oboe::FifoBuffer(2, sampleRate / 4));
+    fifo = std::make_unique<oboe::FifoBuffer>(2, sampleRate / 4);
     audioBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleRate / 4]);
 
     oboe::AudioStreamBuilder builder;
@@ -62,16 +63,26 @@ void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
 oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
     double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
     double framesAvailableInBuffer = fifo->getFullFramesAvailable();
+
+    // Error here is in range [-1.0, 1.0]
     double error = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
+    errorMeasure = errorMeasure * 0.8 + error * 0.2;
 
-    errorIntegral += error;
+    errorIntegral += errorMeasure * numFrames;
 
-    double proportionalAdjustment = 0.003 * error;
-    double integralAdjustment = 0.00003 * errorIntegral;
-    double finalSampleRate = defaultSampleRate * (1 - 2 * (proportionalAdjustment + integralAdjustment));
+    // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
+    // Just to be safe, Kp should not exceed this value.
+    double proportionalAdjustment = 0.005 * errorMeasure;
 
-//    LOGE("FILIPPO Buffer final adjustment error=%f, errorIntegral=%f", error, errorIntegral);
-//    //LOGE("FILIPPO Buffer error=%f integral=%f proportional=%f integral=%f", error, errorIntegral, proportionalAdjustment, integralAdjustment);
+    // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
+    // be slow enough to be not perceptible. We need to battle test this value.
+    double integralAdjustment = 0.000000005 * errorIntegral;//std::clamp( * errorIntegral, -0.005, 0.005);
+
+    double finalSampleRate = defaultSampleRate * (1 - (proportionalAdjustment + integralAdjustment));
+
+    //LOGE("FILIPPO numFrames=%d", numFrames);
+    //LOGE("FILIPPO final adjustment error=%f, errorIntegral=%f, proportionalAdjustment=%f, integralAdjustment=%f, finalAdjustment=%f", error, errorIntegral, proportionalAdjustment, integralAdjustment, proportionalAdjustment + integralAdjustment);
+    //LOGE("FILIPPO final adjustment=%f", proportionalAdjustment + integralAdjustment);
 
     int32_t adjustedTotalFrames = numFrames * finalSampleRate;
 
