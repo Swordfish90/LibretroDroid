@@ -34,6 +34,7 @@
 #include "rumble.h"
 #include "shadermanager.h"
 #include "javautils.h"
+#include "errorcodes.h"
 #include "environment.cpp"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
@@ -210,7 +211,7 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
         return result ? JNI_TRUE : JNI_FALSE;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
 }
@@ -230,7 +231,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
         return result;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
     }
 }
 
@@ -261,7 +262,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializ
         env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
     }
 }
 
@@ -278,7 +279,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
         return result;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
     }
 }
 
@@ -288,7 +289,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIE
     try {
         core->retro_reset();
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 
@@ -406,7 +407,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         // HW accelerated cores are only supported on opengles 3.
         if (Environment::useHWAcceleration && openglESVersion < 3) {
-            throw std::runtime_error("This device doesn't support opengles 3");
+            LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GL_NOT_COMPATIBLE);
         }
 
         env->ReleaseStringUTFChars(soFilePath, corePath);
@@ -417,7 +418,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
         rumble = new LibretroDroid::Rumble();
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_LIBRARY);
     }
 }
 
@@ -455,7 +456,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(
         env->ReleaseStringUTFChars(gameFilePath, gamePath);
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_GAME);
     }
 }
 
@@ -482,7 +483,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
         Environment::deinitialize();
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 
@@ -502,7 +503,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
         audio->start();
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 
@@ -521,7 +522,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
         fpsSync = nullptr;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 

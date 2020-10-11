@@ -17,11 +17,10 @@
 
 #include "javautils.h"
 
-jint LibretroDroid::JavaUtils::throwRuntimeException(JNIEnv* env, const char *message) {
-    jclass exClass;
-    const char *className = "java/lang/RuntimeException";
-
-    exClass = env->FindClass(className);
-
-    return env->ThrowNew(exClass, message);
+jint LibretroDroid::JavaUtils::throwRetroException(JNIEnv* env, int errorCode) {
+    const char *className = "com/swordfish/libretrodroid/RetroException";
+    jclass clazz = env->FindClass(className);
+    jmethodID constructor = env->GetMethodID(clazz, "<init>", "(I)V");
+    auto exception = (jthrowable) env->NewObject(clazz, constructor, errorCode);
+    return env->Throw(exception);
 }

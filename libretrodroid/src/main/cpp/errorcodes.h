@@ -15,18 +15,15 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_JAVAUTILS_H
-#define LIBRETRODROID_JAVAUTILS_H
-
-#include <jni.h>
+#ifndef LIBRETRODROID_ERRORCODES_H
+#define LIBRETRODROID_ERRORCODES_H
 
 namespace LibretroDroid {
-
-class JavaUtils {
-public:
-    static jint throwRetroException(JNIEnv *env, int errorCode);
-};
-
+    int ERROR_LOAD_LIBRARY = 0;
+    int ERROR_LOAD_GAME = 1;
+    int ERROR_GL_NOT_COMPATIBLE = 2;
+    int ERROR_SERIALIZATION = 3;
+    int ERROR_GENERIC = 4;
 }
 
-#endif //LIBRETRODROID_JAVAUTILS_H
+#endif //LIBRETRODROID_ERRORCODES_H

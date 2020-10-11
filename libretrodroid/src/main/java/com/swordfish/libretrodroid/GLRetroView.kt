@@ -31,6 +31,7 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
+import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
@@ -61,6 +62,7 @@ class GLRetroView(
     private val openGLESVersion: Int
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
+    private val retroGLIssuesErrors = PublishRelay.create<RetroException>()
     private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var gameLoaded: Boolean = false
@@ -76,7 +78,7 @@ class GLRetroView(
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    private fun onCreate(lifecycleOwner: LifecycleOwner) {
+    private fun onCreate(lifecycleOwner: LifecycleOwner) = catchExceptions {
         lifecycle = lifecycleOwner.lifecycle
         LibretroDroid.create(
             openGLESVersion,
@@ -92,7 +94,7 @@ class GLRetroView(
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    private fun onDestroy() {
+    private fun onDestroy() = catchExceptions {
         LibretroDroid.destroy()
         lifecycle = null
     }
@@ -150,6 +152,10 @@ class GLRetroView(
 
     fun getGLRetroEvents(): Observable<GLRetroEvents> {
         return retroGLEventsSubject
+    }
+
+    fun getGLRetroErrors(): Observable<RetroException> {
+        return retroGLIssuesErrors
     }
 
     fun getRumbleEvents(): Observable<Float> {
@@ -229,13 +235,13 @@ class GLRetroView(
     // These functions are called only after the GLSurfaceView has been created.
     private inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-        private fun resume() {
+        private fun resume() = catchExceptions {
             LibretroDroid.resume()
             onResume()
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-        private fun pause() {
+        private fun pause() = catchExceptions {
             onPause()
             LibretroDroid.pause()
         }
@@ -266,8 +272,8 @@ class GLRetroView(
     }
 
     // These functions are called from the GL thread.
-    private fun initializeCore() {
-        if (gameLoaded) return
+    private fun initializeCore() = catchExceptions {
+        if (gameLoaded) return@catchExceptions
         LibretroDroid.loadGame(gameFilePath)
         saveRAMState?.let {
             LibretroDroid.unserializeSRAM(saveRAMState)
@@ -280,6 +286,16 @@ class GLRetroView(
 
     private fun runOnUIThread(runnable: () -> Unit) {
         Handler(Looper.getMainLooper()).post(runnable)
+    }
+
+    private fun catchExceptions(block: () -> Unit) {
+        try {
+            block()
+        } catch (e: RetroException) {
+            retroGLIssuesErrors.accept(e)
+        } catch (e: RuntimeException) {
+            retroGLIssuesErrors.accept(RetroException(LibretroDroid.ERROR_GENERIC))
+        }
     }
 
     /** This function gets called from the jni side.*/
@@ -302,5 +318,11 @@ class GLRetroView(
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
         const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
+
+        const val ERROR_LOAD_LIBRARY = LibretroDroid.ERROR_LOAD_LIBRARY
+        const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME
+        const val ERROR_GL_NOT_COMPATIBLE = LibretroDroid.ERROR_GL_NOT_COMPATIBLE
+        const val ERROR_SERIALIZATION = LibretroDroid.ERROR_SERIALIZATION
+        const val ERROR_GENERIC = LibretroDroid.ERROR_GENERIC
     }
 }
