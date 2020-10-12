@@ -63,7 +63,7 @@ class GLRetroView(
     private var abort = false
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
-    private val retroGLIssuesErrors = PublishRelay.create<RetroException>()
+    private val retroGLIssuesErrors = PublishRelay.create<Int>()
     private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var gameLoaded: Boolean = false
@@ -155,7 +155,7 @@ class GLRetroView(
         return retroGLEventsSubject
     }
 
-    fun getGLRetroErrors(): Observable<RetroException> {
+    fun getGLRetroErrors(): Observable<Int> {
         return retroGLIssuesErrors
     }
 
@@ -295,10 +295,10 @@ class GLRetroView(
             if (abort) return
             block()
         } catch (e: RetroException) {
-            retroGLIssuesErrors.accept(e)
+            retroGLIssuesErrors.accept(e.errorCode)
             abort = true
         } catch (e: Exception) {
-            retroGLIssuesErrors.accept(RetroException(LibretroDroid.ERROR_GENERIC))
+            retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)
         }
     }
 
