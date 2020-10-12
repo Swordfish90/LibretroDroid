@@ -60,6 +60,7 @@ class GLRetroView(
     }
 
     private val openGLESVersion: Int
+    private var abort = false
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
     private val retroGLIssuesErrors = PublishRelay.create<RetroException>()
@@ -248,17 +249,18 @@ class GLRetroView(
     }
 
     inner class Renderer : GLSurfaceView.Renderer {
-        override fun onDrawFrame(gl: GL10) {
+        override fun onDrawFrame(gl: GL10) = catchExceptions {
             LibretroDroid.step(this@GLRetroView)
             retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
         }
 
-        override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
+        override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceChanged(width, height)
         }
 
-        override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
+
+        override fun onSurfaceCreated(gl: GL10, config: EGLConfig) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
@@ -290,10 +292,12 @@ class GLRetroView(
 
     private fun catchExceptions(block: () -> Unit) {
         try {
+            if (abort) return
             block()
         } catch (e: RetroException) {
             retroGLIssuesErrors.accept(e)
-        } catch (e: RuntimeException) {
+            abort = true
+        } catch (e: Exception) {
             retroGLIssuesErrors.accept(RetroException(LibretroDroid.ERROR_GENERIC))
         }
     }
