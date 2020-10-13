@@ -18,7 +18,6 @@
 package com.swordfish.libretrodroid
 
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -29,39 +28,79 @@ class SampleActivity : AppCompatActivity() {
 
     private lateinit var retroView: GLRetroView
 
-    override fun onCreate(icicle: Bundle?) {
-        super.onCreate(icicle)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-        // Here we just have a bunch of preloaded roms used for testing. This are hardcoded path, so replace them.
-        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Super Mario 64/Super Mario 64.n64")
-        //retroView = GLRetroView(this, "snes9x_libretro_android.so", "/storage/emulated/0/Roms Test/snes/BioMetal.smc", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Legend of Zelda, The - Ocarina of Time - Master Quest/Legend of Zelda, The - Ocarina of Time - Master Quest.z64", filesDir.absolutePath, cacheDir.absolutePath, arrayOf(Variable("mupen64plus-43screensize", "320x240")), null, LibretroDroid.SHADER_CRT)
-        //retroView = GLRetroView(this, "mupen64plus_next_gles3_libretro_android.so", "/storage/emulated/0/Roms/n64/Paper Mario.z64", filesDir.absolutePath, cacheDir.absolutePath, arrayOf(Variable("mupen64plus-43screensize", "320x240")), null, LibretroDroid.SHADER_CRT)
+        /* Initialize the main emulator view */
+        retroView = GLRetroView(
+                /* Activity context */
+                this,
 
-        retroView = GLRetroView(this, "gambatte_libretro_android.so", "/storage/emulated/0/Roms Test/Pokemon Blue Version/Pokemon Blue Version.gb", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "fceumm_libretro_android.so", "/storage/emulated/0/Roms Test/Prince of Persia/Prince of Persia.nes", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "mgba_libretro_android.so", "/storage/emulated/0/Roms Test/gba/Drill Dozer.gba", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "ppsspp_libretro_android.so", "/storage/emulated/0/Roms/psp/MediEvil Resurrection.cso", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "desmume_libretro_android.so", "/storage/emulated/0/Roms Test/ds/Pokemon Pearl Version.nds", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "fbneo_libretro_android.so", "/storage/emulated/0/Android/data/com.swordfish.lemuroid/files/roms/fbneo/arkanoid.zip", filesDir.absolutePath, cacheDir.absolutePath)
-        //retroView = GLRetroView(this, "libppsspp_libretro_android.so", "sdcard/Roms/psp/Coded Arms - Contagion (USA).cso", getExternalFilesDir(null).absolutePath, cacheDir.absolutePath)
+                /*
+                 * The path to the ROM to load.
+                 * Example: /data/data/<package-id>/files/example.gba
+                 */
+                "${filesDir}/example.gba",
+
+                /*
+                 * The name of the LibRetro core to load.
+                 * The typical location that libraries should be stored in is
+                 * app/src/main/jniLibs/<ABI>/
+                 *
+                 * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
+                 */
+                "mgba_libretro_android.so",
+
+                /* (Optional) System directory */
+                filesDir.absolutePath,
+
+                /* (Optional) Save file directory */
+                filesDir.absolutePath,
+
+                /* (Optional) Variables to give the LibRetro core */
+                arrayOf(),
+
+                /*
+                * (Optional) SRAM state to deserialize upon init.
+                * When games save their data, they store it in their SRAM.
+                * It is necessary to preserve the SRAM upon closing the app
+                * in order to load it again later.
+                *
+                * The SRAM can be serialized to a ByteArray via serializeSRAM().
+                */
+                null,
+
+                /*
+                 * (Optional) Shader to apply to the view.
+                 *
+                 * SHADER_DEFAULT:      Bilinear filtering, can cause fuzziness in retro games.
+                 * SHADER_CRT:          Classic CRT scan lines.
+                 * SHADER_LCD:          Grid layout, similar to Nintendo DS bottom screens.
+                 * SHADER_SHARP:        Raw, unfiltered image.
+                 */
+                LibretroDroid.SHADER_DEFAULT,
+
+                /* Rumble events enabled */
+                true
+        )
 
         lifecycle.addObserver(retroView)
 
+        /* Create a FrameLayout to house the GLRetroView */
         val frameLayout = FrameLayout(this)
         setContentView(frameLayout)
 
+        /* Add and center the GLRetroView */
         frameLayout.addView(retroView)
-        retroView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
-            this.gravity = Gravity.CENTER_HORIZONTAL
-        }
-
-        // Let's print out core variables.
-        retroView.getVariables().forEach {
-            Log.i("Retro variable: ", it.toString())
+        retroView.layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
         }
     }
 
+    /* Pipe motion events to the GLRetroView */
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
         if (event != null) {
             sendMotionEvent(
@@ -89,28 +128,27 @@ class SampleActivity : AppCompatActivity() {
         return super.onGenericMotionEvent(event)
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (event != null) {
-            retroView.sendKeyEvent(event.action, keyCode)
-            return true
-        }
+    /*
+     * Pipe hardware key events to the GLRetroView.
+     *
+     * WARNING: This method can override volume key events.
+     */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        retroView.sendKeyEvent(event.action, keyCode)
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (event != null) {
-            retroView.sendKeyEvent(event.action, keyCode)
-            return true
-        }
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        retroView.sendKeyEvent(event.action, keyCode)
         return super.onKeyUp(keyCode, event)
     }
 
     private fun sendMotionEvent(
-        event: MotionEvent,
-        source: Int,
-        xAxis: Int,
-        yAxis: Int,
-        port: Int
+            event: MotionEvent,
+            source: Int,
+            xAxis: Int,
+            yAxis: Int,
+            port: Int
     ) {
         retroView.sendMotionEvent(
             source,
