@@ -1,8 +1,7 @@
 # LibretroDroid
+LibretroDroid is a simple C++ LibRetro frontend library for Android. It's powering [Lemuroid](https://github.com/Swordfish90/Lemuroid).
 
-LibretroDroid is a simple C++ libretro frontend library for Android. It's powering [Lemuroid](https://github.com/Swordfish90/Lemuroid).
-
-Supported features:
+### Supported features:
 * 2D Cores
 * GL Cores
 * Audio
@@ -14,7 +13,7 @@ Supported features:
 * Multiple disk support
 * Core variables
 
-Tested working cores:
+### Tested working cores:
 * Stella
 * Gambatte
 * mGBA
@@ -22,9 +21,26 @@ Tested working cores:
 * Snes9x
 * QuickNES
 * fceumm
+* nestopia
 * PPSSPP
 * fbneo
 * picodrive
 * Genesis Plus GX
 * DeSmuME
 * PCSXReARMed
+
+### Setup
+LibretroDroid can be added to a standard build.gradle file.
+```
+[app/build.gradle]
+dependencies {
+    ...
+    implementation 'com.github.swordfish90:libretrodroid:0.4.1'
+    ...
+}
+```
+
+```
+[settings.gradle]
+include ':app', ':libretrodroid'
+```
