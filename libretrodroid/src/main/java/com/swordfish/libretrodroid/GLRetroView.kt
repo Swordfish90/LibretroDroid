@@ -41,7 +41,8 @@ import kotlin.properties.Delegates
 class GLRetroView(
     context: Context,
     private val coreFilePath: String,
-    private val gameFilePath: String,
+    private val gameFilePath: String?,
+    private val gameFileBytes: ByteArray?,
     private val systemDirectory: String = context.filesDir.absolutePath,
     private val savesDirectory: String = context.filesDir.absolutePath,
     private val variables: Array<Variable> = arrayOf(),
@@ -268,7 +269,10 @@ class GLRetroView(
     // These functions are called from the GL thread.
     private fun initializeCore() {
         if (gameLoaded) return
-        LibretroDroid.loadGame(gameFilePath)
+        if (gameFilePath != null)
+            LibretroDroid.loadGameFromPath(gameFilePath)
+        else if (gameFileBytes != null)
+            LibretroDroid.loadGameFromBytes(gameFileBytes)
         saveRAMState?.let {
             LibretroDroid.unserializeSRAM(saveRAMState)
             saveRAMState = null

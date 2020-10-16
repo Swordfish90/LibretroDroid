@@ -108,7 +108,8 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jint shaderType, jfloat refreshRate, jstring language);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(JNIEnv * env, jobject obj, jstring gameFilePath);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromPath(JNIEnv * env, jobject obj, jstring gameFilePath);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromBytes(JNIEnv * env, jobject obj, jbyteArray gameFileBytes);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
@@ -421,12 +422,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromPath(
     JNIEnv * env,
     jobject obj,
     jstring gameFilePath
 ) {
-    LOGD("Performing LibretroDroid loadGame");
+    LOGD("Performing LibretroDroid loadGameFromPath");
     const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
 
     try {
@@ -454,6 +455,39 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGame(
 
         env->ReleaseStringUTFChars(gameFilePath, gamePath);
 
+    } catch (std::exception& exception) {
+        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+    }
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromBytes(
+        JNIEnv * env,
+        jobject obj,
+        jbyteArray gameFileBytes
+) {
+    LOGD("Performing LibretroDroid loadGameFromBytes");
+
+    try {
+        struct retro_system_info system_info;
+        core->retro_get_system_info(&system_info);
+
+        struct retro_game_info game_info;
+        game_info.path = nullptr;
+        game_info.meta = nullptr;
+
+        if (system_info.need_fullpath) {
+            game_info.data = nullptr;
+            game_info.size = 0;
+        } else {
+            game_info.data = gameFileBytes;
+            game_info.size = (*env).GetArrayLength(gameFileBytes);
+        }
+
+        bool result = core->retro_load_game(&game_info);
+        if (!result) {
+            LOGE("Cannot load game. Leaving.");
+            throw std::runtime_error("Cannot load game");
+        }
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
     }
