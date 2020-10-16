@@ -559,7 +559,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
         fpsSync->sync();
     }
 
-    handlePostStepTasks();
+    handlePostStepTasks(env, obj, glRetroView);
 }
 
 float retrieveGameSpecificAspectRatio() {
