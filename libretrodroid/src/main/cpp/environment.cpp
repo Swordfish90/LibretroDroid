@@ -44,6 +44,11 @@ namespace Environment {
     bool bottomLeftOrigin = false;
     float screenRotation = 0;
 
+    bool gameGeometryUpdated = false;
+    unsigned gameGeometryWidth = 0;
+    unsigned gameGeometryHeight = 0;
+    float gameGeometryAspectRatio = -1.0f;
+
     uint16_t vibrationStrengthWeak = 0;
     uint16_t vibrationStrengthStrong = 0;
     uint16_t lastRumbleStrength = 0;
@@ -86,6 +91,11 @@ namespace Environment {
         useStencil = false;
         bottomLeftOrigin = false;
         screenRotation = 0;
+
+        gameGeometryUpdated = false;
+        gameGeometryWidth = 0;
+        gameGeometryHeight = 0;
+        gameGeometryAspectRatio = -1.0f;
 
         vibrationStrengthWeak = 0;
         vibrationStrengthStrong = 0;
@@ -264,9 +274,14 @@ namespace Environment {
                 LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
                 return false;
 
-            case RETRO_ENVIRONMENT_SET_GEOMETRY:
-                LOGD("Called RETRO_ENVIRONMENT_SET_GEOMETRY");
-                return false;
+            case RETRO_ENVIRONMENT_SET_GEOMETRY: {
+                struct retro_game_geometry *geometry = static_cast<struct retro_game_geometry *>(data);
+                gameGeometryHeight = geometry->base_height;
+                gameGeometryWidth = geometry->base_width;
+                gameGeometryAspectRatio = geometry->aspect_ratio;
+                gameGeometryUpdated = true;
+                return true;
+            }
 
             case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
                 LOGD("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
