@@ -77,7 +77,7 @@ void callback_audio_sample(int16_t left, int16_t right) {
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    if (audio != nullptr && audioEnabled && !fastForwardEnabled) {
+    if (audio != nullptr && audioEnabled) {
         audio->write(data, frames);
     }
     return frames;
