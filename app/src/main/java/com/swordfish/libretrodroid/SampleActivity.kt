@@ -37,12 +37,6 @@ class SampleActivity : AppCompatActivity() {
                 this,
 
                 /*
-                 * The path to the ROM to load.
-                 * Example: /data/data/<package-id>/files/example.gba
-                 */
-                "${filesDir}/example.gba",
-
-                /*
                  * The name of the LibRetro core to load.
                  * The typical location that libraries should be stored in is
                  * app/src/main/jniLibs/<ABI>/
@@ -50,6 +44,12 @@ class SampleActivity : AppCompatActivity() {
                  * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
                  */
                 "mgba_libretro_android.so",
+
+                /*
+                 * The path to the ROM to load.
+                 * Example: /data/data/<package-id>/files/example.gba
+                 */
+                "${filesDir}/example.gba",
 
                 /* (Optional) System directory */
                 filesDir.absolutePath,
