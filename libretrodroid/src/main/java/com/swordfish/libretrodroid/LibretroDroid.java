@@ -33,6 +33,12 @@ class LibretroDroid {
     public static final int SHADER_LCD = 2;
     public static final int SHADER_SHARP = 3;
 
+    public static final int ERROR_LOAD_LIBRARY = 0;
+    public static final int ERROR_LOAD_GAME = 1;
+    public static final int ERROR_GL_NOT_COMPATIBLE = 2;
+    public static final int ERROR_SERIALIZATION = 3;
+    public static final int ERROR_GENERIC = 4;
+
     public static native void create(int GLESVersion, String coreFilePath, String systemDir, String savesDir, Variable[] variables, int shaderType, float refreshRate, String language);
     public static native void loadGame(String gameFilePath);
     public static native void resume();
