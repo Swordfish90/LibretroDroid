@@ -34,6 +34,7 @@
 #include "rumble.h"
 #include "shadermanager.h"
 #include "javautils.h"
+#include "errorcodes.h"
 #include "environment.cpp"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
@@ -77,7 +78,7 @@ void callback_audio_sample(int16_t left, int16_t right) {
 }
 
 size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    if (audio != nullptr && audioEnabled && !fastForwardEnabled) {
+    if (audio != nullptr && audioEnabled) {
         audio->write(data, frames);
     }
     return frames;
@@ -92,6 +93,12 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
         return input->getInputState(port, device, index, id);
     }
     return 0;
+}
+
+void updateAudioSampleRateMultiplier() {
+    if (audio != nullptr) {
+        audio->setSampleRateMultiplier(fastForwardEnabled ? 2.0 : 1.0);
+    }
 }
 
 // INITIALIZATION
@@ -211,7 +218,7 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
         return result ? JNI_TRUE : JNI_FALSE;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
 }
@@ -231,7 +238,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
         return result;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
     }
 }
 
@@ -262,7 +269,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializ
         env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
     }
 }
 
@@ -279,7 +286,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
         return result;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
     }
 }
 
@@ -289,7 +296,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIE
     try {
         core->retro_reset();
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 
@@ -407,7 +414,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
 
         // HW accelerated cores are only supported on opengles 3.
         if (Environment::useHWAcceleration && openglESVersion < 3) {
-            throw std::runtime_error("This device doesn't support opengles 3");
+            LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GL_NOT_COMPATIBLE);
         }
 
         env->ReleaseStringUTFChars(soFilePath, corePath);
@@ -418,7 +425,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
         rumble = new LibretroDroid::Rumble();
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_LIBRARY);
     }
 }
 
@@ -456,7 +463,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
         env->ReleaseStringUTFChars(gameFilePath, gamePath);
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_GAME);
     }
 }
 
@@ -516,7 +523,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
         Environment::deinitialize();
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 
@@ -533,10 +540,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
 
         double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
         audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
+        updateAudioSampleRateMultiplier();
         audio->start();
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
     }
 }
 
@@ -555,7 +563,21 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
         fpsSync = nullptr;
 
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
+    }
+}
+
+void handlePostStepTasks(JNIEnv * env, jobject obj, jobject glRetroView) {
+    if (rumble != nullptr) {
+        rumble->updateAndDispatch(Environment::lastRumbleStrength, env, glRetroView);
+    }
+
+    // Some games override the core geometry at runtime. These fields get updated in retro_run().
+    if (Environment::gameGeometryUpdated) {
+        Environment::gameGeometryUpdated = false;
+        jclass cls = env->GetObjectClass(glRetroView);
+        jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
+        env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
     }
 }
 
@@ -578,19 +600,36 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
         fpsSync->sync();
     }
 
-    if (rumble != nullptr) {
-        rumble->updateAndDispatch(Environment::lastRumbleStrength, env, glRetroView);
+    handlePostStepTasks(env, obj, glRetroView);
+}
+
+float retrieveGameSpecificAspectRatio() {
+    if (Environment::gameGeometryAspectRatio > 0) {
+        return Environment::gameGeometryAspectRatio;
     }
+
+    if (Environment::gameGeometryWidth > 0 && Environment::gameGeometryHeight > 0) {
+        return (float) Environment::gameGeometryWidth / (float) Environment::gameGeometryHeight;
+    }
+
+    return -1.0f;
 }
 
 JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj) {
+    float aspectRatio = retrieveGameSpecificAspectRatio();
+    if (aspectRatio > 0) {
+        return aspectRatio;
+    }
+
     struct retro_system_av_info system_av_info;
     core->retro_get_system_av_info(&system_av_info);
-    float aspectRatio = system_av_info.geometry.aspect_ratio;
 
-    if (aspectRatio <= 0.0) {
-        aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    aspectRatio = system_av_info.geometry.aspect_ratio;
+    if (aspectRatio > 0) {
+        return aspectRatio;
     }
+
+    aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
 
     return aspectRatio;
 }
@@ -601,6 +640,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleE
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFastForwardEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
     fastForwardEnabled = enabled;
+    updateAudioSampleRateMultiplier();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
