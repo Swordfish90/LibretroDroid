@@ -526,6 +526,20 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
     }
 }
 
+void handlePostStepTasks(JNIEnv * env, jobject obj, jobject glRetroView) {
+    if (rumble != nullptr) {
+        rumble->updateAndDispatch(Environment::lastRumbleStrength, env, glRetroView);
+    }
+
+    // Some games override the core geometry at runtime. These fields get updated in retro_run().
+    if (Environment::gameGeometryUpdated) {
+        Environment::gameGeometryUpdated = false;
+        jclass cls = env->GetObjectClass(glRetroView);
+        jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
+        env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
+    }
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView)
 {
     LOGD("Stepping into retro_run()");
@@ -545,19 +559,36 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
         fpsSync->sync();
     }
 
-    if (rumble != nullptr) {
-        rumble->updateAndDispatch(Environment::lastRumbleStrength, env, glRetroView);
+    handlePostStepTasks(env, obj, glRetroView);
+}
+
+float retrieveGameSpecificAspectRatio() {
+    if (Environment::gameGeometryAspectRatio > 0) {
+        return Environment::gameGeometryAspectRatio;
     }
+
+    if (Environment::gameGeometryWidth > 0 && Environment::gameGeometryHeight > 0) {
+        return (float) Environment::gameGeometryWidth / (float) Environment::gameGeometryHeight;
+    }
+
+    return -1.0f;
 }
 
 JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj) {
+    float aspectRatio = retrieveGameSpecificAspectRatio();
+    if (aspectRatio > 0) {
+        return aspectRatio;
+    }
+
     struct retro_system_av_info system_av_info;
     core->retro_get_system_av_info(&system_av_info);
-    float aspectRatio = system_av_info.geometry.aspect_ratio;
 
-    if (aspectRatio <= 0.0) {
-        aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    aspectRatio = system_av_info.geometry.aspect_ratio;
+    if (aspectRatio > 0) {
+        return aspectRatio;
     }
+
+    aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
 
     return aspectRatio;
 }
