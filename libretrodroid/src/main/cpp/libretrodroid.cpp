@@ -95,6 +95,12 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
     return 0;
 }
 
+void updateAudioSampleRateMultiplier() {
+    if (audio != nullptr) {
+        audio->setSampleRateMultiplier(fastForwardEnabled ? 2.0 : 1.0);
+    }
+}
+
 // INITIALIZATION
 
 extern "C" {
@@ -500,6 +506,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNI
 
         double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
         audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
+        updateAudioSampleRateMultiplier();
         audio->start();
 
     } catch (std::exception& exception) {
@@ -599,7 +606,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleE
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFastForwardEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
     fastForwardEnabled = enabled;
-    audio->setSampleRateMultiplier(enabled ? 2.0 : 1.0);
+    updateAudioSampleRateMultiplier();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
