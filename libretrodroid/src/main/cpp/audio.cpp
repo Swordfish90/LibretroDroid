@@ -57,8 +57,14 @@ void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
     fifo->write(data, size);
 }
 
+void LibretroDroid::Audio::setSampleRateMultiplier(const double multiplier) {
+    sampleRateMultiplier = multiplier;
+}
+
 oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    double finalSampleRate = defaultSampleRate * computeAudioSpeedCoefficient(0.001 * numFrames);
+    double finalSampleRate = defaultSampleRate *
+            computeAudioSpeedCoefficient(0.001 * numFrames) *
+            sampleRateMultiplier;
 
     int32_t adjustedTotalFrames = numFrames * finalSampleRate;
 
