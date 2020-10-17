@@ -43,6 +43,7 @@ public:
 private:
     const double MAX_AUDIO_SPEED_PROPORTIONAL = 0.005;
     const double MAX_AUDIO_SPEED_INTEGRAL = 0.02;
+    const int32_t AUDIO_LATENCY_MAX_MS = 60;
 
     static int32_t roundToEven(int32_t x);
     double computeAudioSpeedCoefficient(double dt);

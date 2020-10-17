@@ -24,15 +24,18 @@
 LibretroDroid::Audio::Audio(int32_t sampleRate) {
     LOGI("Audio initialization has been called with sample rate %d", sampleRate);
 
-    // We are buffering a max of 125ms of audio.
-    fifo = std::make_unique<oboe::FifoBuffer>(2, roundToEven(sampleRate / 4));
-    audioBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleRate / 4]);
+    int32_t sampleRateDivisor = 500 / AUDIO_LATENCY_MAX_MS;
+    int32_t sampleRateBufferSize = sampleRate / sampleRateDivisor;
+
+    fifo = std::make_unique<oboe::FifoBuffer>(2, roundToEven(sampleRateBufferSize));
+    audioBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleRateBufferSize]);
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
     builder.setCallback(this);
+    builder.setFramesPerCallback(sampleRateBufferSize / 8);
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result != oboe::Result::OK) {
