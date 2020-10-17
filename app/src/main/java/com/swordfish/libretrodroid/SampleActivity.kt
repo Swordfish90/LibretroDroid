@@ -51,8 +51,6 @@ class SampleActivity : AppCompatActivity() {
                  */
                 "${filesDir}/example.gba",
 
-                null,
-
                 /* (Optional) System directory */
                 filesDir.absolutePath,
 
