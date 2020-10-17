@@ -38,6 +38,7 @@ public:
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
 
     void write(const int16_t *data, size_t frames);
+    void setSampleRateMultiplier(const double multiplier);
 
 private:
     const double MAX_AUDIO_SPEED_PROPORTIONAL = 0.005;
@@ -54,6 +55,7 @@ private:
     double defaultSampleRate;
     double errorMeasure = 0.0;
     double errorIntegral = 0.0;
+    double sampleRateMultiplier = 1.0;
 };
 
 }
