@@ -496,7 +496,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
             throw std::runtime_error("Cannot load game");
         }
     } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRuntimeException(env, exception.what());
+        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_GAME);
     }
 }
 

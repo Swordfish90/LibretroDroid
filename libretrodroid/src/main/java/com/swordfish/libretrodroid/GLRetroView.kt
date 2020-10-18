@@ -313,7 +313,7 @@ class GLRetroView(context: Context) : AspectRatioGLSurfaceView(context), Lifecyc
     }
 
     // These functions are called from the GL thread.
-    private fun initializeCore() {
+    private fun initializeCore() = catchExceptions {
         if (gameLoaded) return@catchExceptions
         if (gameFilePath != null)
             LibretroDroid.loadGameFromPath(gameFilePath)
