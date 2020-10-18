@@ -39,17 +39,56 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
 
-class GLRetroView(
-    context: Context,
-    private val coreFilePath: String,
-    private val gameFilePath: String,
-    private val systemDirectory: String = context.filesDir.absolutePath,
-    private val savesDirectory: String = context.filesDir.absolutePath,
-    private val variables: Array<Variable> = arrayOf(),
-    private var saveRAMState: ByteArray? = null,
-    private val shader: Int = LibretroDroid.SHADER_DEFAULT,
-    private val rumbleEventsEnabled: Boolean = true
-) : AspectRatioGLSurfaceView(context), LifecycleObserver {
+class GLRetroView(context: Context) : AspectRatioGLSurfaceView(context), LifecycleObserver {
+    private lateinit var coreFilePath: String
+    private var gameFilePath: String? = null
+    private var gameFileBytes: ByteArray? = null
+    private var systemDirectory: String = context.filesDir.absolutePath
+    private var savesDirectory: String = context.filesDir.absolutePath
+    private var variables: Array<Variable> = arrayOf()
+    private var saveRAMState: ByteArray? = null
+    private var shader: Int = LibretroDroid.SHADER_DEFAULT
+    private var rumbleEventsEnabled: Boolean = true
+
+    constructor(context: Context,
+                coreFilePath: String,
+                gameFilePath: String,
+                systemDirectory: String = context.filesDir.absolutePath,
+                savesDirectory: String = context.filesDir.absolutePath,
+                variables: Array<Variable> = arrayOf(),
+                saveRAMState: ByteArray? = null,
+                shader: Int = LibretroDroid.SHADER_DEFAULT,
+                rumbleEventsEnabled: Boolean = true) : this(context)
+    {
+        this.coreFilePath = coreFilePath
+        this.gameFilePath = gameFilePath
+        this.systemDirectory = systemDirectory
+        this.savesDirectory = savesDirectory
+        this.variables = variables
+        this.saveRAMState = saveRAMState
+        this.shader = shader
+        this.rumbleEventsEnabled = rumbleEventsEnabled
+    }
+
+    constructor(context: Context,
+                coreFilePath: String,
+                gameFileBytes: ByteArray,
+                systemDirectory: String = context.filesDir.absolutePath,
+                savesDirectory: String = context.filesDir.absolutePath,
+                variables: Array<Variable> = arrayOf(),
+                saveRAMState: ByteArray? = null,
+                shader: Int = LibretroDroid.SHADER_DEFAULT,
+                rumbleEventsEnabled: Boolean = true) : this(context)
+    {
+        this.coreFilePath = coreFilePath
+        this.gameFileBytes = gameFileBytes
+        this.systemDirectory = systemDirectory
+        this.savesDirectory = savesDirectory
+        this.variables = variables
+        this.saveRAMState = saveRAMState
+        this.shader = shader
+        this.rumbleEventsEnabled = rumbleEventsEnabled
+    }
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
         LibretroDroid.setAudioEnabled(value)
@@ -274,9 +313,12 @@ class GLRetroView(
     }
 
     // These functions are called from the GL thread.
-    private fun initializeCore() = catchExceptions {
+    private fun initializeCore() {
         if (gameLoaded) return@catchExceptions
-        LibretroDroid.loadGame(gameFilePath)
+        if (gameFilePath != null)
+            LibretroDroid.loadGameFromPath(gameFilePath)
+        else if (gameFileBytes != null)
+            LibretroDroid.loadGameFromBytes(gameFileBytes)
         saveRAMState?.let {
             LibretroDroid.unserializeSRAM(saveRAMState)
             saveRAMState = null
