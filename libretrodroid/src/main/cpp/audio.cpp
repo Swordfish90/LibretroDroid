@@ -35,7 +35,7 @@ LibretroDroid::Audio::Audio(int32_t sampleRate) {
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
     builder.setCallback(this);
-    builder.setFramesPerCallback(sampleRateBufferSize / 8);
+    builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result != oboe::Result::OK) {
