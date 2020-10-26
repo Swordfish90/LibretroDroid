@@ -49,8 +49,7 @@ void LibretroDroid::BaseImageRenderer::setPixelFormat(int newPixelFormat) {
     }
 }
 
-void
-LibretroDroid::BaseImageRenderer::convertDataFrom0RGB1555(
+void LibretroDroid::BaseImageRenderer::convertDataFrom0RGB1555(
         const void *data, unsigned int width, unsigned int height, size_t pitch) {
     auto castData = (uint16_t*) data;
 
