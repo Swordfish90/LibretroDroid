@@ -39,56 +39,10 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
 
-class GLRetroView(context: Context) : AspectRatioGLSurfaceView(context), LifecycleObserver {
-    private lateinit var coreFilePath: String
-    private var gameFilePath: String? = null
-    private var gameFileBytes: ByteArray? = null
-    private var systemDirectory: String = context.filesDir.absolutePath
-    private var savesDirectory: String = context.filesDir.absolutePath
-    private var variables: Array<Variable> = arrayOf()
-    private var saveRAMState: ByteArray? = null
-    private var shader: Int = LibretroDroid.SHADER_DEFAULT
-    private var rumbleEventsEnabled: Boolean = true
-
-    constructor(context: Context,
-                coreFilePath: String,
-                gameFilePath: String,
-                systemDirectory: String = context.filesDir.absolutePath,
-                savesDirectory: String = context.filesDir.absolutePath,
-                variables: Array<Variable> = arrayOf(),
-                saveRAMState: ByteArray? = null,
-                shader: Int = LibretroDroid.SHADER_DEFAULT,
-                rumbleEventsEnabled: Boolean = true) : this(context)
-    {
-        this.coreFilePath = coreFilePath
-        this.gameFilePath = gameFilePath
-        this.systemDirectory = systemDirectory
-        this.savesDirectory = savesDirectory
-        this.variables = variables
-        this.saveRAMState = saveRAMState
-        this.shader = shader
-        this.rumbleEventsEnabled = rumbleEventsEnabled
-    }
-
-    constructor(context: Context,
-                coreFilePath: String,
-                gameFileBytes: ByteArray,
-                systemDirectory: String = context.filesDir.absolutePath,
-                savesDirectory: String = context.filesDir.absolutePath,
-                variables: Array<Variable> = arrayOf(),
-                saveRAMState: ByteArray? = null,
-                shader: Int = LibretroDroid.SHADER_DEFAULT,
-                rumbleEventsEnabled: Boolean = true) : this(context)
-    {
-        this.coreFilePath = coreFilePath
-        this.gameFileBytes = gameFileBytes
-        this.systemDirectory = systemDirectory
-        this.savesDirectory = savesDirectory
-        this.variables = variables
-        this.saveRAMState = saveRAMState
-        this.shader = shader
-        this.rumbleEventsEnabled = rumbleEventsEnabled
-    }
+class GLRetroView(
+        context: Context,
+        private val data: GLRetroViewData
+) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
         LibretroDroid.setAudioEnabled(value)
@@ -122,15 +76,15 @@ class GLRetroView(context: Context) : AspectRatioGLSurfaceView(context), Lifecyc
         lifecycle = lifecycleOwner.lifecycle
         LibretroDroid.create(
             openGLESVersion,
-            coreFilePath,
-            systemDirectory,
-            savesDirectory,
-            variables,
-            shader,
+            data.coreFilePath,
+            data.systemDirectory,
+            data.savesDirectory,
+            data.variables,
+            data.shader,
             getDefaultRefreshRate(),
             getDeviceLanguage()
         )
-        LibretroDroid.setRumbleEnabled(rumbleEventsEnabled)
+        LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -315,13 +269,13 @@ class GLRetroView(context: Context) : AspectRatioGLSurfaceView(context), Lifecyc
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
         if (gameLoaded) return@catchExceptions
-        if (gameFilePath != null)
-            LibretroDroid.loadGameFromPath(gameFilePath)
-        else if (gameFileBytes != null)
-            LibretroDroid.loadGameFromBytes(gameFileBytes)
-        saveRAMState?.let {
-            LibretroDroid.unserializeSRAM(saveRAMState)
-            saveRAMState = null
+        if (data.gameFilePath != null)
+            LibretroDroid.loadGameFromPath(data.gameFilePath)
+        else if (data.gameFileBytes != null)
+            LibretroDroid.loadGameFromBytes(data.gameFileBytes)
+        data.saveRAMState?.let {
+            LibretroDroid.unserializeSRAM(data.saveRAMState)
+            data.saveRAMState = null
         }
         LibretroDroid.onSurfaceCreated()
         lifecycle?.addObserver(RenderLifecycleObserver())
