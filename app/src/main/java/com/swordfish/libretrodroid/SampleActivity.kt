@@ -31,58 +31,64 @@ class SampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        /* Prepare config for GLRetroView */
+        val data = GLRetroViewData(this).apply {
+            /*
+             * The name of the LibRetro core to load.
+             * The typical location that libraries should be stored in is
+             * app/src/main/jniLibs/<ABI>/
+             *
+             * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
+             */
+            coreFilePath = "mgba_libretro_android.so"
+
+            /*
+             * The path to the ROM to load.
+             * Example: /data/data/<package-id>/files/example.gba
+             */
+            gameFilePath = "${filesDir}/example.gba"
+
+            /*
+             * Direct ROM bytes to load.
+             * This is mutually exclusive with gameFilePath.
+             */
+            gameFileBytes = null
+
+            /* (Optional) System directory */
+            systemDirectory = filesDir.absolutePath
+
+            /* (Optional) Save file directory */
+            savesDirectory = filesDir.absolutePath
+
+            /* (Optional) Variables to give the LibRetro core */
+            variables = arrayOf()
+
+            /*
+            * (Optional) SRAM state to deserialize upon init.
+            * When games save their data, they store it in their SRAM.
+            * It is necessary to preserve the SRAM upon closing the app
+            * in order to load it again later.
+            *
+            * The SRAM can be serialized to a ByteArray via serializeSRAM().
+            */
+            saveRAMState = null
+
+            /*
+             * (Optional) Shader to apply to the view.
+             *
+             * SHADER_DEFAULT:      Bilinear filtering, can cause fuzziness in retro games.
+             * SHADER_CRT:          Classic CRT scan lines.
+             * SHADER_LCD:          Grid layout, similar to Nintendo DS bottom screens.
+             * SHADER_SHARP:        Raw, unfiltered image.
+             */
+            shader = LibretroDroid.SHADER_DEFAULT
+
+            /* Rumble events enabled */
+            rumbleEventsEnabled = true
+        }
+
         /* Initialize the main emulator view */
-        retroView = GLRetroView(
-                /* Activity context */
-                this,
-
-                /*
-                 * The name of the LibRetro core to load.
-                 * The typical location that libraries should be stored in is
-                 * app/src/main/jniLibs/<ABI>/
-                 *
-                 * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
-                 */
-                "mgba_libretro_android.so",
-
-                /*
-                 * The path to the ROM to load.
-                 * Example: /data/data/<package-id>/files/example.gba
-                 */
-                "${filesDir}/example.gba",
-
-                /* (Optional) System directory */
-                filesDir.absolutePath,
-
-                /* (Optional) Save file directory */
-                filesDir.absolutePath,
-
-                /* (Optional) Variables to give the LibRetro core */
-                arrayOf(),
-
-                /*
-                * (Optional) SRAM state to deserialize upon init.
-                * When games save their data, they store it in their SRAM.
-                * It is necessary to preserve the SRAM upon closing the app
-                * in order to load it again later.
-                *
-                * The SRAM can be serialized to a ByteArray via serializeSRAM().
-                */
-                null,
-
-                /*
-                 * (Optional) Shader to apply to the view.
-                 *
-                 * SHADER_DEFAULT:      Bilinear filtering, can cause fuzziness in retro games.
-                 * SHADER_CRT:          Classic CRT scan lines.
-                 * SHADER_LCD:          Grid layout, similar to Nintendo DS bottom screens.
-                 * SHADER_SHARP:        Raw, unfiltered image.
-                 */
-                LibretroDroid.SHADER_DEFAULT,
-
-                /* Rumble events enabled */
-                true
-        )
+        retroView = GLRetroView(this, data)
 
         lifecycle.addObserver(retroView)
 
