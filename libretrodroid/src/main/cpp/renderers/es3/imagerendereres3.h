@@ -18,8 +18,10 @@
 #ifndef LIBRETRODROID_IMAGERENDERERES3_H
 #define LIBRETRODROID_IMAGERENDERERES3_H
 
+#include "../../libretro/libretro.h"
 #include "../renderer.h"
 #include "GLES3/gl3.h"
+#include "../baseimagerenderer.h"
 
 #include <cstdint>
 #include <utility>
@@ -27,26 +29,13 @@
 
 namespace LibretroDroid {
 
-class ImageRendererES3: public LibretroDroid::Renderer {
+class ImageRendererES3: public LibretroDroid::BaseImageRenderer {
 public:
     explicit ImageRendererES3();
-    uintptr_t getTexture() override;
-    uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
-    void setPixelFormat(int pixelFormat) override;
 
 private:
     void applyGLSwizzle(int r, int g, int b, int a);
-
-private:
-    unsigned int bytesPerPixel = 1;
-    bool swapRedAndBlueChannels = false;
-
-    unsigned int glType = 0;
-    unsigned int glInternalFormat = 0;
-    unsigned int glFormat = 0;
-
-    unsigned int currentTexture = 0;
 };
 
 }

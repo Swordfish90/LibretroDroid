@@ -31,6 +31,8 @@ public:
     virtual void setPixelFormat(int pixelFormat) = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     std::pair<int, int> lastFrameSize;
+
+    virtual ~Renderer() = default;
 };
 
 }

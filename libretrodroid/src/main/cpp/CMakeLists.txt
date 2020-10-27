@@ -18,6 +18,8 @@ add_library(libretrodroid SHARED
         video.cpp
         renderers/renderer.h
         renderers/renderer.cpp
+        renderers/baseimagerenderer.h
+        renderers/baseimagerenderer.cpp
         renderers/es3/framebufferrenderer.h
         renderers/es3/framebufferrenderer.cpp
         renderers/es2/imagerendereres2.h
