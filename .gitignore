@@ -5,3 +5,4 @@ app/*.iml
 .gradle
 .idea
 *.iml
+local.properties
