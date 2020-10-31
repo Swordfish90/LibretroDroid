@@ -55,7 +55,7 @@ class LibretroDroid {
     public static native void reset();
 
     public static native void setRumbleEnabled(boolean enabled);
-    public static native void setFastForwardEnabled(boolean enabled);
+    public static native void setFrameSpeed(int speed);
     public static native void setAudioEnabled(boolean enabled);
 
     public static native byte[] serializeState();
