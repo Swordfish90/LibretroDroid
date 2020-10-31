@@ -482,12 +482,16 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
         game_info.path = nullptr;
         game_info.meta = nullptr;
 
+        size_t gameFileSizeNative = env->GetArrayLength(gameFileBytes);
+        auto* gameFileBytesNative = new char[gameFileSizeNative];
+        env->GetByteArrayRegion(gameFileBytes, 0, gameFileSizeNative, reinterpret_cast<jbyte*>(gameFileBytesNative));
+
         if (system_info.need_fullpath) {
             game_info.data = nullptr;
             game_info.size = 0;
         } else {
-            game_info.data = gameFileBytes;
-            game_info.size = (*env).GetArrayLength(gameFileBytes);
+            game_info.data = gameFileBytesNative;
+            game_info.size = gameFileSizeNative;
         }
 
         bool result = core->retro_load_game(&game_info);
