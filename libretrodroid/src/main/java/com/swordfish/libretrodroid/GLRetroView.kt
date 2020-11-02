@@ -166,6 +166,9 @@ class GLRetroView(
         }
     }
 
+    fun pause() = LibretroDroid.pause()
+    fun resume() = LibretroDroid.resume()
+
     fun getAvailableDisks() = LibretroDroid.availableDisks()
     fun getCurrentDisk() = LibretroDroid.currentDisk()
     fun changeDisk(index: Int) = LibretroDroid.changeDisk(index)
