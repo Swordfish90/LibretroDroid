@@ -235,6 +235,12 @@ namespace Environment {
                 return true;
             }
 
+            case RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER: {
+                LOGD("Called RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER");
+                *((unsigned*) data) = retro_hw_context_type::RETRO_HW_CONTEXT_OPENGLES3;
+                return true;
+            }
+
             case RETRO_ENVIRONMENT_SET_HW_RENDER:
                 LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
                 return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
@@ -296,7 +302,7 @@ namespace Environment {
             case RETRO_ENVIRONMENT_GET_LANGUAGE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
                 *((unsigned*) data) = language;
-                return false;
+                return true;
         }
 
         LOGD("callback environment has been called: %u", cmd);
