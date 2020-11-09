@@ -52,7 +52,7 @@ LibretroDroid::FPSSync* fpsSync = nullptr;
 LibretroDroid::Input* input = nullptr;
 LibretroDroid::Rumble* rumble = nullptr;
 
-bool fastForwardEnabled = false;
+unsigned int frameSpeed = 1;
 bool audioEnabled = true;
 
 std::mutex retroStateMutex;
@@ -97,7 +97,7 @@ int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index,
 
 void updateAudioSampleRateMultiplier() {
     if (audio != nullptr) {
-        audio->setSampleRateMultiplier(fastForwardEnabled ? 2.0 : 1.0);
+        audio->setSampleRateMultiplier(frameSpeed);
     }
 }
 
@@ -127,7 +127,7 @@ extern "C" {
     JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv * env, jobject obj, jboolean enabled);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFastForwardEnabled(JNIEnv * env, jobject obj, jboolean enabled);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(JNIEnv * env, jobject obj, jint speed);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled);
 };
 
@@ -391,7 +391,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
         openglESVersion = GLESVersion;
         screenRefreshRate = refreshRate;
         audioEnabled = true;
-        fastForwardEnabled = false;
+        frameSpeed = 1;
 
         core = new LibretroDroid::Core(corePath);
 
@@ -590,10 +590,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
     LOGD("Stepping into retro_run()");
 
     retroStateMutex.lock();
-    core->retro_run();
-    if (fastForwardEnabled) {
+    for (size_t i = 0; i < frameSpeed; i++)
         core->retro_run();
-    }
     retroStateMutex.unlock();
 
     if (video != nullptr) {
@@ -642,8 +640,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleE
     rumble->setEnabled(enabled);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFastForwardEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
-    fastForwardEnabled = enabled;
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(JNIEnv * env, jobject obj, jint speed) {
+    frameSpeed = speed;
     updateAudioSampleRateMultiplier();
 }
 

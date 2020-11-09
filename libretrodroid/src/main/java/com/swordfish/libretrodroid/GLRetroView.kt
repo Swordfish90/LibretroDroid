@@ -48,8 +48,8 @@ class GLRetroView(
         LibretroDroid.setAudioEnabled(value)
     }
 
-    var fastForwardEnabled: Boolean by Delegates.observable(false) { _, _, value ->
-        LibretroDroid.setFastForwardEnabled(value)
+    var frameSpeed: Int by Delegates.observable(1) { _, _, value ->
+        LibretroDroid.setFrameSpeed(value)
     }
 
     private val openGLESVersion: Int
