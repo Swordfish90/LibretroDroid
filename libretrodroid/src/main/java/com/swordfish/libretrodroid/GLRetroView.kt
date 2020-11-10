@@ -140,6 +140,10 @@ class GLRetroView(
         return LibretroDroid.serializeSRAM()
     }
 
+    fun unserializeSRAM(data: ByteArray): Boolean {
+        return LibretroDroid.unserializeSRAM(data)
+    }
+
     fun reset() {
         LibretroDroid.reset()
     }
