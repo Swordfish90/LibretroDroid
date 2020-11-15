@@ -5,23 +5,24 @@ import android.opengl.GLSurfaceView
 import android.widget.FrameLayout
 
 open class AspectRatioGLSurfaceView(context: Context) : GLSurfaceView(context) {
-
-    /**
-     * Either the width or height is decreased to obtain the desired aspect ratio.
-     */
-    val RESIZE_MODE_FIT = 0
-    /**
-     * The width is fixed and the height is increased or decreased to obtain the desired aspect ratio.
-     */
-    val RESIZE_MODE_FIXED_WIDTH = 1
-    /**
-     * The height is fixed and the width is increased or decreased to obtain the desired aspect ratio.
-     */
-    val RESIZE_MODE_FIXED_HEIGHT = 2
-    /**
-     * The specified aspect ratio is ignored.
-     */
-    val RESIZE_MODE_FILL = 3
+    companion object {
+        /**
+         * Either the width or height is decreased to obtain the desired aspect ratio.
+         */
+        const val RESIZE_MODE_FIT = 0
+        /**
+         * The width is fixed and the height is increased or decreased to obtain the desired aspect ratio.
+         */
+        const val RESIZE_MODE_FIXED_WIDTH = 1
+        /**
+         * The height is fixed and the width is increased or decreased to obtain the desired aspect ratio.
+         */
+        const val RESIZE_MODE_FIXED_HEIGHT = 2
+        /**
+         * The specified aspect ratio is ignored.
+         */
+        const val RESIZE_MODE_FILL = 3
+    }
 
     /**
      * The [FrameLayout] will not resize itself if the fractional difference between its natural
@@ -36,7 +37,7 @@ open class AspectRatioGLSurfaceView(context: Context) : GLSurfaceView(context) {
     private val MAX_ASPECT_RATIO_DEFORMATION_FRACTION = 0.01f
 
     private var videoAspectRatio = 0f
-    private var resizeMode = 0
+    private var resizeMode = RESIZE_MODE_FIT
 
     /**
      * Set the aspect ratio that this view should satisfy.
