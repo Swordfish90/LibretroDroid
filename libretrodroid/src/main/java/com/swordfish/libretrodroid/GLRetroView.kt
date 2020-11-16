@@ -122,9 +122,11 @@ class GLRetroView(
         return true
     }
 
+    private fun clamp(x: Float, min: Float, max: Float) = minOf(maxOf(x, min), max)
+
     private fun sendTouchEvent(event: MotionEvent) {
-        val x = event.x / width
-        val y = event.y / height
+        val x = clamp(event.x / width, 0f, 1f)
+        val y = clamp(event.y / height, 0f, 1f)
         sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
     }
 
