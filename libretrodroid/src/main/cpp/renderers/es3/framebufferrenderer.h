@@ -32,10 +32,14 @@ public:
     uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
     void setPixelFormat(int pixelFormat) override;
+    void updateRenderedResolution(unsigned int width, unsigned int height) override;
 
 private:
     unsigned int currentFramebuffer = 0;
     unsigned int currentTexture = 0;
+    unsigned int currentDepthBuffer = 0;
+    bool depth = false;
+    bool stencil = false;
 };
 
 }

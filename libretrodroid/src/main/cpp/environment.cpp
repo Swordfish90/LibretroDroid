@@ -282,6 +282,8 @@ namespace Environment {
                 LOGD("Called RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
                 return false;
 
+            // TODO... RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO can also change frame-rate
+            case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
             case RETRO_ENVIRONMENT_SET_GEOMETRY: {
                 struct retro_game_geometry *geometry = static_cast<struct retro_game_geometry *>(data);
                 gameGeometryHeight = geometry->base_height;
@@ -290,10 +292,6 @@ namespace Environment {
                 gameGeometryUpdated = true;
                 return true;
             }
-
-            case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
-                LOGD("Called RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO");
-                return false;
 
             case RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE");

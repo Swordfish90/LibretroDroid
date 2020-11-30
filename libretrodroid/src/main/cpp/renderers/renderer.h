@@ -28,6 +28,7 @@ class Renderer {
 public:
     virtual uintptr_t getFramebuffer() = 0;
     virtual uintptr_t getTexture() = 0;
+    virtual void updateRenderedResolution(unsigned width, unsigned height) = 0;
     virtual void setPixelFormat(int pixelFormat) = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     std::pair<int, int> lastFrameSize;

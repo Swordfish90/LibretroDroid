@@ -19,32 +19,17 @@
 #include "../../log.h"
 
 LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
-    glGenFramebuffers(1, &currentFramebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, currentFramebuffer);
+    this->depth = depth;
+    this->stencil = stencil;
 
+    glGenFramebuffers(1, &currentFramebuffer);
     glGenTextures(1, &currentTexture);
-    glBindTexture(GL_TEXTURE_2D, currentTexture);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, currentTexture, 0);
 
     if (depth) {
-        unsigned depth_buffer;
-        glGenRenderbuffers(1, &depth_buffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, stencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT16, width, height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, stencil? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+        glGenRenderbuffers(1, &currentDepthBuffer);
     }
 
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        LOGE("Error while creating framebuffer. Leaving!");
-        throw std::runtime_error("Cannot create framebuffer");
-    }
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    FramebufferRenderer::updateRenderedResolution(width, height);
 }
 
 void LibretroDroid::FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
@@ -61,4 +46,30 @@ uintptr_t LibretroDroid::FramebufferRenderer::getFramebuffer() {
 
 void LibretroDroid::FramebufferRenderer::setPixelFormat(int pixelFormat) {
     // TODO... Here we should handle 32bit framebuffers.
+}
+
+void LibretroDroid::FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
+    glBindFramebuffer(GL_FRAMEBUFFER, currentFramebuffer);
+
+    glBindTexture(GL_TEXTURE_2D, currentTexture);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, currentTexture, 0);
+
+    if (depth) {
+        unsigned depth_buffer;
+        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, stencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT16, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, stencil? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+    }
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        LOGE("Error while creating framebuffer. Leaving!");
+        throw std::runtime_error("Cannot create framebuffer");
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
