@@ -579,6 +579,9 @@ void handlePostStepTasks(JNIEnv * env, jobject obj, jobject glRetroView) {
     // Some games override the core geometry at runtime. These fields get updated in retro_run().
     if (Environment::gameGeometryUpdated) {
         Environment::gameGeometryUpdated = false;
+
+        video->updateRendererSize(Environment::gameGeometryWidth, Environment::gameGeometryHeight);
+
         jclass cls = env->GetObjectClass(glRetroView);
         jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
         env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);

@@ -251,8 +251,13 @@ void LibretroDroid::Video::updateViewModelMatrix() {
     gViewModelMatrix[5] = cos(rotation);
 }
 
-void LibretroDroid::Video::updateScreenSize(int screenWidth, int screenHeight) {
+void LibretroDroid::Video::updateScreenSize(unsigned screenWidth, unsigned screenHeight) {
     LOGD("Updating screen size: %d x %d", screenWidth, screenHeight);
     this->screenWidth = screenWidth;
     this->screenHeight = screenHeight;
+}
+
+void LibretroDroid::Video::updateRendererSize(unsigned int width, unsigned int height) {
+    LOGD("Updating renderer size: %d x %d", screenWidth, screenHeight);
+    renderer->updateRenderedResolution(width, height);
 }

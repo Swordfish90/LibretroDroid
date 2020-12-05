@@ -33,6 +33,7 @@ public:
     uintptr_t getFramebuffer() override;
     void setPixelFormat(int newPixelFormat) override;
     virtual ~BaseImageRenderer() = default;
+    void updateRenderedResolution(unsigned width, unsigned height) override;
 
 protected:
     void convertDataFrom0RGB1555(const void *data, unsigned width, unsigned height, size_t pitch);

@@ -59,3 +59,5 @@ void LibretroDroid::BaseImageRenderer::convertDataFrom0RGB1555(
                       | (((0x1Fu << 10) & castData[i]) << 1);
     }
 }
+
+void LibretroDroid::BaseImageRenderer::updateRenderedResolution(unsigned width, unsigned height) { }
