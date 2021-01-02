@@ -165,9 +165,11 @@ namespace Environment {
         va_start(argptr, fmt);
 
         switch (level) {
+#if VERBOSE_LOGGING
             case RETRO_LOG_DEBUG:
                 __android_log_vprint(ANDROID_LOG_DEBUG, MODULE_NAME_CORE, fmt, argptr);
                 break;
+#endif
             case RETRO_LOG_INFO:
                 __android_log_vprint(ANDROID_LOG_INFO, MODULE_NAME_CORE, fmt, argptr);
                 break;
