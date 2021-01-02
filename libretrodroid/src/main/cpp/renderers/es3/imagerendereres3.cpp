@@ -16,6 +16,7 @@
  */
 
 #include "imagerendereres3.h"
+#include "../../libretro/libretro.h"
 
 LibretroDroid::ImageRendererES3::ImageRendererES3() {
     glGenTextures(1, &currentTexture);
@@ -32,10 +33,6 @@ void LibretroDroid::ImageRendererES3::onNewFrame(const void *data, unsigned widt
         applyGLSwizzle(GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA);
     } else {
         applyGLSwizzle(GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA);
-    }
-
-    if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
-        convertDataFrom0RGB1555(data, width, height, pitch);
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -61,4 +58,34 @@ void LibretroDroid::ImageRendererES3::applyGLSwizzle(int r, int g, int b, int a)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, g);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, b);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, a);
+}
+
+uintptr_t LibretroDroid::ImageRendererES3::getTexture() {
+    return currentTexture;
+}
+
+uintptr_t LibretroDroid::ImageRendererES3::getFramebuffer() {
+    return 0; // ImageRender does not really expose a framebuffer.
+}
+
+void LibretroDroid::ImageRendererES3::setPixelFormat(int pixelFormat) {
+    switch (pixelFormat) {
+
+        case RETRO_PIXEL_FORMAT_XRGB8888:
+            this->glInternalFormat = GL_RGBA;
+            this->glFormat = GL_RGBA;
+            this->glType = GL_UNSIGNED_BYTE;
+            this->bytesPerPixel = 4;
+            this->swapRedAndBlueChannels = true;
+            break;
+
+        default:
+        case RETRO_PIXEL_FORMAT_RGB565:
+            this->glInternalFormat = GL_RGB565;
+            this->glFormat = GL_RGB;
+            this->glType = GL_UNSIGNED_SHORT_5_6_5;
+            this->bytesPerPixel = 2;
+            this->swapRedAndBlueChannels = false;
+            break;
+    }
 }

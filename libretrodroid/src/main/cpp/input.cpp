@@ -25,8 +25,6 @@
 #include "libretro/libretro.h"
 
 int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsigned index, unsigned id) {
-    if (port >= 4 || port < 0) return 0;
-
     switch (device) {
         case RETRO_DEVICE_JOYPAD: {
             switch (id) {
