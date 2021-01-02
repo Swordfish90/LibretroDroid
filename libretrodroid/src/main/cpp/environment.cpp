@@ -208,7 +208,7 @@ namespace Environment {
             case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT: {
                 LOGD("Called SET_PIXEL_FORMAT");
                 pixelFormat = *static_cast<enum retro_pixel_format *>(data);
-                return pixelFormat == RETRO_PIXEL_FORMAT_RGB565 || pixelFormat == RETRO_PIXEL_FORMAT_XRGB8888;
+                return true;
             }
 
             case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
