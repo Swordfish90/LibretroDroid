@@ -22,7 +22,6 @@
 
 #include "../renderer.h"
 #include "../../libretro/libretro.h"
-#include "../baseimagerenderer.h"
 
 #include <cstdint>
 #include <utility>
@@ -30,14 +29,27 @@
 
 namespace LibretroDroid {
 
-class ImageRendererES2: public LibretroDroid::BaseImageRenderer {
-
+class ImageRendererES2: public LibretroDroid::Renderer {
 public:
     explicit ImageRendererES2();
+    uintptr_t getTexture() override;
+    uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
+    void setPixelFormat(int pixelFormat) override;
+    void updateRenderedResolution(unsigned int width, unsigned int height) override;
 
 private:
     void convertDataFromRGB8888(const void* pixelData, size_t size);
+    void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch);
+
+private:
+    int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
+    unsigned int bytesPerPixel = 1;
+    unsigned int glType = 0;
+    unsigned int glInternalFormat = 0;
+    unsigned int glFormat = 0;
+
+    unsigned int currentTexture = 0;
 };
 
 }

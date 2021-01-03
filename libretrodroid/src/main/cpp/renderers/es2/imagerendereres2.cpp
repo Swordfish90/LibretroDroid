@@ -30,9 +30,7 @@ void LibretroDroid::ImageRendererES2::onNewFrame(const void *data, unsigned widt
 
     if (pixelFormat == RETRO_PIXEL_FORMAT_XRGB8888) {
         convertDataFromRGB8888(data, pitch * height);
-    }
-
-    if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
+    } else if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
         convertDataFrom0RGB1555(data, width, height, pitch);
     }
 
@@ -71,3 +69,45 @@ void LibretroDroid::ImageRendererES2::convertDataFromRGB8888(const void *data, s
         pixelData[i + 2] = currentRed;
     }
 }
+
+uintptr_t LibretroDroid::ImageRendererES2::getTexture() {
+    return currentTexture;
+}
+
+uintptr_t LibretroDroid::ImageRendererES2::getFramebuffer() {
+    return 0; // ImageRender does not really expose a framebuffer.
+}
+
+void LibretroDroid::ImageRendererES2::setPixelFormat(int pixelFormat) {
+    this->pixelFormat = pixelFormat;
+
+    switch (pixelFormat) {
+        case RETRO_PIXEL_FORMAT_XRGB8888:
+            this->glInternalFormat = GL_RGBA;
+            this->glFormat = GL_RGBA;
+            this->glType = GL_UNSIGNED_BYTE;
+            this->bytesPerPixel = 4;
+            break;
+
+        default:
+        case RETRO_PIXEL_FORMAT_0RGB1555:
+        case RETRO_PIXEL_FORMAT_RGB565:
+            this->glInternalFormat = GL_RGB;
+            this->glFormat = GL_RGB;
+            this->glType = GL_UNSIGNED_SHORT_5_6_5;
+            this->bytesPerPixel = 2;
+            break;
+    }
+}
+
+void LibretroDroid::ImageRendererES2::convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) {
+    auto castData = (uint16_t*) data;
+
+    for (int i = 0; i < height * pitch / bytesPerPixel; ++i) {
+         castData[i] = ((0x1Fu) & castData[i])
+            | (((0x1Fu << 5) & castData[i]) << 1)
+            | (((0x1Fu << 10) & castData[i]) << 1);
+    }
+}
+
+void LibretroDroid::ImageRendererES2::updateRenderedResolution(unsigned int width, unsigned int height) {}

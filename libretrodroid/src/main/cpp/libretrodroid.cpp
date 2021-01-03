@@ -363,6 +363,15 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent
     }
 }
 
+void resetGlobalVariables() {
+    core = nullptr;
+    audio = nullptr;
+    video = nullptr;
+    fpsSync = nullptr;
+    input = nullptr;
+    rumble = nullptr;
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     JNIEnv * env,
     jobject obj,
@@ -378,6 +387,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     LOGD("Performing LibretroDroid create");
     const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
     const char* deviceLanguage = env->GetStringUTFChars(language, nullptr);
+
+    resetGlobalVariables();
 
     try {
         Environment::initialize(
@@ -515,14 +526,20 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JN
         core->retro_unload_game();
         core->retro_deinit();
 
-        delete video;
-        video = nullptr;
+        if (video) {
+            delete video;
+            video = nullptr;
+        }
 
-        delete core;
-        core = nullptr;
+        if (core) {
+            delete core;
+            core = nullptr;
+        }
 
-        delete rumble;
-        rumble = nullptr;
+        if (rumble) {
+            delete rumble;
+            rumble = nullptr;
+        }
 
         Environment::deinitialize();
 
@@ -556,15 +573,21 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIE
     LOGD("Performing LibretroDroid pause");
 
     try {
-        delete input;
-        input = nullptr;
+        if (input) {
+            delete input;
+            input = nullptr;
+        }
 
-        audio->stop();
-        delete audio;
-        audio = nullptr;
+        if (audio) {
+            audio->stop();
+            delete audio;
+            audio = nullptr;
+        }
 
-        delete fpsSync;
-        fpsSync = nullptr;
+        if (fpsSync) {
+            delete fpsSync;
+            fpsSync = nullptr;
+        }
 
     } catch (std::exception& exception) {
         LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);

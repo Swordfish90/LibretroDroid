@@ -72,7 +72,7 @@ class GLRetroView(
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    private fun onCreate(lifecycleOwner: LifecycleOwner) = catchExceptions {
+    fun onCreate(lifecycleOwner: LifecycleOwner) = catchExceptions {
         lifecycle = lifecycleOwner.lifecycle
         LibretroDroid.create(
             openGLESVersion,
@@ -88,7 +88,7 @@ class GLRetroView(
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    private fun onDestroy() = catchExceptions {
+    fun onDestroy() = catchExceptions {
         LibretroDroid.destroy()
         lifecycle = null
     }
