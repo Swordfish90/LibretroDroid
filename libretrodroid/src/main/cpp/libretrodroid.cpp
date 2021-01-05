@@ -616,8 +616,17 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
     LOGD("Stepping into retro_run()");
 
     retroStateMutex.lock();
-    for (size_t i = 0; i < frameSpeed; i++)
+    unsigned frames = 1;
+    if (fpsSync != nullptr) {
+        unsigned requestedFrames = fpsSync->advanceFrames();
+
+        // If the application runs too slow it's better to just skip those frames.
+        frames = std::min(requestedFrames, 2u);
+    }
+
+    for (size_t i = 0; i < frames * frameSpeed; i++)
         core->retro_run();
+
     retroStateMutex.unlock();
 
     if (video != nullptr) {
@@ -625,7 +634,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
     }
 
     if (fpsSync != nullptr) {
-        fpsSync->sync();
+        fpsSync->wait();
     }
 
     handlePostStepTasks(env, obj, glRetroView);

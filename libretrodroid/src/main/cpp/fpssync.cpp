@@ -19,28 +19,31 @@
 #include "fpssync.h"
 #include "log.h"
 
-void LibretroDroid::FPSSync::sync() {
-    if (useVSync) return;
+unsigned LibretroDroid::FPSSync::advanceFrames() {
+    if (useVSync) return 1;
 
     if (lastFrame == MIN_TIME) {
         start();
     }
 
-    std::this_thread::sleep_until(lastFrame + sampleInterval);
-    lastFrame = lastFrame + sampleInterval;
+    auto now = std::chrono::steady_clock::now();
+    auto frames = std::max((now - lastFrame) / sampleInterval, (long long) 1);
+    lastFrame = lastFrame + sampleInterval * frames;
+
+    return frames;
 }
 
 LibretroDroid::FPSSync::FPSSync(double contentRefreshRate, double screenRefreshRate) {
     this->contentRefreshRate = contentRefreshRate;
     this->screenRefreshRate = screenRefreshRate;
-    this->useVSync = contentRefreshRate > screenRefreshRate - FPS_TOLERANCE;
+    this->useVSync = std::abs(contentRefreshRate - screenRefreshRate) < FPS_TOLERANCE;
     this->sampleInterval = std::chrono::microseconds((long) ((1000000L / contentRefreshRate)));
     reset();
 }
 
 void LibretroDroid::FPSSync::start() {
     LOGI("Starting game with fps %f on a screen with refresh rate %f. Using vsync: %d", contentRefreshRate, screenRefreshRate, useVSync);
-    lastFrame = lastFrame = std::chrono::steady_clock::now();
+    lastFrame = std::chrono::steady_clock::now();
 }
 
 void LibretroDroid::FPSSync::reset() {
@@ -49,4 +52,9 @@ void LibretroDroid::FPSSync::reset() {
 
 double LibretroDroid::FPSSync::getTimeStretchFactor() {
     return useVSync ? contentRefreshRate / screenRefreshRate : 1.0;
+}
+
+void LibretroDroid::FPSSync::wait() {
+    if (useVSync) return;
+    std::this_thread::sleep_until(lastFrame);
 }
