@@ -248,7 +248,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializ
     try {
         jboolean isCopy = JNI_FALSE;
         jbyte* cData = env->GetByteArrayElements(data, &isCopy);
-        jsize stateSize = env->GetArrayLength(data);
+        jsize dataSize = env->GetArrayLength(data);
 
         size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
         void* sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
@@ -259,7 +259,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializ
             return;
         }
 
-        if (sramSize != stateSize) {
+        if (dataSize > sramSize) {
             LOGE("Cannot load SRAM: size mismatch");
             env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
             return;
