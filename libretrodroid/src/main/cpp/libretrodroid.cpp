@@ -265,7 +265,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializ
             return;
         }
 
-        memcpy(sramState, cData, sramSize);
+        memcpy(sramState, cData, dataSize);
         env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
 
     } catch (std::exception& exception) {
