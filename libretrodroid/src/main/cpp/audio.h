@@ -27,7 +27,7 @@
 
 namespace LibretroDroid {
 
-class Audio: public oboe::AudioStreamCallback {
+class Audio: public oboe::AudioStreamDataCallback {
 public:
     Audio(int32_t sampleRate);
     ~Audio() = default;
