@@ -39,7 +39,6 @@ LibretroDroid::Audio::Audio(int32_t sampleRate) {
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
-        stream->open();
         defaultSampleRate = (double) sampleRate / stream->getSampleRate();
     } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
