@@ -34,25 +34,26 @@ LibretroDroid::Audio::Audio(int32_t sampleRate) {
     builder.setChannelCount(2);
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
-    builder.setCallback(this);
+    builder.setDataCallback(this);
     builder.setFramesPerCallback(sampleRateBufferSize / 8);
 
     oboe::Result result = builder.openManagedStream(stream);
-    if (result != oboe::Result::OK) {
+    if (result == oboe::Result::OK) {
+        defaultSampleRate = (double) sampleRate / stream->getSampleRate();
+    } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
+        stream = nullptr;
     }
-
-    stream->open();
-
-    defaultSampleRate = (double) sampleRate / stream->getSampleRate();
 }
 
 void LibretroDroid::Audio::start() {
-    stream->requestStart();
+    if (stream != nullptr)
+        stream->requestStart();
 }
 
 void LibretroDroid::Audio::stop() {
-    stream->requestStop();
+    if (stream != nullptr)
+        stream->requestStop();
 }
 
 void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
