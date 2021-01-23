@@ -31,7 +31,8 @@ public:
     FPSSync(double contentRefreshRate, double screenRefreshRate);
     ~FPSSync() { }
 
-    void sync();
+    unsigned advanceFrames();
+    void wait();
     double getTimeStretchFactor();
 private:
 
