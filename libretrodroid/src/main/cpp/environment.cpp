@@ -63,6 +63,14 @@ namespace Environment {
         std::string description;
     };
 
+    struct Controller {
+    public:
+        unsigned id;
+        std::string description;
+    };
+
+    std::vector<std::vector<struct Controller>> controllers;
+
     void initialize(const char* systemDirectory, const char* savesDirectory, retro_hw_get_current_framebuffer_t callback_get_current_framebuffer) {
         Environment::callback_get_current_framebuffer = callback_get_current_framebuffer;
         Environment::systemDirectory = systemDirectory;
@@ -144,6 +152,31 @@ namespace Environment {
             }
         }
         return false;
+    }
+
+    bool environment_handle_set_controller_info(const struct retro_controller_info* received) {
+        controllers.clear();
+
+        unsigned player = 0;
+        while (received[player].types != nullptr) {
+
+            auto currentPlayer = received[player];
+
+            controllers.push_back(std::vector<struct Controller>());
+
+            unsigned controller = 0;
+            while (controller < currentPlayer.num_types) {
+                auto currentController = currentPlayer.types[controller];
+                LOGE("Received controller for player %d: %d %s", player, currentController.id, currentController.desc);
+
+                controllers[player].push_back(Controller {currentController.id, currentController.desc});
+                controller++;
+            }
+
+            player++;
+        }
+
+        return true;
     }
 
     bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
@@ -289,6 +322,10 @@ namespace Environment {
                 gameGeometryUpdated = true;
                 return true;
             }
+
+            case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO:
+                LOGD("Called RETRO_ENVIRONMENT_SET_CONTROLLER_INFO");
+                return environment_handle_set_controller_info(static_cast<const struct retro_controller_info*>(data));
 
             case RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE:
                 LOGD("Called RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE");

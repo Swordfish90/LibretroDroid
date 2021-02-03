@@ -77,4 +77,7 @@ class LibretroDroid {
     public static native void onKeyEvent(int port, int action, int keyCode);
 
     public static native float getAspectRatio();
+
+    public static native Controller[][] getControllers();
+    public static native void setControllerType(int port, int type);
 }
