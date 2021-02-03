@@ -165,11 +165,11 @@ namespace Environment {
             controllers.push_back(std::vector<struct Controller>());
 
             unsigned controller = 0;
-            while (controller < currentPlayer.num_types) {
+            while (controller < currentPlayer.num_types && currentPlayer.types[controller].desc != nullptr) {
                 auto currentController = currentPlayer.types[controller];
-                LOGE("Received controller for player %d: %d %s", player, currentController.id, currentController.desc);
+                LOGD("Received controller for player %d: %d %s", player, currentController.id, currentController.desc);
 
-                controllers[player].push_back(Controller {currentController.id, currentController.desc});
+                controllers[player].push_back(Controller { currentController.id, currentController.desc });
                 controller++;
             }
 
