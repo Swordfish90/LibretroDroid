@@ -181,8 +181,10 @@ namespace Environment {
 
     bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
         useHWAcceleration = true;
-        useDepth = hw_render_callback->depth;
-        useStencil = hw_render_callback->stencil;
+
+        // Let's try to force it to true here.
+        useDepth = true;//hw_render_callback->depth;
+        useStencil = true;//hw_render_callback->stencil;
         bottomLeftOrigin = hw_render_callback->bottom_left_origin;
 
         hw_context_destroy = hw_render_callback->context_destroy;
