@@ -122,6 +122,8 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
     JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
     JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj);
+    JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getControllers(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControllerType(JNIEnv * env, jobject obj, jint port, jint type);
     JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable);
     JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj);
     JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj);
@@ -202,6 +204,38 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
         env->SetObjectArrayElement(result, i, jVariable);
     }
     return result;
+}
+
+JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getControllers(JNIEnv * env, jobject obj) {
+    jclass variableClass = env->FindClass("[Lcom/swordfish/libretrodroid/Controller;");
+
+    auto controllers = Environment::controllers;
+    jobjectArray result = env->NewObjectArray(controllers.size(), variableClass, nullptr);
+
+    for (int i = 0; i < controllers.size(); i++) {
+        jclass variableClass2 = env->FindClass("com/swordfish/libretrodroid/Controller");
+        jobjectArray controllerArray = env->NewObjectArray(controllers[i].size(), variableClass2, nullptr);
+        jmethodID variableMethod = env->GetMethodID(variableClass2, "<init>", "()V");
+
+        for (int j = 0; j < controllers[i].size(); j++) {
+            jobject jController = env->NewObject(variableClass2, variableMethod);
+
+            jfieldID jIdField = env->GetFieldID(variableClass2, "id", "I");
+            jfieldID jDescriptionField = env->GetFieldID(variableClass2, "description", "Ljava/lang/String;");
+
+            env->SetIntField(jController, jIdField, controllers[i][j].id);
+            env->SetObjectField(jController, jDescriptionField, env->NewStringUTF(controllers[i][j].description.data()));
+
+            env->SetObjectArrayElement(controllerArray, j, jController);
+        }
+
+        env->SetObjectArrayElement(result, i, controllerArray);
+    }
+    return result;
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControllerType(JNIEnv * env, jobject obj, jint port, jint type) {
+    core->retro_set_controller_port_device(port, type);
 }
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {

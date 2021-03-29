@@ -162,6 +162,14 @@ class GLRetroView(
         return rumbleEventsSubject
     }
 
+    fun getControllers(): Array<Array<Controller>> {
+        return LibretroDroid.getControllers()
+    }
+
+    fun setControllerType(port: Int, type: Int) {
+        LibretroDroid.setControllerType(port, type)
+    }
+
     fun getVariables(): Array<Variable> {
         return LibretroDroid.getVariables()
     }
