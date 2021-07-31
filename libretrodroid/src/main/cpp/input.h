@@ -52,9 +52,24 @@ public:
     void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
 
 private:
-    const int UNKNOWN_KEY = -1;
+    bool isDPADLeftPressed(unsigned int port);
+    bool isDPADUpPressed(unsigned int port);
+    bool isDPADDownPressed(unsigned int port);
+    bool isDPADRightPressed(unsigned int port);
 
-    int convertAndroidToLibretroKey(int keyCode);
+    int convertAndroidToLibretroKey(int keyCode) const;
+
+    template<typename ...Args>
+    bool isRetroKeyPressed(unsigned port, int retroKeyCode, Args...more);
+    bool isRetroKeyPressed(unsigned port, int retroKeyCode);
+
+private:
+    // These keys are not defined in the Libretro API
+    const int VIRTUAL_LIBRETRO_KEY_UNKNOWN = -1;
+    const int VIRTUAL_LIBRETRO_KEY_DPAD_UP_LEFT = -2;
+    const int VIRTUAL_LIBRETRO_KEY_DPAD_UP_RIGHT = -3;
+    const int VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_LEFT = -4;
+    const int VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_RIGHT = -5;
 
     GamePadState pads[4];
 };

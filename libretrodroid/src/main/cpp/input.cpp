@@ -31,15 +31,15 @@ int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsi
         case RETRO_DEVICE_JOYPAD: {
             switch (id) {
                 case RETRO_DEVICE_ID_JOYPAD_LEFT:
-                    return pads[port].dpadXAxis == -1;
+                    return pads[port].dpadXAxis == -1 || isDPADLeftPressed(port);
                 case RETRO_DEVICE_ID_JOYPAD_RIGHT:
-                    return pads[port].dpadXAxis == 1;
+                    return pads[port].dpadXAxis == 1 || isDPADRightPressed(port);
                 case RETRO_DEVICE_ID_JOYPAD_UP:
-                    return pads[port].dpadYAxis == -1;
+                    return pads[port].dpadYAxis == -1 || isDPADUpPressed(port);
                 case RETRO_DEVICE_ID_JOYPAD_DOWN:
-                    return pads[port].dpadYAxis == 1;
+                    return pads[port].dpadYAxis == 1 || isDPADDownPressed(port);
                 default:
-                    return pads[port].pressedKeys.count(id) > 0;
+                    return isRetroKeyPressed(port, id);
             }
         }
 
@@ -97,7 +97,43 @@ int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsi
     }
 }
 
-int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
+bool LibretroDroid::Input::isDPADDownPressed(unsigned port) {
+    return isRetroKeyPressed(
+            port,
+            RETRO_DEVICE_ID_JOYPAD_DOWN,
+            VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_LEFT,
+            VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_RIGHT
+    );
+}
+
+bool LibretroDroid::Input::isDPADUpPressed(unsigned port) {
+    return isRetroKeyPressed(
+            port,
+            RETRO_DEVICE_ID_JOYPAD_UP,
+            VIRTUAL_LIBRETRO_KEY_DPAD_UP_LEFT,
+            VIRTUAL_LIBRETRO_KEY_DPAD_UP_RIGHT
+    );
+}
+
+bool LibretroDroid::Input::isDPADRightPressed(unsigned port) {
+    return isRetroKeyPressed(
+            port,
+            RETRO_DEVICE_ID_JOYPAD_RIGHT,
+            VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_LEFT,
+            VIRTUAL_LIBRETRO_KEY_DPAD_UP_LEFT
+    );
+}
+
+bool LibretroDroid::Input::isDPADLeftPressed(unsigned port) {
+    return isRetroKeyPressed(
+            port,
+            RETRO_DEVICE_ID_JOYPAD_LEFT,
+            VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_LEFT,
+            VIRTUAL_LIBRETRO_KEY_DPAD_UP_LEFT
+    );
+}
+
+int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) const {
     switch (keyCode) {
         case AKEYCODE_BUTTON_START:
             return RETRO_DEVICE_ID_JOYPAD_START;
@@ -123,13 +159,30 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
             return RETRO_DEVICE_ID_JOYPAD_L3;
         case AKEYCODE_BUTTON_THUMBR:
             return RETRO_DEVICE_ID_JOYPAD_R3;
+        case AKEYCODE_DPAD_UP:
+            return RETRO_DEVICE_ID_JOYPAD_UP;
+        case AKEYCODE_DPAD_DOWN:
+            return RETRO_DEVICE_ID_JOYPAD_DOWN;
+        case AKEYCODE_DPAD_LEFT:
+            return RETRO_DEVICE_ID_JOYPAD_LEFT;
+        case AKEYCODE_DPAD_RIGHT:
+            return RETRO_DEVICE_ID_JOYPAD_RIGHT;
+        case AKEYCODE_DPAD_DOWN_LEFT:
+            return VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_LEFT;
+        case AKEYCODE_DPAD_DOWN_RIGHT:
+            return VIRTUAL_LIBRETRO_KEY_DPAD_DOWN_RIGHT;
+        case AKEYCODE_DPAD_UP_LEFT:
+            return VIRTUAL_LIBRETRO_KEY_DPAD_UP_LEFT;
+        case AKEYCODE_DPAD_UP_RIGHT:
+            return VIRTUAL_LIBRETRO_KEY_DPAD_UP_RIGHT;
+        default:
+            return VIRTUAL_LIBRETRO_KEY_UNKNOWN;
     }
-    return UNKNOWN_KEY;
 }
 
 void LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
     int retroKeyCode = convertAndroidToLibretroKey(keyCode);
-    if (retroKeyCode == UNKNOWN_KEY) {
+    if (retroKeyCode == VIRTUAL_LIBRETRO_KEY_UNKNOWN) {
         return;
     }
 
@@ -161,5 +214,17 @@ void LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis
             pads[port].pointerScreenXAxis = xAxis;
             pads[port].pointerScreenYAxis = yAxis;
             break;
+
+        default:
+            break;
     }
+}
+
+template<typename... Args>
+bool LibretroDroid::Input::isRetroKeyPressed(unsigned int port, int retroKeyCode, Args... more) {
+    return isRetroKeyPressed(port, retroKeyCode) || isRetroKeyPressed(port, more...);
+}
+
+bool LibretroDroid::Input::isRetroKeyPressed(unsigned port, int retroKeyCode) {
+    return pads[port].pressedKeys.count(retroKeyCode);
 }

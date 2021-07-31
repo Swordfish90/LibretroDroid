@@ -3,11 +3,11 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 30
     defaultConfig {
         applicationId 'com.android.gl2jni'
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 30
     }
 
     buildTypes {
