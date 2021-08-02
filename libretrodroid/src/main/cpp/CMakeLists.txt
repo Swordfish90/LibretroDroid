@@ -10,6 +10,7 @@ include_directories (${OBOE_DIR}/include)
 include_directories (${OBOE_DIR}/src)
 
 add_library(libretrodroid SHARED
+        libretrodroid.h
         libretrodroid.cpp
         log.h
         core.h
@@ -33,6 +34,8 @@ add_library(libretrodroid SHARED
         resamplers/sincresampler.cpp
         fpssync.h
         fpssync.cpp
+        environment.h
+        environment.cpp
         input.h
         input.cpp
         shadermanager.h
