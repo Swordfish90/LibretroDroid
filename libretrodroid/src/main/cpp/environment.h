@@ -30,76 +30,128 @@
 #include "libretro/libretro.h"
 #include "log.h"
 
-namespace Environment {
-    extern retro_hw_context_reset_t hw_context_reset;
-    extern retro_hw_context_reset_t hw_context_destroy;
-    extern struct retro_disk_control_callback* retro_disk_control_callback;
+class Environment {
+public:
+    static Environment& getInstance()
+    {
+        static Environment instance;
+        return instance;
+    }
+    Environment(Environment const&) = delete;
+    void operator=(Environment const&) = delete;
 
-    extern const char* savesDirectory;
-    extern const char* systemDirectory;
-    extern retro_hw_get_current_framebuffer_t callback_get_current_framebuffer;
-    extern unsigned language;
+    static void callback_retro_log(enum retro_log_level level, const char *fmt, ...);
 
-    extern int pixelFormat;
-    extern bool useHWAcceleration;
-    extern bool useDepth;
-    extern bool useStencil;
-    extern bool bottomLeftOrigin;
-    extern float screenRotation;
+    static bool callback_set_rumble_state(
+        unsigned port,
+        enum retro_rumble_effect effect,
+        uint16_t strength
+    );
 
-    extern bool gameGeometryUpdated;
-    extern unsigned gameGeometryWidth;
-    extern unsigned gameGeometryHeight;
-    extern float gameGeometryAspectRatio;
+    static bool callback_environment(unsigned cmd, void *data);
 
-    extern uint16_t vibrationStrengthWeak;
-    extern uint16_t vibrationStrengthStrong;
-    extern uint16_t lastRumbleStrength;
+private:
+    Environment() {}
 
-    extern std::vector<struct Variable> variables;
-    extern bool dirtyVariables;
-
-    extern std::vector<std::vector<struct Controller>> controllers;
-
-    struct Variable {
-    public:
-        std::string key;
-        std::string value;
-        std::string description;
-    };
-
-    struct Controller {
-    public:
-        unsigned id;
-        std::string description;
-    };
-
+public:
     void initialize(
-        const char* requiredSystemDirectory,
-        const char* requiredSavesDirectory,
+        const char *requiredSystemDirectory,
+        const char *requiredSavesDirectory,
         retro_hw_get_current_framebuffer_t required_callback_get_current_framebuffer
     );
 
     void deinitialize();
 
-    void updateVariable(const std::string& key, const std::string& value);
+    void updateVariable(const std::string &key, const std::string &value);
 
-    bool environment_handle_set_variables(const struct retro_variable* received);
+    void setLanguage(const std::string &androidLanguage);
 
-    bool environment_handle_get_variable(struct retro_variable* requested);
+    bool handle_callback_set_rumble_state(
+        unsigned port,
+        enum retro_rumble_effect effect,
+        uint16_t strength
+    );
 
-    bool environment_handle_set_controller_info(const struct retro_controller_info* received);
+    bool handle_callback_environment(unsigned cmd, void *data);
 
-    bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback);
+    retro_hw_context_reset_t getHwContextReset() const;
+    retro_hw_context_reset_t getHwContextDestroy() const;
 
-    void callback_retro_log(enum retro_log_level level, const char *fmt, ...);
+    retro_hw_get_current_framebuffer_t getCallbackGetCurrentFramebuffer() const;
+    struct retro_disk_control_callback* getRetroDiskControlCallback() const;
 
-    bool set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength);
+    int getPixelFormat() const;
+    bool isUseHwAcceleration() const;
+    bool isUseDepth() const;
+    bool isUseStencil() const;
+    bool isBottomLeftOrigin() const;
+    float getScreenRotation() const;
 
-    bool callback_environment(unsigned cmd, void *data);
+    unsigned int getGameGeometryWidth() const;
+    unsigned int getGameGeometryHeight() const;
+    float getGameGeometryAspectRatio() const;
+    bool isGameGeometryUpdated() const;
+    void clearGameGeometryUpdated();
 
-    void setLanguage(const std::string& androidLanguage);
-}
+    uint16_t getLastRumbleStrength() const;
+
+    const std::vector<struct Variable> &getVariables() const;
+
+    const std::vector<std::vector<struct Controller>> &getControllers() const;
+
+private:
+    bool environment_handle_set_variables(const struct retro_variable *received);
+
+    bool environment_handle_get_variable(struct retro_variable *requested);
+
+    bool environment_handle_set_controller_info(const struct retro_controller_info *received);
+
+    bool environment_handle_set_hw_render(struct retro_hw_render_callback *hw_render_callback);
+
+private:
+    retro_hw_context_reset_t hw_context_reset = nullptr;
+    retro_hw_context_reset_t hw_context_destroy = nullptr;
+    struct retro_disk_control_callback *retro_disk_control_callback = nullptr;
+
+    const char *savesDirectory = nullptr;
+    const char *systemDirectory = nullptr;
+    retro_hw_get_current_framebuffer_t callback_get_current_framebuffer = nullptr;
+    unsigned language = RETRO_LANGUAGE_ENGLISH;
+
+    int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
+    bool useHWAcceleration = false;
+    bool useDepth = false;
+    bool useStencil = false;
+    bool bottomLeftOrigin = false;
+    float screenRotation = 0;
+
+    bool gameGeometryUpdated = false;
+    unsigned gameGeometryWidth = 0;
+    unsigned gameGeometryHeight = 0;
+    float gameGeometryAspectRatio = -1.0f;
+
+    uint16_t vibrationStrengthWeak = 0;
+    uint16_t vibrationStrengthStrong = 0;
+    uint16_t lastRumbleStrength = 0;
+
+    std::vector<struct Variable> variables;
+    bool dirtyVariables = false;
+
+    std::vector<std::vector<struct Controller>> controllers;
+};
+
+struct Variable {
+public:
+    std::string key;
+    std::string value;
+    std::string description;
+};
+
+struct Controller {
+public:
+    unsigned id;
+    std::string description;
+};
 
 #endif //LIBRETRODROID_ENVIRONMENT_H
 

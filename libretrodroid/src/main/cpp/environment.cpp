@@ -28,38 +28,6 @@
 #include "log.h"
 #include "environment.h"
 
-namespace Environment {
-    retro_hw_context_reset_t hw_context_reset = nullptr;
-    retro_hw_context_reset_t hw_context_destroy = nullptr;
-    struct retro_disk_control_callback* retro_disk_control_callback = nullptr;
-
-    const char* savesDirectory = nullptr;
-    const char* systemDirectory = nullptr;
-    retro_hw_get_current_framebuffer_t callback_get_current_framebuffer = nullptr;
-    unsigned language = RETRO_LANGUAGE_ENGLISH;
-
-    int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
-    bool useHWAcceleration = false;
-    bool useDepth = false;
-    bool useStencil = false;
-    bool bottomLeftOrigin = false;
-    float screenRotation = 0;
-
-    bool gameGeometryUpdated = false;
-    unsigned gameGeometryWidth = 0;
-    unsigned gameGeometryHeight = 0;
-    float gameGeometryAspectRatio = -1.0f;
-
-    uint16_t vibrationStrengthWeak = 0;
-    uint16_t vibrationStrengthStrong = 0;
-    uint16_t lastRumbleStrength = 0;
-
-    std::vector<struct Variable> variables;
-    bool dirtyVariables = false;
-
-    std::vector<std::vector<struct Controller>> controllers;
-}
-
 void Environment::initialize(
     const char* requiredSystemDirectory,
     const char* requiredSavesDirectory,
@@ -211,7 +179,11 @@ void Environment::callback_retro_log(enum retro_log_level level, const char *fmt
     }
 }
 
-bool Environment::set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
+bool Environment::callback_set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
+    return Environment::getInstance().handle_callback_set_rumble_state(port, effect, strength);
+}
+
+bool Environment::handle_callback_set_rumble_state(unsigned port, enum retro_rumble_effect effect, uint16_t strength) {
     LOGV("Setting rumble strength to %i", strength);
 
     if (effect == RETRO_RUMBLE_STRONG) {
@@ -228,6 +200,10 @@ bool Environment::set_rumble_state(unsigned port, enum retro_rumble_effect effec
 }
 
 bool Environment::callback_environment(unsigned cmd, void *data) {
+    return Environment::getInstance().handle_callback_environment(cmd, data);
+}
+
+bool Environment::handle_callback_environment(unsigned cmd, void *data) {
     switch (cmd) {
         case RETRO_ENVIRONMENT_GET_CAN_DUPE:
             *((bool*) data) = true;
@@ -270,7 +246,7 @@ bool Environment::callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
-            ((struct retro_rumble_interface*) data)->set_rumble_state = &set_rumble_state;
+            ((struct retro_rumble_interface*) data)->set_rumble_state = &callback_set_rumble_state;
             return true;
 
         case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
@@ -328,10 +304,11 @@ bool Environment::callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_GET_LANGUAGE");
             *((unsigned*) data) = language;
             return true;
-    }
 
-    LOGD("callback environment has been called: %u", cmd);
-    return false;
+        default:
+            LOGD("callback environment has been called: %u", cmd);
+            return false;
+    }
 }
 
 void Environment::setLanguage(const std::string& androidLanguage) {
@@ -358,4 +335,72 @@ void Environment::setLanguage(const std::string& androidLanguage) {
     if (languages.find(androidLanguage) != languages.end()) {
         language = languages[androidLanguage];
     }
+}
+
+retro_hw_context_reset_t Environment::getHwContextReset() const {
+    return hw_context_reset;
+}
+
+retro_hw_context_reset_t Environment::getHwContextDestroy() const {
+    return hw_context_destroy;
+}
+
+struct retro_disk_control_callback* Environment::getRetroDiskControlCallback() const {
+    return retro_disk_control_callback;
+}
+
+int Environment::getPixelFormat() const {
+    return pixelFormat;
+}
+
+bool Environment::isUseHwAcceleration() const {
+    return useHWAcceleration;
+}
+
+bool Environment::isUseDepth() const {
+    return useDepth;
+}
+
+bool Environment::isUseStencil() const {
+    return useStencil;
+}
+
+bool Environment::isBottomLeftOrigin() const {
+    return bottomLeftOrigin;
+}
+
+float Environment::getScreenRotation() const {
+    return screenRotation;
+}
+
+bool Environment::isGameGeometryUpdated() const {
+    return gameGeometryUpdated;
+}
+
+void Environment::clearGameGeometryUpdated() {
+    gameGeometryUpdated = false;
+}
+
+unsigned int Environment::getGameGeometryWidth() const {
+    return gameGeometryWidth;
+}
+
+unsigned int Environment::getGameGeometryHeight() const {
+    return gameGeometryHeight;
+}
+
+float Environment::getGameGeometryAspectRatio() const {
+    return gameGeometryAspectRatio;
+}
+
+uint16_t Environment::getLastRumbleStrength() const {
+    return lastRumbleStrength;
+}
+
+const std::vector<struct Variable> &Environment::getVariables() const {
+    return variables;
+}
+
+const std::vector<std::vector<struct Controller>> &Environment::getControllers() const {
+    return controllers;
 }
