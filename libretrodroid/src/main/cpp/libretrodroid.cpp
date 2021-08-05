@@ -222,7 +222,7 @@ void LibretroDroid::onSurfaceCreated() {
     video = std::unique_ptr<Video>(newVideo);
 
     if (Environment::getInstance().getHwContextReset() != nullptr) {
-        Environment::getInstance().getHwContextReset();
+        Environment::getInstance().getHwContextReset()();
     }
 }
 
@@ -348,7 +348,7 @@ void LibretroDroid::destroy() {
     LOGD("Performing libretrodroid destroy");
 
     if (Environment::getInstance().getHwContextDestroy() != nullptr) {
-        Environment::getInstance().getHwContextDestroy();
+        Environment::getInstance().getHwContextDestroy()();
     }
 
     core->retro_unload_game();

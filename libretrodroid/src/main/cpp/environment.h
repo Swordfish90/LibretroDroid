@@ -79,7 +79,6 @@ public:
     retro_hw_context_reset_t getHwContextReset() const;
     retro_hw_context_reset_t getHwContextDestroy() const;
 
-    retro_hw_get_current_framebuffer_t getCallbackGetCurrentFramebuffer() const;
     struct retro_disk_control_callback* getRetroDiskControlCallback() const;
 
     int getPixelFormat() const;
