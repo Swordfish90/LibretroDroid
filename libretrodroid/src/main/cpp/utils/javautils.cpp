@@ -16,11 +16,28 @@
  */
 
 #include "javautils.h"
+#include "jnistring.h"
 
-jint LibretroDroid::JavaUtils::throwRetroException(JNIEnv* env, int errorCode) {
+namespace libretrodroid {
+
+jint JavaUtils::throwRetroException(JNIEnv* env, int errorCode) {
     const char *className = "com/swordfish/libretrodroid/RetroException";
     jclass clazz = env->FindClass(className);
     jmethodID constructor = env->GetMethodID(clazz, "<init>", "(I)V");
     auto exception = (jthrowable) env->NewObject(clazz, constructor, errorCode);
     return env->Throw(exception);
 }
+
+Variable JavaUtils::variableFromJava(JNIEnv *env, jobject obj) {
+    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+
+    jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+    jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+
+    auto key = JniString(env, (jstring) env->GetObjectField(obj, jKeyField));
+    auto value = JniString(env, (jstring) env->GetObjectField(obj, jValueField));
+
+    return Variable { key.stdString(), value.stdString() };
+}
+
+} //namespace libretrodroid

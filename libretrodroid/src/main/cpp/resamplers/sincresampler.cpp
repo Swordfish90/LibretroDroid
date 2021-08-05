@@ -18,10 +18,12 @@
 #include <algorithm>
 #include "sincresampler.h"
 
-LibretroDroid::SincResampler::SincResampler(const int taps)
+namespace libretrodroid {
+
+SincResampler::SincResampler(const int taps)
     : halfTaps(taps / 2) { }
 
-void LibretroDroid::SincResampler::resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) {
+void SincResampler::resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) {
     double outputTime = 0;
     double outputTimeStep = 1.0f / sinkFrames;
 
@@ -49,7 +51,9 @@ void LibretroDroid::SincResampler::resample(const int16_t *source, int32_t input
     }
 }
 
-float LibretroDroid::SincResampler::sinc(float x) {
+float SincResampler::sinc(float x) {
     if (abs(x) < 1.0e-9) return 1.0;
     return sinf(x * PI_F) / (x * PI_F);
 }
+
+} //namespace libretrodroid

@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class Resampler {
 public:

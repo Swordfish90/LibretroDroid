@@ -55,8 +55,8 @@ private:
 
 public:
     void initialize(
-        const char *requiredSystemDirectory,
-        const char *requiredSavesDirectory,
+        const std::string &requiredSystemDirectory,
+        const std::string &requiredSavesDirectory,
         retro_hw_get_current_framebuffer_t required_callback_get_current_framebuffer
     );
 
@@ -65,6 +65,8 @@ public:
     void updateVariable(const std::string &key, const std::string &value);
 
     void setLanguage(const std::string &androidLanguage);
+
+    float retrieveGameSpecificAspectRatio();
 
     bool handle_callback_set_rumble_state(
         unsigned port,
@@ -113,8 +115,8 @@ private:
     retro_hw_context_reset_t hw_context_destroy = nullptr;
     struct retro_disk_control_callback *retro_disk_control_callback = nullptr;
 
-    const char *savesDirectory = nullptr;
-    const char *systemDirectory = nullptr;
+    std::string savesDirectory;
+    std::string systemDirectory;
     retro_hw_get_current_framebuffer_t callback_get_current_framebuffer = nullptr;
     unsigned language = RETRO_LANGUAGE_ENGLISH;
 

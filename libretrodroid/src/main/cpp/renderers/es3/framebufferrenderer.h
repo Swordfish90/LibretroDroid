@@ -23,9 +23,9 @@
 
 #include "../renderer.h"
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
-class FramebufferRenderer: public LibretroDroid::Renderer {
+class FramebufferRenderer: public Renderer {
 public:
     FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil);
     uintptr_t getTexture() override;

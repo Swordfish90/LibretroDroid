@@ -26,6 +26,7 @@
 #include <vector>
 #include <unordered_set>
 #include <mutex>
+#include <memory>
 
 #include "log.h"
 #include "core.h"
@@ -36,82 +37,118 @@
 #include "input.h"
 #include "rumble.h"
 #include "shadermanager.h"
-#include "javautils.h"
-#include "errorcodes.h"
+#include "utils/javautils.h"
 #include "environment.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 
-extern "C" {
-#include "utils.h"
-#include "libretro/libretro.h"
-}
+namespace libretrodroid {
 
-LibretroDroid::Core* core = nullptr;
-LibretroDroid::Audio* audio = nullptr;
-LibretroDroid::Video* video = nullptr;
-LibretroDroid::FPSSync* fpsSync = nullptr;
-LibretroDroid::Input* input = nullptr;
-LibretroDroid::Rumble* rumble = nullptr;
+class LibretroDroid {
+public:
+    static LibretroDroid& getInstance()
+    {
+        static LibretroDroid instance;
+        return instance;
+    }
+    LibretroDroid(LibretroDroid const&) = delete;
+    void operator=(LibretroDroid const&) = delete;
 
-unsigned int frameSpeed = 1;
-bool audioEnabled = true;
+private:
+    LibretroDroid() {}
 
-std::mutex retroStateMutex;
+public:
+    std::pair<int8_t*, size_t> serializeState();
+    bool unserializeState(int8_t *data, size_t size);
 
-auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
-float screenRefreshRate = 60.0;
-int openglESVersion = 2;
+    std::pair<int8_t *, size_t> serializeSRAM();
+    jboolean unserializeSRAM(int8_t *data, size_t size);
 
-uintptr_t callback_get_current_framebuffer();
+    void onSurfaceCreated();
+    void onSurfaceChanged(unsigned int width, unsigned int height);
 
-void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);
+    void create(
+        unsigned int GLESVersion,
+        const std::string& soFilePath,
+        const std::string& systemDir,
+        const std::string& savesDir,
+        std::vector<Variable> variables,
+        int shaderType,
+        float refreshRate,
+        const std::string& language
+    );
+    void resume();
+    void step();
+    void pause();
+    void destroy();
 
-void callback_audio_sample(int16_t left, int16_t right);
+    void reset();
 
-size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames);
+    void loadGameFromPath(const std::string &gamePath);
+    void loadGameFromBytes(const int8_t *data, size_t size);
 
-void callback_retro_set_input_poll();
+    void onKeyEvent(unsigned int port, int action, int keyCode);
+    void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);
 
-int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index, unsigned id);
+    float getAspectRatio();
 
-void updateAudioSampleRateMultiplier();
+    bool requiresVideoRefresh() const;
+    void clearRequiresVideoRefresh();
 
-void handlePostStepTasks(JNIEnv* env, jclass obj, jobject glRetroView);
+    std::vector<Variable> getVariables();
+    void updateVariable(const Variable& variable);
 
-float retrieveGameSpecificAspectRatio();
+    std::vector<std::vector<struct Controller>> getControllers();
+    void setControllerType(unsigned int port, unsigned int type);
 
-extern "C" {
+    int availableDisks();
+    int currentDisk();
+    void changeDisk(unsigned int index);
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv* env, jclass obj);
-JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeState(JNIEnv* env, jclass obj);
-JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv* env, jclass obj, jbyteArray data);
-JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv* env, jclass obj);
-JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv* env, jclass obj, jbyteArray data);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv* env, jclass obj);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv* env, jclass obj, jint width, jint height);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv* env, jclass obj);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv* env, jclass obj);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv* env, jclass obj, jobject glRetroView);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv* env, jclass obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jint shaderType, jfloat refreshRate, jstring language);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromPath(JNIEnv* env, jclass obj, jstring gameFilePath);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromBytes(JNIEnv* env, jclass obj, jbyteArray gameFileBytes);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv* env, jclass obj);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv* env, jclass obj, jint port, jint action, jint keyCode);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv* env, jclass obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
-JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv* env, jclass obj);
-JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv* env, jclass obj);
-JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getControllers(JNIEnv* env, jclass obj);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControllerType(JNIEnv* env, jclass obj, jint port, jint type);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv* env, jclass obj, jobject variable);
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv* env, jclass obj);
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv* env, jclass obj);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv* env, jclass obj, jint index);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv* env, jclass obj, jboolean enabled);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(JNIEnv* env, jclass obj, jint speed);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv* env, jclass obj, jboolean enabled);
+    void setRumbleEnabled(bool enabled);
+    void setFrameSpeed(unsigned int speed);
+    void setAudioEnabled(bool enabled);
 
-}
+    void resetGlobalVariables();
+
+    // Handle callbacks
+    void handleVideoRefresh(const void *data, unsigned width, unsigned height, size_t pitch);
+    size_t handleAudioCallback(const int16_t* data, size_t frames);
+    int16_t handleSetInputState(unsigned port, unsigned device, unsigned index, unsigned id);
+    uintptr_t handleGetCurrentFrameBuffer();
+
+private:
+    void updateAudioSampleRateMultiplier();
+
+protected:
+    static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);
+    static size_t callback_set_audio_sample_batch(const int16_t* data, size_t frames);
+    static void callback_audio_sample(int16_t left, int16_t right);
+    static int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index, unsigned id);
+    static uintptr_t callback_get_current_framebuffer();
+    static void callback_retro_set_input_poll();
+
+private:
+    unsigned int frameSpeed = 1;
+    bool audioEnabled = true;
+
+    std::mutex retroStateMutex;
+
+    ShaderManager::Type fragmentShaderType = ShaderManager::Type::SHADER_DEFAULT;
+    float screenRefreshRate = 60.0;
+    int openglESVersion = 2;
+
+    bool dirtyVideo = false;
+
+    std::unique_ptr<Core> core;
+    std::unique_ptr<Audio> audio;
+    std::unique_ptr<Video> video;
+    std::unique_ptr<FPSSync> fpsSync;
+    std::unique_ptr<Input> input;
+    std::unique_ptr<Rumble> rumble;
+};
+
+} //namespace libretrodroid
 
 #endif //LIBRETRODROID_LIBRETRODROID_H

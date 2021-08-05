@@ -22,7 +22,7 @@
 
 #include "renderers/renderer.h"
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class Video {
 public:
@@ -92,8 +92,8 @@ private:
         0.0F, 0.0F, 0.0F, 1.0F,
     };
 
-    int screenWidth = 0;
-    int screenHeight = 0;
+    unsigned screenWidth = 0;
+    unsigned screenHeight = 0;
 
     float rotation = 0;
 

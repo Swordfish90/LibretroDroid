@@ -22,7 +22,7 @@
 
 #include "libretro/libretro.h"
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class Core {
 public:

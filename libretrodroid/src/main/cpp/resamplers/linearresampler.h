@@ -20,14 +20,15 @@
 
 #include "resampler.h"
 
-namespace LibretroDroid {
-class LinearResampler : public LibretroDroid::Resampler {
+namespace libretrodroid {
+
+class LinearResampler : public Resampler {
 public:
     void resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) override;
     LinearResampler() = default;
     virtual ~LinearResampler() = default;
 };
-}
 
+} //namespace libretrodroid
 
 #endif //LIBRETRODROID_LINEARRESAMPLER_H

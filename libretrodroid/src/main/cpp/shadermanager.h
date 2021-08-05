@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class ShaderManager {
 public:

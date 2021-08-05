@@ -17,6 +17,10 @@
 
 #include "renderer.h"
 
-void LibretroDroid::Renderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+namespace libretrodroid {
+
+void Renderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     lastFrameSize = std::make_pair(width, height);
 }
+
+} //namespace libretrodroid

@@ -18,7 +18,7 @@
 #ifndef LIBRETRODROID_ERRORCODES_H
 #define LIBRETRODROID_ERRORCODES_H
 
-namespace LibretroDroid {
+namespace libretrodroid {
     int ERROR_LOAD_LIBRARY = 0;
     int ERROR_LOAD_GAME = 1;
     int ERROR_GL_NOT_COMPATIBLE = 2;

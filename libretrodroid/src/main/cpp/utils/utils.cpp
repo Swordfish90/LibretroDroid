@@ -15,21 +15,30 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_UTILS_H
-#define LIBRETRODROID_UTILS_H
+#include <iostream>
+#include <fstream>
 
-namespace LibretroDroid {
+#include "utils.h"
+#include "../log.h"
 
-class Utils {
-public:
-    struct ReadResult {
-        size_t size;
-        char* data;
-    };
+namespace libretrodroid {
 
-    static ReadResult readFileAsBytes(const char* filePath);
-};
+Utils::ReadResult Utils::readFileAsBytes(const std::string &filePath) {
+    std::ifstream fileStream(filePath);
+    fileStream.seekg(0, std::ios::end);
+    size_t size = fileStream.tellg();
+    char* bytes = new char[size];
+    fileStream.seekg(0, std::ios::beg);
+    fileStream.read(bytes, size);
+    fileStream.close();
 
+    return ReadResult { size, bytes };
 }
 
-#endif //LIBRETRODROID_UTILS_H
+const char* Utils::cloneToCString(const std::string &input) {
+    char* result = new char[input.length() + 1];
+    std::strcpy(result, input.c_str());
+    return result;
+}
+
+} //namespace libretrodroid

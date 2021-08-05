@@ -20,8 +20,9 @@
 
 #include "resampler.h"
 
-namespace LibretroDroid {
-class SincResampler : public LibretroDroid::Resampler {
+namespace libretrodroid {
+
+class SincResampler : public Resampler {
 public:
     void resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) override;
     SincResampler(const int taps);
@@ -34,7 +35,7 @@ private:
     static constexpr float PI_F = 3.14159265358979f;
     int halfTaps;
 };
-}
 
+} //namespace libretrodroid
 
 #endif //LIBRETRODROID_SINCRESAMPLER_H

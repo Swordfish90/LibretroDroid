@@ -17,6 +17,7 @@
 
 #define MODULE_NAME_CORE "Libretro Core"
 
+#include <utility>
 #include <vector>
 #include <string>
 #include <cstring>
@@ -29,8 +30,8 @@
 #include "environment.h"
 
 void Environment::initialize(
-    const char* requiredSystemDirectory,
-    const char* requiredSavesDirectory,
+    const std::string &requiredSystemDirectory,
+    const std::string &requiredSavesDirectory,
     retro_hw_get_current_framebuffer_t required_callback_get_current_framebuffer
 ) {
     callback_get_current_framebuffer = required_callback_get_current_framebuffer;
@@ -256,13 +257,13 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
 
         case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
             LOGD("Called RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
-            *(const char**) data = savesDirectory;
-            return savesDirectory != nullptr;
+            *(const char**) data = savesDirectory.c_str();
+            return !savesDirectory.empty();
 
         case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
             LOGD("Called RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
-            *(const char**) data = systemDirectory;
-            return systemDirectory != nullptr;
+            *(const char**) data = systemDirectory.c_str();
+            return !systemDirectory.empty();
 
         case RETRO_ENVIRONMENT_SET_ROTATION: {
             LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
@@ -403,4 +404,16 @@ const std::vector<struct Variable> &Environment::getVariables() const {
 
 const std::vector<std::vector<struct Controller>> &Environment::getControllers() const {
     return controllers;
+}
+
+float Environment::retrieveGameSpecificAspectRatio() {
+    if (getGameGeometryAspectRatio() > 0) {
+        return getGameGeometryAspectRatio();
+    }
+
+    if (getGameGeometryWidth() > 0 && getGameGeometryHeight() > 0) {
+        return (float) getGameGeometryWidth() / (float) getGameGeometryHeight();
+    }
+
+    return -1.0f;
 }
