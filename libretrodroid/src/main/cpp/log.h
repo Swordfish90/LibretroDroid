@@ -20,7 +20,7 @@
 
 #include <android/log.h>
 
-#define MODULE_NAME "LibretroDroid"
+#define MODULE_NAME "libretrodroid"
 
 #define VERBOSE_LOGGING false
 

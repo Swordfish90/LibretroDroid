@@ -20,16 +20,19 @@
 
 #include <jni.h>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
+// TODO FILIPPO... This should be enabled again with the new implementation...
 class Rumble {
 public:
     void setEnabled(bool enabled);
-    void updateAndDispatch(uint16_t currentStrength, JNIEnv* env, jobject glRetroView);
+    void update(uint16_t currentStrength);
+    bool hasUpdate();
+    float getCurrentValue();
 
 private:
-    bool enabled;
-    jmethodID rumbleMethodId = nullptr;
+    bool enabled = false;
+    bool dirty = false;
     uint16_t currentRumbleStrength = 0;
 };
 

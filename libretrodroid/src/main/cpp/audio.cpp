@@ -21,7 +21,9 @@
 #include <cmath>
 #include <memory>
 
-LibretroDroid::Audio::Audio(int32_t sampleRate) {
+namespace libretrodroid {
+
+Audio::Audio(int32_t sampleRate) {
     LOGI("Audio initialization has been called with sample rate %d", sampleRate);
 
     int32_t sampleRateDivisor = 500 / AUDIO_LATENCY_MAX_MS;
@@ -46,26 +48,26 @@ LibretroDroid::Audio::Audio(int32_t sampleRate) {
     }
 }
 
-void LibretroDroid::Audio::start() {
+void Audio::start() {
     if (stream != nullptr)
         stream->requestStart();
 }
 
-void LibretroDroid::Audio::stop() {
+void Audio::stop() {
     if (stream != nullptr)
         stream->requestStop();
 }
 
-void LibretroDroid::Audio::write(const int16_t *data, size_t frames) {
+void Audio::write(const int16_t *data, size_t frames) {
     size_t size = frames * 2;
     fifo->write(data, size);
 }
 
-void LibretroDroid::Audio::setSampleRateMultiplier(const double multiplier) {
+void Audio::setSampleRateMultiplier(const double multiplier) {
     sampleRateMultiplier = multiplier;
 }
 
-oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
     double finalSampleRate = defaultSampleRate *
             computeAudioSpeedCoefficient(0.001 * numFrames) *
             sampleRateMultiplier;
@@ -81,7 +83,7 @@ oboe::DataCallbackResult LibretroDroid::Audio::onAudioReady(oboe::AudioStream *o
 
 // To prevent audio buffer overruns or underruns we set up a PI controller. The idea is to run the
 // audio slower when the buffer is empty and faster when it's full.
-double LibretroDroid::Audio::computeAudioSpeedCoefficient(double dt) {
+double Audio::computeAudioSpeedCoefficient(double dt) {
     double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
     double framesAvailableInBuffer = fifo->getFullFramesAvailable();
 
@@ -104,6 +106,8 @@ double LibretroDroid::Audio::computeAudioSpeedCoefficient(double dt) {
     return 1.0 - (proportionalAdjustment + integralAdjustment);
 }
 
-int32_t LibretroDroid::Audio::roundToEven(int32_t x) {
+int32_t Audio::roundToEven(int32_t x) {
     return (x / 2) * 2;
 }
+
+} //namespace libretrodroid

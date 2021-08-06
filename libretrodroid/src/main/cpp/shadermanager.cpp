@@ -1,10 +1,25 @@
-//
-// Created by swordfish on 18/11/19.
-//
+/*
+ *     Copyright (C) 2019  Filippo Scognamiglio
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include "shadermanager.h"
 
-const std::string LibretroDroid::ShaderManager::defaultShader =
+namespace libretrodroid {
+
+const std::string ShaderManager::defaultShader =
         "precision mediump float;\n"
         "uniform lowp sampler2D texture;\n"
         "varying vec2 coords;\n"
@@ -13,7 +28,7 @@ const std::string LibretroDroid::ShaderManager::defaultShader =
         "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
         "}\n";
 
-const std::string LibretroDroid::ShaderManager::crtShader =
+const std::string ShaderManager::crtShader =
         "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
         "#define HIGHP highp\n"
         "#else\n"
@@ -43,7 +58,7 @@ const std::string LibretroDroid::ShaderManager::crtShader =
         "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
         "}\n";
 
-const std::string LibretroDroid::ShaderManager::lcdShader =
+const std::string ShaderManager::lcdShader =
         "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
         "#define HIGHP highp\n"
         "#else\n"
@@ -80,7 +95,7 @@ const std::string LibretroDroid::ShaderManager::lcdShader =
         "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
         "}\n";
 
-const std::string LibretroDroid::ShaderManager::defaultSharp =
+const std::string ShaderManager::defaultSharp =
         "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
         "#define HIGHP highp\n"
         "#else\n"
@@ -106,7 +121,7 @@ const std::string LibretroDroid::ShaderManager::defaultSharp =
         "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
         "}\n";
 
-std::string LibretroDroid::ShaderManager::getShader(Type type) {
+std::string ShaderManager::getShader(Type type) {
     switch (type) {
         case Type::SHADER_DEFAULT:
             return defaultShader;
@@ -121,3 +136,5 @@ std::string LibretroDroid::ShaderManager::getShader(Type type) {
             return defaultSharp;
     }
 }
+
+} //namespace libretrodroid

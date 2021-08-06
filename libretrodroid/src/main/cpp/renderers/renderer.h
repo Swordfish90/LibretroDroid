@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class Renderer {
 public:

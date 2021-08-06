@@ -21,7 +21,7 @@
 #include <chrono>
 #include <thread>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 typedef std::chrono::steady_clock::time_point TimePoint;
 typedef std::chrono::duration<long, std::micro> Duration;

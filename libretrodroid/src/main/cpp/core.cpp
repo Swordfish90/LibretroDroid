@@ -20,7 +20,9 @@
 
 #include "log.h"
 
-LibretroDroid::Core::Core(const std::string& soCorePath) {
+namespace libretrodroid {
+
+Core::Core(const std::string& soCorePath) {
     open(soCorePath);
 }
 
@@ -33,7 +35,7 @@ void* get_symbol(void* handle, const char* symbol) {
     return result;
 }
 
-void LibretroDroid::Core::open(const std::string& soCorePath) {
+void Core::open(const std::string& soCorePath) {
     libHandle = dlopen(soCorePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
     if (!libHandle) {
         LOGE("Cannot dlopen library, closing");
@@ -63,13 +65,15 @@ void LibretroDroid::Core::open(const std::string& soCorePath) {
     retro_set_input_state = (void (*)(retro_input_state_t)) get_symbol(libHandle, "retro_set_input_state");
 }
 
-void LibretroDroid::Core::close() {
+void Core::close() {
     if (libHandle) {
         dlclose(libHandle);
         libHandle = nullptr;
     }
 }
 
-LibretroDroid::Core::~Core() {
+Core::~Core() {
     close();
 }
+
+} //namespace libretrodroid

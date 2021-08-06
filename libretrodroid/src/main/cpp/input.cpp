@@ -24,7 +24,9 @@
 
 #include "libretro/libretro.h"
 
-int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsigned index, unsigned id) {
+namespace libretrodroid {
+
+int16_t Input::getInputState(unsigned port, unsigned device, unsigned index, unsigned id) {
     if (port >= 4 || port < 0) return 0;
 
     switch (device) {
@@ -97,7 +99,7 @@ int16_t LibretroDroid::Input::getInputState(unsigned port, unsigned device, unsi
     }
 }
 
-int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
+int Input::convertAndroidToLibretroKey(int keyCode) const {
     switch (keyCode) {
         case AKEYCODE_BUTTON_START:
             return RETRO_DEVICE_ID_JOYPAD_START;
@@ -123,11 +125,12 @@ int LibretroDroid::Input::convertAndroidToLibretroKey(int keyCode) {
             return RETRO_DEVICE_ID_JOYPAD_L3;
         case AKEYCODE_BUTTON_THUMBR:
             return RETRO_DEVICE_ID_JOYPAD_R3;
+        default:
+            return UNKNOWN_KEY;
     }
-    return UNKNOWN_KEY;
 }
 
-void LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
+void Input::onKeyEvent(unsigned int port, int action, int keyCode) {
     int retroKeyCode = convertAndroidToLibretroKey(keyCode);
     if (retroKeyCode == UNKNOWN_KEY) {
         return;
@@ -140,26 +143,28 @@ void LibretroDroid::Input::onKeyEvent(int port, int action, int keyCode) {
     }
 }
 
-void LibretroDroid::Input::onMotionEvent(int port, int motionSource, float xAxis, float yAxis) {
+void Input::onMotionEvent(int port, int motionSource, float xAxis, float yAxis) {
     switch (motionSource) {
-        case LibretroDroid::Input::MOTION_SOURCE_DPAD:
+        case Input::MOTION_SOURCE_DPAD:
             pads[port].dpadXAxis = (int) round(xAxis);
             pads[port].dpadYAxis = (int) round(yAxis);
             break;
 
-        case LibretroDroid::Input::MOTION_SOURCE_ANALOG_LEFT:
+        case Input::MOTION_SOURCE_ANALOG_LEFT:
             pads[port].joypadLeftXAxis = xAxis;
             pads[port].joypadLeftYAxis = yAxis;
             break;
 
-        case LibretroDroid::Input::MOTION_SOURCE_ANALOG_RIGHT:
+        case Input::MOTION_SOURCE_ANALOG_RIGHT:
             pads[port].joypadRightXAxis = xAxis;
             pads[port].joypadRightYAxis = yAxis;
             break;
 
-        case LibretroDroid::Input::MOTION_SOURCE_POINTER:
+        case Input::MOTION_SOURCE_POINTER:
             pads[port].pointerScreenXAxis = xAxis;
             pads[port].pointerScreenYAxis = yAxis;
             break;
     }
 }
+
+} //namespace libretrodroid

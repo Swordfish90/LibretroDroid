@@ -25,6 +25,8 @@
 
 #include "video.h"
 
+namespace libretrodroid {
+
 static void printGLString(const char *name, GLenum s) {
     const char *v = (const char *) glGetString(s);
     LOGI("GL %s = %s\n", name, v);
@@ -122,7 +124,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation) {
+void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
@@ -168,7 +170,7 @@ void LibretroDroid::Video::initializeGraphics(Renderer* renderer, const std::str
     glUseProgram(0);
 }
 
-void LibretroDroid::Video::renderFrame() {
+void Video::renderFrame() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, screenWidth, screenHeight);
@@ -225,25 +227,25 @@ void LibretroDroid::Video::renderFrame() {
     glUseProgram(0);
 }
 
-float LibretroDroid::Video::getScreenDensity() {
+float Video::getScreenDensity() {
     return std::min(screenWidth / getTextureWidth(), screenHeight / getTextureHeight());
 }
 
-float LibretroDroid::Video::getTextureWidth() {
+float Video::getTextureWidth() {
     return renderer->lastFrameSize.first;
 }
 
-float LibretroDroid::Video::getTextureHeight() {
+float Video::getTextureHeight() {
     return renderer->lastFrameSize.second;
 }
 
-void LibretroDroid::Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
     }
 }
 
-void LibretroDroid::Video::updateViewModelMatrix() {
+void Video::updateViewModelMatrix() {
     // Apply simple rotation matrix
     gViewModelMatrix[0] = cos(rotation);
     gViewModelMatrix[1] = -sin(rotation);
@@ -251,13 +253,15 @@ void LibretroDroid::Video::updateViewModelMatrix() {
     gViewModelMatrix[5] = cos(rotation);
 }
 
-void LibretroDroid::Video::updateScreenSize(unsigned screenWidth, unsigned screenHeight) {
+void Video::updateScreenSize(unsigned screenWidth, unsigned screenHeight) {
     LOGD("Updating screen size: %d x %d", screenWidth, screenHeight);
     this->screenWidth = screenWidth;
     this->screenHeight = screenHeight;
 }
 
-void LibretroDroid::Video::updateRendererSize(unsigned int width, unsigned int height) {
+void Video::updateRendererSize(unsigned int width, unsigned int height) {
     LOGD("Updating renderer size: %d x %d", screenWidth, screenHeight);
     renderer->updateRenderedResolution(width, height);
 }
+
+} //namespace libretrodroid

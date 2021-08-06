@@ -10,6 +10,9 @@ include_directories (${OBOE_DIR}/include)
 include_directories (${OBOE_DIR}/src)
 
 add_library(libretrodroid SHARED
+        libretrodroidjni.h
+        libretrodroidjni.cpp
+        libretrodroid.h
         libretrodroid.cpp
         log.h
         core.h
@@ -33,17 +36,22 @@ add_library(libretrodroid SHARED
         resamplers/sincresampler.cpp
         fpssync.h
         fpssync.cpp
+        environment.h
+        environment.cpp
         input.h
         input.cpp
         shadermanager.h
         shadermanager.cpp
-        javautils.h
-        javautils.cpp
+        utils/javautils.h
+        utils/javautils.cpp
         rumble.h
         rumble.cpp
-        utils.cpp
-        utils.h
-        libretro/libretro.h)
+        utils/utils.cpp
+        utils/utils.h
+        utils/jnistring.h
+        utils/jnistring.cpp
+        libretro/libretro.h
+)
 
 # add lib dependencies
 target_link_libraries(libretrodroid
@@ -51,5 +59,6 @@ target_link_libraries(libretrodroid
                       log 
                       EGL
                       oboe
-                      GLESv3)
+                      GLESv3
+)
 

@@ -27,9 +27,9 @@
 #include <utility>
 #include <vector>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
-class ImageRendererES3: public LibretroDroid::Renderer {
+class ImageRendererES3: public Renderer {
 public:
     explicit ImageRendererES3();
     uintptr_t getTexture() override;
@@ -40,7 +40,7 @@ public:
 
 private:
     void applyGLSwizzle(int r, int g, int b, int a);
-    void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch);
+    void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const;
 
 private:
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;

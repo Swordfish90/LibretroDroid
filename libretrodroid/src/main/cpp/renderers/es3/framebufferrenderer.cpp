@@ -18,7 +18,9 @@
 #include "framebufferrenderer.h"
 #include "../../log.h"
 
-LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
+namespace libretrodroid {
+
+FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
     this->depth = depth;
     this->stencil = stencil;
 
@@ -32,23 +34,23 @@ LibretroDroid::FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned
     FramebufferRenderer::updateRenderedResolution(width, height);
 }
 
-void LibretroDroid::FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
-    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
+void FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+    Renderer::onNewFrame(data, width, height, pitch);
 }
 
-uintptr_t LibretroDroid::FramebufferRenderer::getTexture() {
+uintptr_t FramebufferRenderer::getTexture() {
     return currentTexture;
 }
 
-uintptr_t LibretroDroid::FramebufferRenderer::getFramebuffer() {
+uintptr_t FramebufferRenderer::getFramebuffer() {
     return currentFramebuffer;
 }
 
-void LibretroDroid::FramebufferRenderer::setPixelFormat(int pixelFormat) {
+void FramebufferRenderer::setPixelFormat(int pixelFormat) {
     // TODO... Here we should handle 32bit framebuffers.
 }
 
-void LibretroDroid::FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
+void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, currentFramebuffer);
 
     glBindTexture(GL_TEXTURE_2D, currentTexture);
@@ -58,10 +60,19 @@ void LibretroDroid::FramebufferRenderer::updateRenderedResolution(unsigned int w
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, currentTexture, 0);
 
     if (depth) {
-        unsigned depth_buffer;
-        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, stencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT16, width, height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, stencil? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, currentDepthBuffer);
+        glRenderbufferStorage(
+            GL_RENDERBUFFER,
+            stencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT16,
+            width,
+            height
+        );
+        glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER,
+            stencil? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT,
+            GL_RENDERBUFFER,
+            currentDepthBuffer
+        );
     }
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -73,3 +84,5 @@ void LibretroDroid::FramebufferRenderer::updateRenderedResolution(unsigned int w
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
+
+} //namespace libretrodroid

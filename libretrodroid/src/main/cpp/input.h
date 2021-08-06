@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <unordered_set>
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class Input {
 
@@ -48,13 +48,13 @@ public:
 
     int16_t getInputState(unsigned port, unsigned device, unsigned index, unsigned id);
 
-    void onKeyEvent(int port, int action, int keyCode);
+    void onKeyEvent(unsigned int port, int action, int keyCode);
     void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
 
 private:
     const int UNKNOWN_KEY = -1;
 
-    int convertAndroidToLibretroKey(int keyCode);
+    int convertAndroidToLibretroKey(int keyCode) const;
 
     GamePadState pads[4];
 };

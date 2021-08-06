@@ -19,12 +19,14 @@
 #define LIBRETRODROID_JAVAUTILS_H
 
 #include <jni.h>
+#include "../environment.h"
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class JavaUtils {
 public:
     static jint throwRetroException(JNIEnv *env, int errorCode);
+    static Variable variableFromJava(JNIEnv *env, jobject obj);
 };
 
 }

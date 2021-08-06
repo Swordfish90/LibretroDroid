@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2020  Filippo Scognamiglio
+ *     Copyright (C) 2021  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -15,28 +15,21 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "rumble.h"
+#include "jnistring.h"
 
-namespace libretrodroid {
-
-void Rumble::update(uint16_t currentStrength) {
-    if (!enabled || currentStrength == currentRumbleStrength) return;
-
-    currentRumbleStrength = currentStrength;
-    dirty = true;
+JniString::JniString(JNIEnv *env, jstring javaString) :
+    env(env), javaString(javaString) {
+    nativeString = env->GetStringUTFChars(javaString, 0);
 }
 
-void Rumble::setEnabled(bool enabled) {
-    this->enabled = enabled;
+JniString::~JniString() {
+    env->ReleaseStringUTFChars(javaString, nativeString);
 }
 
-bool Rumble::hasUpdate() {
-    return dirty;
+const char* JniString::cString() {
+    return nativeString;
 }
 
-float Rumble::getCurrentValue() {
-    dirty = false;
-    return (float) currentRumbleStrength / 0xFFFF;
+std::string JniString::stdString() {
+    return std::string(cString());
 }
-
-} //namespace libretrodroid

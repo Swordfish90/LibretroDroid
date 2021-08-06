@@ -18,12 +18,14 @@
 #include "imagerendereres2.h"
 #include "../../libretro/libretro.h"
 
-LibretroDroid::ImageRendererES2::ImageRendererES2() {
+namespace libretrodroid {
+
+ImageRendererES2::ImageRendererES2() {
     glGenTextures(1, &currentTexture);
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 }
 
-void LibretroDroid::ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
@@ -56,10 +58,10 @@ void LibretroDroid::ImageRendererES2::onNewFrame(const void *data, unsigned widt
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    LibretroDroid::Renderer::onNewFrame(data, width, height, pitch);
+    Renderer::onNewFrame(data, width, height, pitch);
 }
 
-void LibretroDroid::ImageRendererES2::convertDataFromRGB8888(const void *data, size_t size) {
+void ImageRendererES2::convertDataFromRGB8888(const void *data, size_t size) {
     char* pixelData = (char*) data;
 
     for (int i = 0; i < size - 4; i += 4) {
@@ -70,15 +72,15 @@ void LibretroDroid::ImageRendererES2::convertDataFromRGB8888(const void *data, s
     }
 }
 
-uintptr_t LibretroDroid::ImageRendererES2::getTexture() {
+uintptr_t ImageRendererES2::getTexture() {
     return currentTexture;
 }
 
-uintptr_t LibretroDroid::ImageRendererES2::getFramebuffer() {
+uintptr_t ImageRendererES2::getFramebuffer() {
     return 0; // ImageRender does not really expose a framebuffer.
 }
 
-void LibretroDroid::ImageRendererES2::setPixelFormat(int pixelFormat) {
+void ImageRendererES2::setPixelFormat(int pixelFormat) {
     this->pixelFormat = pixelFormat;
 
     switch (pixelFormat) {
@@ -100,7 +102,7 @@ void LibretroDroid::ImageRendererES2::setPixelFormat(int pixelFormat) {
     }
 }
 
-void LibretroDroid::ImageRendererES2::convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) {
+void ImageRendererES2::convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const {
     auto castData = (uint16_t*) data;
 
     for (int i = 0; i < height * pitch / bytesPerPixel; ++i) {
@@ -110,4 +112,6 @@ void LibretroDroid::ImageRendererES2::convertDataFrom0RGB1555(const void *data, 
     }
 }
 
-void LibretroDroid::ImageRendererES2::updateRenderedResolution(unsigned int width, unsigned int height) {}
+void ImageRendererES2::updateRenderedResolution(unsigned int width, unsigned int height) {}
+
+} //namespace libretrodroid

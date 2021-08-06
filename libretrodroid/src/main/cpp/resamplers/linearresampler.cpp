@@ -19,7 +19,9 @@
 #include <algorithm>
 #include "linearresampler.h"
 
-void LibretroDroid::LinearResampler::resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) {
+namespace libretrodroid {
+
+void LinearResampler::resample(const int16_t *source, int32_t inputFrames, int16_t *sink, int32_t sinkFrames) {
     double outputTime = 0;
     double outputTimeStep = 1.0 / sinkFrames;
 
@@ -37,3 +39,5 @@ void LibretroDroid::LinearResampler::resample(const int16_t *source, int32_t inp
         sinkFrames--;
     }
 }
+
+} //namespace libretrodroid

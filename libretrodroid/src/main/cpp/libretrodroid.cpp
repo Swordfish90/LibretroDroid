@@ -20,10 +20,12 @@
 #include <EGL/egl.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <unordered_set>
 #include <mutex>
 
+#include "libretrodroid.h"
 #include "log.h"
 #include "core.h"
 #include "audio.h"
@@ -33,371 +35,58 @@
 #include "input.h"
 #include "rumble.h"
 #include "shadermanager.h"
-#include "javautils.h"
-#include "errorcodes.h"
-#include "environment.cpp"
+#include "utils/javautils.h"
+#include "environment.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
+#include "utils/utils.h"
 
-extern "C" {
-#include "utils.h"
-#include "libretro/libretro.h"
+namespace libretrodroid {
+
+uintptr_t LibretroDroid::callback_get_current_framebuffer() {
+    return LibretroDroid::getInstance().handleGetCurrentFrameBuffer();
 }
 
-LibretroDroid::Core* core = nullptr;
-LibretroDroid::Audio* audio = nullptr;
-LibretroDroid::Video* video = nullptr;
-LibretroDroid::FPSSync* fpsSync = nullptr;
-LibretroDroid::Input* input = nullptr;
-LibretroDroid::Rumble* rumble = nullptr;
-
-unsigned int frameSpeed = 1;
-bool audioEnabled = true;
-
-std::mutex retroStateMutex;
-
-auto fragmentShaderType = LibretroDroid::ShaderManager::Type::SHADER_DEFAULT;
-float screenRefreshRate = 60.0;
-int openglESVersion = 2;
-
-uintptr_t callback_get_current_framebuffer() {
-    if (video != nullptr) {
-        return video->getCurrentFramebuffer();
-    }
-    return 0;
-}
-
-void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
+void LibretroDroid::callback_hw_video_refresh(
+    const void *data,
+    unsigned width,
+    unsigned height,
+    size_t pitch
+) {
     LOGD("hw video refresh callback called %i %i", width, height);
-    video->onNewFrame(data, width, height, pitch);
+    LibretroDroid::getInstance().handleVideoRefresh(data, width, height, pitch);
 }
 
-void callback_audio_sample(int16_t left, int16_t right) {
+void LibretroDroid::callback_audio_sample(int16_t left, int16_t right) {
     LOGE("callback audio sample (left, right) has been called");
 }
 
-size_t callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
-    if (audio != nullptr && audioEnabled) {
-        audio->write(data, frames);
-    }
-    return frames;
+size_t LibretroDroid::callback_set_audio_sample_batch(const int16_t *data, size_t frames) {
+    return LibretroDroid::getInstance().handleAudioCallback(data, frames);
 }
 
-void callback_retro_set_input_poll() {
+void LibretroDroid::callback_retro_set_input_poll() {
     // Do nothing in here...
 }
 
-int16_t callback_set_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
-    if (input != nullptr) {
-        return input->getInputState(port, device, index, id);
-    }
-    return 0;
+int16_t LibretroDroid::callback_set_input_state(
+    unsigned int port,
+    unsigned int device,
+    unsigned int index,
+    unsigned int id
+) {
+    return LibretroDroid::getInstance().handleSetInputState(port, device, index, id);
 }
 
-void updateAudioSampleRateMultiplier() {
-    if (audio != nullptr) {
+void LibretroDroid::updateAudioSampleRateMultiplier() {
+    if (audio) {
         audio->setSampleRateMultiplier(frameSpeed);
     }
 }
 
-// INITIALIZATION
-
-extern "C" {
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj);
-    JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeState(JNIEnv * env, jobject obj);
-    JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data);
-    JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv * env, jobject obj, jbyteArray data);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv * env, jobject obj, jint GLESVersion, jstring soFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jint shaderType, jfloat refreshRate, jstring language);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromPath(JNIEnv * env, jobject obj, jstring gameFilePath);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromBytes(JNIEnv * env, jobject obj, jbyteArray gameFileBytes);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis);
-    JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj);
-    JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj);
-    JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getControllers(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControllerType(JNIEnv * env, jobject obj, jint port, jint type);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable);
-    JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj);
-    JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv * env, jobject obj, jboolean enabled);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(JNIEnv * env, jobject obj, jint speed);
-    JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled);
-};
-
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableDisks(JNIEnv * env, jobject obj) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-    return Environment::retro_disk_control_callback != nullptr
-        ? Environment::retro_disk_control_callback->get_num_images()
-        : 0;
-}
-
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(JNIEnv * env, jobject obj) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-    return Environment::retro_disk_control_callback != nullptr
-           ? Environment::retro_disk_control_callback->get_image_index()
-           : 0;
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(JNIEnv * env, jobject obj, jint index) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-    if (Environment::retro_disk_control_callback == nullptr) {
-        LOGE("Cannot swap disk. This platform does not support it.");
-        return;
-    }
-
-    if (index < 0 || index >= Environment::retro_disk_control_callback->get_num_images()) {
-        LOGE("Requested image index is not valid.");
-        return;
-    }
-
-    if (Environment::retro_disk_control_callback->get_image_index() != index) {
-        Environment::retro_disk_control_callback->set_eject_state(true);
-        Environment::retro_disk_control_callback->set_image_index((unsigned) index);
-        Environment::retro_disk_control_callback->set_eject_state(false);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(JNIEnv * env, jobject obj, jobject variable) {
-    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
-
-    jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
-    jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
-
-    auto jKeyObject = (jstring) env->GetObjectField(variable, jKeyField);
-    auto jValueObject = (jstring) env->GetObjectField(variable, jValueField);
-
-    jboolean isCopy = JNI_TRUE;
-
-    Environment::updateVariable(
-        env->GetStringUTFChars(jKeyObject, &isCopy),
-        env->GetStringUTFChars(jValueObject, &isCopy)
-    );
-}
-
-JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(JNIEnv * env, jobject obj) {
-    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
-    jmethodID variableMethod = env->GetMethodID(variableClass, "<init>", "()V");
-
-    auto variables = Environment::variables;
-    jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
-
-    for (int i = 0; i < variables.size(); i++) {
-        jobject jVariable = env->NewObject(variableClass, variableMethod);
-
-        jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
-        jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
-        jfieldID jDescriptionField = env->GetFieldID(variableClass, "description", "Ljava/lang/String;");
-
-        env->SetObjectField(jVariable, jKeyField, env->NewStringUTF(variables[i].key.data()));
-        env->SetObjectField(jVariable, jValueField, env->NewStringUTF(variables[i].value.data()));
-        env->SetObjectField(jVariable, jDescriptionField, env->NewStringUTF(variables[i].description.data()));
-
-        env->SetObjectArrayElement(result, i, jVariable);
-    }
-    return result;
-}
-
-JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getControllers(JNIEnv * env, jobject obj) {
-    jclass variableClass = env->FindClass("[Lcom/swordfish/libretrodroid/Controller;");
-
-    auto controllers = Environment::controllers;
-    jobjectArray result = env->NewObjectArray(controllers.size(), variableClass, nullptr);
-
-    for (int i = 0; i < controllers.size(); i++) {
-        jclass variableClass2 = env->FindClass("com/swordfish/libretrodroid/Controller");
-        jobjectArray controllerArray = env->NewObjectArray(controllers[i].size(), variableClass2, nullptr);
-        jmethodID variableMethod = env->GetMethodID(variableClass2, "<init>", "()V");
-
-        for (int j = 0; j < controllers[i].size(); j++) {
-            jobject jController = env->NewObject(variableClass2, variableMethod);
-
-            jfieldID jIdField = env->GetFieldID(variableClass2, "id", "I");
-            jfieldID jDescriptionField = env->GetFieldID(variableClass2, "description", "Ljava/lang/String;");
-
-            env->SetIntField(jController, jIdField, controllers[i][j].id);
-            env->SetObjectField(jController, jDescriptionField, env->NewStringUTF(controllers[i][j].description.data()));
-
-            env->SetObjectArrayElement(controllerArray, j, jController);
-        }
-
-        env->SetObjectArrayElement(result, i, controllerArray);
-    }
-    return result;
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControllerType(JNIEnv * env, jobject obj, jint port, jint type) {
-    core->retro_set_controller_port_device(port, type);
-}
-
-JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv * env, jobject obj, jbyteArray data) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
-    try {
-        jboolean isCopy = JNI_FALSE;
-        jbyte* cData = env->GetByteArrayElements(data, &isCopy);
-        jsize stateSize = env->GetArrayLength(data);
-
-        bool result = core->retro_unserialize(cData, (size_t) stateSize);
-        env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
-
-        return result ? JNI_TRUE : JNI_FALSE;
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
-        return JNI_FALSE;
-    }
-}
-
-JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeState(JNIEnv * env, jobject obj) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
-    try {
-        size_t size = core->retro_serialize_size();
-        jbyte* state = new jbyte[size];
-
-        core->retro_serialize(state, size);
-
-        jbyteArray result = env->NewByteArray(size);
-        env->SetByteArrayRegion (result, 0, size, state);
-
-        return result;
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv * env, jobject obj, jbyteArray data) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
-    try {
-        jboolean isCopy = JNI_FALSE;
-        jbyte* cData = env->GetByteArrayElements(data, &isCopy);
-        jsize dataSize = env->GetArrayLength(data);
-
-        size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
-        void* sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
-
-        if (sramState == nullptr) {
-            LOGE("Cannot load SRAM: nullptr in retro_get_memory_data");
-            env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
-            return;
-        }
-
-        if (dataSize > sramSize) {
-            LOGE("Cannot load SRAM: size mismatch");
-            env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
-            return;
-        }
-
-        memcpy(sramState, cData, dataSize);
-        env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
-    }
-}
-
-JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv * env, jobject obj) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
-    try {
-        size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
-        void* sram = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
-
-        jbyteArray result = env->NewByteArray(size);
-        env->SetByteArrayRegion(result, 0, size, (jbyte*) sram);
-
-        return result;
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_SERIALIZATION);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIEnv * env, jobject obj) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
-    try {
-        core->retro_reset();
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height) {
-    LOGD("Performing LibretroDroid onSurfaceChanged");
-    video->updateScreenSize(width, height);
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv * env, jobject obj) {
-    LOGD("Performing LibretroDroid onSurfaceCreated");
-
-    struct retro_system_av_info system_av_info;
-    core->retro_get_system_av_info(&system_av_info);
-
-    if (video != nullptr) {
-        delete video;
-        video = nullptr;
-    }
-
-    LibretroDroid::Renderer* renderer;
-    if (Environment::useHWAcceleration) {
-        renderer = new LibretroDroid::FramebufferRenderer(
-                system_av_info.geometry.base_width,
-                system_av_info.geometry.base_height,
-                Environment::useDepth,
-                Environment::useStencil
-        );
-    } else {
-        if (openglESVersion >= 3) {
-            renderer = new LibretroDroid::ImageRendererES3();
-        } else {
-            renderer = new LibretroDroid::ImageRendererES2();
-        }
-    }
-
-    auto newVideo = new LibretroDroid::Video();
-    newVideo->initializeGraphics(
-            renderer,
-            LibretroDroid::ShaderManager::getShader(fragmentShaderType),
-            Environment::bottomLeftOrigin,
-            Environment::screenRotation
-    );
-
-    renderer->setPixelFormat(Environment::pixelFormat);
-
-    video = newVideo;
-
-    if (Environment::hw_context_reset != nullptr) {
-        Environment::hw_context_reset();
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(JNIEnv * env, jobject obj, jint port, jint source, jfloat xAxis, jfloat yAxis) {
-    LOGD("Received motion event: %d %.2f, %.2f", source, xAxis, yAxis);
-    if (input != nullptr) {
-        input->onMotionEvent(port, source, xAxis, yAxis);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(JNIEnv * env, jobject obj, jint port, jint action, jint keyCode) {
-    LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
-    if (input != nullptr) {
-        input->onKeyEvent(port, action, keyCode);
-    }
-}
-
-void resetGlobalVariables() {
+// TODO... Do we really need this?
+void LibretroDroid::resetGlobalVariables() {
     core = nullptr;
     audio = nullptr;
     video = nullptr;
@@ -406,252 +95,304 @@ void resetGlobalVariables() {
     rumble = nullptr;
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
-    JNIEnv * env,
-    jobject obj,
-    jint GLESVersion,
-    jstring soFilePath,
-    jstring systemDir,
-    jstring savesDir,
-    jobjectArray variables,
-    jint shaderType,
-    jfloat refreshRate,
-    jstring language
+int LibretroDroid::availableDisks() {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+    return Environment::getInstance().getRetroDiskControlCallback() != nullptr
+           ? Environment::getInstance().getRetroDiskControlCallback()->get_num_images()
+           : 0;
+}
+
+int LibretroDroid::currentDisk() {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+    return Environment::getInstance().getRetroDiskControlCallback() != nullptr
+           ? Environment::getInstance().getRetroDiskControlCallback()->get_image_index()
+           : 0;
+}
+
+void LibretroDroid::changeDisk(unsigned int index) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+    if (Environment::getInstance().getRetroDiskControlCallback() == nullptr) {
+        LOGE("Cannot swap disk. This platform does not support it.");
+        return;
+    }
+
+    if (index < 0 || index >= Environment::getInstance().getRetroDiskControlCallback()->get_num_images()) {
+        LOGE("Requested image index is not valid.");
+        return;
+    }
+
+    if (Environment::getInstance().getRetroDiskControlCallback()->get_image_index() != index) {
+        Environment::getInstance().getRetroDiskControlCallback()->set_eject_state(true);
+        Environment::getInstance().getRetroDiskControlCallback()->set_image_index((unsigned) index);
+        Environment::getInstance().getRetroDiskControlCallback()->set_eject_state(false);
+    }
+}
+
+void LibretroDroid::updateVariable(const Variable& variable) {
+    Environment::getInstance().updateVariable(variable.key, variable.value);
+}
+
+std::vector<Variable> LibretroDroid::getVariables() {
+    return Environment::getInstance().getVariables();
+}
+
+std::vector<std::vector<struct Controller>> LibretroDroid::getControllers() {
+    return Environment::getInstance().getControllers();
+}
+
+void LibretroDroid::setControllerType(unsigned int port, unsigned int type) {
+    core->retro_set_controller_port_device(port, type);
+}
+
+bool LibretroDroid::unserializeState(int8_t *data, size_t size) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+    return core->retro_unserialize(data, size);
+}
+
+JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t size) {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+
+    size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+    void *sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
+
+    if (sramState == nullptr) {
+        LOGE("Cannot load SRAM: nullptr in retro_get_memory_data");
+        return false;
+    }
+
+    if (size > sramSize) {
+        LOGE("Cannot load SRAM: size mismatch");
+        return false;
+    }
+
+    memcpy(sramState, data, size);
+
+    return true;
+}
+
+std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+
+    size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+    auto* data = new int8_t[size];
+    memcpy(data, (int8_t*) core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM), size);
+
+    return std::pair(data, size);
+}
+
+void LibretroDroid::onSurfaceChanged(unsigned int width, unsigned int height) {
+    LOGD("Performing libretrodroid onSurfaceChanged");
+    video->updateScreenSize(width, height);
+}
+
+void LibretroDroid::onSurfaceCreated() {
+    LOGD("Performing libretrodroid onSurfaceCreated");
+
+    struct retro_system_av_info system_av_info {};
+    core->retro_get_system_av_info(&system_av_info);
+
+    video = nullptr;
+
+    Renderer *renderer;
+    if (Environment::getInstance().isUseHwAcceleration()) {
+        renderer = new FramebufferRenderer(
+            system_av_info.geometry.base_width,
+            system_av_info.geometry.base_height,
+            Environment::getInstance().isUseDepth(),
+            Environment::getInstance().isUseStencil()
+        );
+    } else {
+        if (openglESVersion >= 3) {
+            renderer = new ImageRendererES3();
+        } else {
+            renderer = new ImageRendererES2();
+        }
+    }
+
+    auto newVideo = new Video();
+    newVideo->initializeGraphics(
+        renderer,
+        ShaderManager::getShader(fragmentShaderType),
+        Environment::getInstance().isBottomLeftOrigin(),
+        Environment::getInstance().getScreenRotation()
+    );
+
+    renderer->setPixelFormat(Environment::getInstance().getPixelFormat());
+
+    video = std::unique_ptr<Video>(newVideo);
+
+    if (Environment::getInstance().getHwContextReset() != nullptr) {
+        Environment::getInstance().getHwContextReset()();
+    }
+}
+
+void LibretroDroid::onMotionEvent(
+    unsigned int port,
+    unsigned int source,
+    float xAxis,
+    float yAxis
 ) {
-    LOGD("Performing LibretroDroid create");
-    const char* corePath = env->GetStringUTFChars(soFilePath, nullptr);
-    const char* deviceLanguage = env->GetStringUTFChars(language, nullptr);
+    LOGD("Received motion event: %d %.2f, %.2f", source, xAxis, yAxis);
+    if (input) {
+        input->onMotionEvent(port, source, xAxis, yAxis);
+    }
+}
+
+void LibretroDroid::onKeyEvent(unsigned int port, int action, int keyCode) {
+    LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
+    if (input) {
+        input->onKeyEvent(port, action, keyCode);
+    }
+}
+
+void LibretroDroid::create(
+    unsigned int GLESVersion,
+    const std::string& soFilePath,
+    const std::string& systemDir,
+    const std::string& savesDir,
+    std::vector<Variable> variables,
+    int shaderType,
+    float refreshRate,
+    const std::string& language
+) {
+    LOGD("Performing libretrodroid create");
 
     resetGlobalVariables();
 
-    try {
-        Environment::initialize(
-            env->GetStringUTFChars(systemDir, nullptr),
-            env->GetStringUTFChars(savesDir, nullptr),
-            &callback_get_current_framebuffer
-        );
+    Environment::getInstance().initialize(systemDir, savesDir, &callback_get_current_framebuffer);
+    Environment::getInstance().setLanguage(language);
 
-        Environment::setLanguage(std::string(deviceLanguage));
+    openglESVersion = GLESVersion;
+    screenRefreshRate = refreshRate;
+    audioEnabled = true;
+    frameSpeed = 1;
 
-        openglESVersion = GLESVersion;
-        screenRefreshRate = refreshRate;
-        audioEnabled = true;
-        frameSpeed = 1;
+    core = std::make_unique<Core>(soFilePath);
 
-        core = new LibretroDroid::Core(corePath);
+    core->retro_set_video_refresh(&callback_hw_video_refresh);
+    core->retro_set_environment(&Environment::callback_environment);
+    core->retro_set_audio_sample(&callback_audio_sample);
+    core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
+    core->retro_set_input_poll(&callback_retro_set_input_poll);
+    core->retro_set_input_state(&callback_set_input_state);
 
-        core->retro_set_video_refresh(&callback_hw_video_refresh);
-        core->retro_set_environment(&Environment::callback_environment);
-        core->retro_set_audio_sample(&callback_audio_sample);
-        core->retro_set_audio_sample_batch(&callback_set_audio_sample_batch);
-        core->retro_set_input_poll(&callback_retro_set_input_poll);
-        core->retro_set_input_state(&callback_set_input_state);
+    std::for_each(variables.begin(), variables.end(), [&](const Variable& v) {
+        updateVariable(v);
+    });
 
-        int size = env->GetArrayLength(variables);
-        for (int i = 0; i < size; i++) {
-            auto variable = (jobject) env->GetObjectArrayElement(variables, i);
-            Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(env, obj, variable);
-        }
+    core->retro_init();
 
-        core->retro_init();
+    fragmentShaderType = ShaderManager::Type(shaderType);
 
-        fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
+    // HW accelerated cores are only supported on opengles 3.
+    if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
+        // TODO FILIPPO... Throw custom cpp exception here to handle unsupported opengles version.
+    }
 
-        // HW accelerated cores are only supported on opengles 3.
-        if (Environment::useHWAcceleration && openglESVersion < 3) {
-            LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GL_NOT_COMPATIBLE);
-        }
+    fragmentShaderType = ShaderManager::Type(shaderType);
 
-        env->ReleaseStringUTFChars(soFilePath, corePath);
-        env->ReleaseStringUTFChars(language, deviceLanguage);
+    rumble = std::make_unique<Rumble>();
+}
 
-        fragmentShaderType = LibretroDroid::ShaderManager::Type(shaderType);
+void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
+    LOGD("Performing libretrodroid loadGameFromPath");
+    struct retro_system_info system_info {};
+    core->retro_get_system_info(&system_info);
 
-        rumble = new LibretroDroid::Rumble();
+    struct retro_game_info game_info {};
+    game_info.path = Utils::cloneToCString(gamePath);
+    game_info.meta = nullptr;
 
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_LIBRARY);
+    if (system_info.need_fullpath) {
+        game_info.data = nullptr;
+        game_info.size = 0;
+    } else {
+        struct Utils::ReadResult file = Utils::readFileAsBytes(gamePath);
+        game_info.data = file.data;
+        game_info.size = file.size;
+    }
+
+    bool result = core->retro_load_game(&game_info);
+    if (!result) {
+        LOGE("Cannot load game. Leaving.");
+        throw std::runtime_error("Cannot load game");
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromPath(
-    JNIEnv * env,
-    jobject obj,
-    jstring gameFilePath
-) {
-    LOGD("Performing LibretroDroid loadGameFromPath");
-    const char* gamePath = env->GetStringUTFChars(gameFilePath, nullptr);
+void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
+    LOGD("Performing libretrodroid loadGameFromBytes");
 
-    try {
-        struct retro_system_info system_info;
-        core->retro_get_system_info(&system_info);
+    struct retro_system_info system_info {};
+    core->retro_get_system_info(&system_info);
 
-        struct retro_game_info game_info;
-        game_info.path = gamePath;
-        game_info.meta = nullptr;
+    struct retro_game_info game_info {};
+    game_info.path = nullptr;
+    game_info.meta = nullptr;
 
-        if (system_info.need_fullpath) {
-            game_info.data = nullptr;
-            game_info.size = 0;
-        } else {
-            struct LibretroDroid::Utils::ReadResult file = LibretroDroid::Utils::readFileAsBytes(gamePath);
-            game_info.data = file.data;
-            game_info.size = file.size;
-        }
+    if (system_info.need_fullpath) {
+        game_info.data = nullptr;
+        game_info.size = 0;
+    } else {
+        game_info.data = data;
+        game_info.size = size;
+    }
 
-        bool result = core->retro_load_game(&game_info);
-        if (!result) {
-            LOGE("Cannot load game. Leaving.");
-            throw std::runtime_error("Cannot load game");
-        }
-
-        env->ReleaseStringUTFChars(gameFilePath, gamePath);
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_GAME);
+    bool result = core->retro_load_game(&game_info);
+    if (!result) {
+        LOGE("Cannot load game. Leaving.");
+        throw std::runtime_error("Cannot load game");
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromBytes(
-        JNIEnv * env,
-        jobject obj,
-        jbyteArray gameFileBytes
-) {
-    LOGD("Performing LibretroDroid loadGameFromBytes");
+void LibretroDroid::destroy() {
+    LOGD("Performing libretrodroid destroy");
 
-    try {
-        struct retro_system_info system_info;
-        core->retro_get_system_info(&system_info);
-
-        struct retro_game_info game_info;
-        game_info.path = nullptr;
-        game_info.meta = nullptr;
-
-        size_t gameFileSizeNative = env->GetArrayLength(gameFileBytes);
-        auto* gameFileBytesNative = new char[gameFileSizeNative];
-        env->GetByteArrayRegion(gameFileBytes, 0, gameFileSizeNative, reinterpret_cast<jbyte*>(gameFileBytesNative));
-
-        if (system_info.need_fullpath) {
-            game_info.data = nullptr;
-            game_info.size = 0;
-        } else {
-            game_info.data = gameFileBytesNative;
-            game_info.size = gameFileSizeNative;
-        }
-
-        bool result = core->retro_load_game(&game_info);
-        if (!result) {
-            LOGE("Cannot load game. Leaving.");
-            throw std::runtime_error("Cannot load game");
-        }
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_LOAD_GAME);
+    if (Environment::getInstance().getHwContextDestroy() != nullptr) {
+        Environment::getInstance().getHwContextDestroy()();
     }
+
+    core->retro_unload_game();
+    core->retro_deinit();
+
+    video = nullptr;
+    core = nullptr;
+    rumble = nullptr;
+
+    Environment::getInstance().deinitialize();
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(JNIEnv * env, jobject obj) {
-    LOGD("Performing LibretroDroid destroy");
+void LibretroDroid::resume() {
+    LOGD("Performing libretrodroid resume");
 
-    try {
-        if (Environment::hw_context_destroy != nullptr) {
-            Environment::hw_context_destroy();
-        }
+    input = std::make_unique<Input>();
 
-        core->retro_unload_game();
-        core->retro_deinit();
+    struct retro_system_av_info system_av_info {};
+    core->retro_get_system_av_info(&system_av_info);
 
-        if (video) {
-            delete video;
-            video = nullptr;
-        }
+    fpsSync = std::make_unique<FPSSync>(system_av_info.timing.fps, screenRefreshRate);
 
-        if (core) {
-            delete core;
-            core = nullptr;
-        }
-
-        if (rumble) {
-            delete rumble;
-            rumble = nullptr;
-        }
-
-        Environment::deinitialize();
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
-    }
+    double audioSamplingRate =
+        system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
+    audio = std::make_unique<Audio>(std::lround(audioSamplingRate));
+    updateAudioSampleRateMultiplier();
+    audio->start();
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv * env, jobject obj) {
-    LOGD("Performing LibretroDroid resume");
+void LibretroDroid::pause() {
+    LOGD("Performing libretrodroid pause");
 
-    try {
-        input = new LibretroDroid::Input();
-
-        struct retro_system_av_info system_av_info;
-        core->retro_get_system_av_info(&system_av_info);
-
-        fpsSync = new LibretroDroid::FPSSync(system_av_info.timing.fps, screenRefreshRate);
-
-        double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
-        audio = new LibretroDroid::Audio(std::lround(audioSamplingRate));
-        updateAudioSampleRateMultiplier();
-        audio->start();
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
-    }
+    input = nullptr;
+    audio = nullptr;
+    fpsSync = nullptr;
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv * env, jobject obj) {
-    LOGD("Performing LibretroDroid pause");
-
-    try {
-        if (input) {
-            delete input;
-            input = nullptr;
-        }
-
-        if (audio) {
-            audio->stop();
-            delete audio;
-            audio = nullptr;
-        }
-
-        if (fpsSync) {
-            delete fpsSync;
-            fpsSync = nullptr;
-        }
-
-    } catch (std::exception& exception) {
-        LibretroDroid::JavaUtils::throwRetroException(env, LibretroDroid::ERROR_GENERIC);
-    }
-}
-
-void handlePostStepTasks(JNIEnv * env, jobject obj, jobject glRetroView) {
-    if (rumble != nullptr) {
-        rumble->updateAndDispatch(Environment::lastRumbleStrength, env, glRetroView);
-    }
-
-    // Some games override the core geometry at runtime. These fields get updated in retro_run().
-    if (Environment::gameGeometryUpdated) {
-        Environment::gameGeometryUpdated = false;
-
-        video->updateRendererSize(Environment::gameGeometryWidth, Environment::gameGeometryHeight);
-
-        jclass cls = env->GetObjectClass(glRetroView);
-        jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
-        env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
-    }
-}
-
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv * env, jobject obj, jobject glRetroView)
-{
+void LibretroDroid::step() {
     LOGD("Stepping into retro_run()");
 
     retroStateMutex.lock();
+
     unsigned frames = 1;
-    if (fpsSync != nullptr) {
+    if (fpsSync) {
         unsigned requestedFrames = fpsSync->advanceFrames();
 
         // If the application runs too slow it's better to just skip those frames.
@@ -663,36 +404,38 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEn
 
     retroStateMutex.unlock();
 
-    if (video != nullptr) {
+    if (video) {
         video->renderFrame();
     }
 
-    if (fpsSync != nullptr) {
+    if (fpsSync) {
         fpsSync->wait();
     }
 
-    handlePostStepTasks(env, obj, glRetroView);
-}
-
-float retrieveGameSpecificAspectRatio() {
-    if (Environment::gameGeometryAspectRatio > 0) {
-        return Environment::gameGeometryAspectRatio;
+    if (rumble) {
+        rumble->update(Environment::getInstance().getLastRumbleStrength());
     }
 
-    if (Environment::gameGeometryWidth > 0 && Environment::gameGeometryHeight > 0) {
-        return (float) Environment::gameGeometryWidth / (float) Environment::gameGeometryHeight;
-    }
+    // Some games override the core geometry at runtime. These fields get updated in retro_run().
+    if (video && Environment::getInstance().isGameGeometryUpdated()) {
+        Environment::getInstance().clearGameGeometryUpdated();
 
-    return -1.0f;
+        video->updateRendererSize(
+            Environment::getInstance().getGameGeometryWidth(),
+            Environment::getInstance().getGameGeometryHeight()
+        );
+
+        dirtyVideo = true;
+    }
 }
 
-JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(JNIEnv * env, jobject obj) {
-    float aspectRatio = retrieveGameSpecificAspectRatio();
+float LibretroDroid::getAspectRatio() {
+    float aspectRatio = Environment::getInstance().retrieveGameSpecificAspectRatio();
     if (aspectRatio > 0) {
         return aspectRatio;
     }
 
-    struct retro_system_av_info system_av_info;
+    struct retro_system_av_info system_av_info {};
     core->retro_get_system_av_info(&system_av_info);
 
     aspectRatio = system_av_info.geometry.aspect_ratio;
@@ -700,20 +443,84 @@ JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspec
         return aspectRatio;
     }
 
-    aspectRatio = (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    aspectRatio =
+        (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
 
     return aspectRatio;
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
+void LibretroDroid::setRumbleEnabled(bool enabled) {
     rumble->setEnabled(enabled);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(JNIEnv * env, jobject obj, jint speed) {
+void LibretroDroid::setFrameSpeed(unsigned int speed) {
     frameSpeed = speed;
     updateAudioSampleRateMultiplier();
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(JNIEnv * env, jobject obj, jboolean enabled) {
+void LibretroDroid::setAudioEnabled(bool enabled) {
     audioEnabled = enabled;
 }
+
+void LibretroDroid::handleVideoRefresh(
+    const void *data,
+    unsigned int width,
+    unsigned int height,
+    size_t pitch
+) {
+    if (video) {
+        video->onNewFrame(data, width, height, pitch);
+    }
+}
+
+size_t LibretroDroid::handleAudioCallback(const int16_t *data, size_t frames) {
+    if (audio && audioEnabled) {
+        audio->write(data, frames);
+    }
+    return frames;
+}
+
+int16_t LibretroDroid::handleSetInputState(
+    unsigned int port,
+    unsigned int device,
+    unsigned int index,
+    unsigned int id
+) {
+    if (input) {
+        return input->getInputState(port, device, index, id);
+    }
+    return 0;
+}
+
+uintptr_t LibretroDroid::handleGetCurrentFrameBuffer() {
+    if (video) {
+        return video->getCurrentFramebuffer();
+    }
+    return 0;
+}
+
+void LibretroDroid::reset() {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+    core->retro_reset();
+}
+
+std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
+    std::lock_guard<std::mutex> lock(retroStateMutex);
+
+    size_t size = core->retro_serialize_size();
+    auto data = new int8_t[size];
+
+    core->retro_serialize(data, size);
+
+    return std::pair(data, size);
+}
+
+bool LibretroDroid::requiresVideoRefresh() const {
+    return dirtyVideo;
+}
+
+void LibretroDroid::clearRequiresVideoRefresh() {
+    dirtyVideo = false;
+}
+
+} //namespace libretrodroid

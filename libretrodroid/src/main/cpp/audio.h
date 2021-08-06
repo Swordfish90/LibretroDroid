@@ -25,7 +25,7 @@
 
 #include "resamplers/linearresampler.h"
 
-namespace LibretroDroid {
+namespace libretrodroid {
 
 class Audio: public oboe::AudioStreamDataCallback {
 public:
