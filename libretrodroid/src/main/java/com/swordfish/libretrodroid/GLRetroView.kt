@@ -334,6 +334,10 @@ class GLRetroView(
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
         const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
 
+        const val AUDIO_LATENCY_MODE_STANDARD = LibretroDroid.AUDIO_LATENCY_MODE_STANDARD
+        const val AUDIO_LATENCY_MODE_LOW_64 = LibretroDroid.AUDIO_LATENCY_MODE_LOW_64
+        const val AUDIO_LATENCY_MODE_LOW_32 = LibretroDroid.AUDIO_LATENCY_MODE_LOW_32
+
         const val ERROR_LOAD_LIBRARY = LibretroDroid.ERROR_LOAD_LIBRARY
         const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME
         const val ERROR_GL_NOT_COMPATIBLE = LibretroDroid.ERROR_GL_NOT_COMPATIBLE
