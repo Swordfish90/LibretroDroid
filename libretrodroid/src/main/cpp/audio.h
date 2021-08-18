@@ -60,8 +60,8 @@ private:
         double ki;
     };
 
-    const AudioPISettings PI_SETTINGS_STANDARD {128, 0.005, 0.000005 };
-    const AudioPISettings PI_SETTINGS_LOW_LATENCY {64, 0.01, 0.00002 };
+    const AudioPISettings PI_SETTINGS_STANDARD { 128, 0.005, 0.000005 };
+    const AudioPISettings PI_SETTINGS_LOW_LATENCY { 64, 0.01, 0.000005 };
 
 private:
     const double MAX_AUDIO_SPEED_INTEGRAL = 0.02;
