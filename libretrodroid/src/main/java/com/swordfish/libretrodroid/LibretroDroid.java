@@ -33,6 +33,10 @@ class LibretroDroid {
     public static final int SHADER_LCD = 2;
     public static final int SHADER_SHARP = 3;
 
+    public static final int AUDIO_LATENCY_MODE_STANDARD = 0;
+    public static final int AUDIO_LATENCY_MODE_LOW_64 = 1;
+    public static final int AUDIO_LATENCY_MODE_LOW_32 = 2;
+
     public static final int ERROR_LOAD_LIBRARY = 0;
     public static final int ERROR_LOAD_GAME = 1;
     public static final int ERROR_GL_NOT_COMPATIBLE = 2;
@@ -47,7 +51,7 @@ class LibretroDroid {
         Variable[] variables,
         int shaderType,
         float refreshRate,
-        boolean preferLowInputStream,
+        int audioLatencyMode,
         String language
     );
 

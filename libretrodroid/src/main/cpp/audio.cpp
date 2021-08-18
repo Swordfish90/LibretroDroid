@@ -23,17 +23,16 @@
 
 namespace libretrodroid {
 
-Audio::Audio(int32_t sampleRate, bool lowInputStream) {
+Audio::Audio(int32_t sampleRate, int requestedLatencyMode) {
     LOGI("Audio initialization has been called with input sample rate %d", sampleRate);
 
-    preferLowInputStream = lowInputStream;
     inputSampleRate = sampleRate;
+    audioLatencySettings = findBestLatencySettings(requestedLatencyMode);
     initializeStream();
 }
 
 bool Audio::initializeStream() {
-    bool useLowLatencyStream = oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowInputStream;
-    LOGI("Using low latency stream: %d", useLowLatencyStream);
+    LOGI("Using low latency stream: %d", audioLatencySettings->useLowLatencyStream);
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
@@ -42,13 +41,9 @@ bool Audio::initializeStream() {
     builder.setDataCallback(this);
     builder.setErrorCallback(this);
 
-    if (useLowLatencyStream) {
+    if (audioLatencySettings->useLowLatencyStream) {
         builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
     }
-
-    piSettings = std::make_unique<AudioPISettings>(
-        useLowLatencyStream ? PI_SETTINGS_LOW_LATENCY : PI_SETTINGS_STANDARD
-    );
 
     int32_t audioBufferSize = computeAudioBufferSize();
 
@@ -65,8 +60,23 @@ bool Audio::initializeStream() {
     }
 }
 
+std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(int latencyMode) {
+    if (!oboe::AudioStreamBuilder::isAAudioRecommended()) {
+        return std::make_unique<AudioLatencySettings>(PI_SETTINGS_STANDARD);
+    }
+
+    switch (latencyMode) {
+        case AUDIO_LATENCY_MODE_LOW_64:
+            return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_64);
+        case AUDIO_LATENCY_MODE_LOW_32:
+            return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_32);
+        default:
+            return std::make_unique<AudioLatencySettings>(PI_SETTINGS_STANDARD);
+    }
+}
+
 int32_t Audio::computeAudioBufferSize() {
-    double sampleRateDivisor = 500.0 / piSettings->maxLatencyMs;
+    double sampleRateDivisor = 500.0 / audioLatencySettings->maxLatencyMs;
     return roundToEven(inputSampleRate / sampleRateDivisor);
 }
 
@@ -117,14 +127,14 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
-    double proportionalAdjustment = piSettings->kp * errorMeasure;
+    double proportionalAdjustment = audioLatencySettings->kp * errorMeasure;
 
     // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
     // be slow enough to be not perceptible. We need to battle test this value.
     double integralAdjustment = std::clamp(
-        piSettings->ki * errorIntegral,
-        -MAX_AUDIO_SPEED_INTEGRAL,
-        MAX_AUDIO_SPEED_INTEGRAL
+            audioLatencySettings->ki * errorIntegral,
+            -MAX_AUDIO_SPEED_INTEGRAL,
+            MAX_AUDIO_SPEED_INTEGRAL
     );
 
     return 1.0 - (proportionalAdjustment + integralAdjustment);

@@ -28,8 +28,24 @@
 namespace libretrodroid {
 
 class Audio: public oboe::AudioStreamDataCallback, oboe::AudioStreamErrorCallback {
+private:
+    struct AudioLatencySettings {
+        double maxLatencyMs;
+        double kp;
+        double ki;
+        bool useLowLatencyStream;
+    };
+
+    const AudioLatencySettings PI_SETTINGS_STANDARD { 128, 0.005, 0.000005, false };
+    const AudioLatencySettings PI_SETTINGS_LOW_64 { 128, 0.005, 0.000005, true };
+    const AudioLatencySettings PI_SETTINGS_LOW_32 { 64, 0.0025, 0.000005, true };
+
 public:
-    Audio(int32_t sampleRate, bool lowInputStream);
+    static const int AUDIO_LATENCY_MODE_STANDARD = 0;
+    static const int AUDIO_LATENCY_MODE_LOW_64 = 1;
+    static const int AUDIO_LATENCY_MODE_LOW_32 = 2;
+
+    Audio(int32_t sampleRate, int requestedLatencyMode);
     ~Audio() = default;
 
     void start();
@@ -52,16 +68,7 @@ private:
     double computeDynamicBufferConversionFactor(double dt);
     int32_t computeAudioBufferSize();
     bool initializeStream();
-
-private:
-    struct AudioPISettings {
-        double maxLatencyMs;
-        double kp;
-        double ki;
-    };
-
-    const AudioPISettings PI_SETTINGS_STANDARD { 128, 0.005, 0.000005 };
-    const AudioPISettings PI_SETTINGS_LOW_LATENCY { 64, 0.01, 0.000005 };
+    std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(int latencyMode);
 
 private:
     const double MAX_AUDIO_SPEED_INTEGRAL = 0.02;
@@ -73,8 +80,6 @@ private:
     oboe::ManagedStream stream = nullptr;
 
     bool startRequested = false;
-
-    bool preferLowInputStream = true;
     int32_t inputSampleRate;
 
     double baseConversionFactor = 1.0;
@@ -82,7 +87,7 @@ private:
 
     double playbackSpeed = 1.0;
 
-    std::unique_ptr<AudioPISettings> piSettings = std::make_unique<AudioPISettings>(PI_SETTINGS_STANDARD);
+    std::unique_ptr<AudioLatencySettings> audioLatencySettings;
 };
 
 }
