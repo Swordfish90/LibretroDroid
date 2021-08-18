@@ -12,4 +12,5 @@ class GLRetroViewData(context: Context) {
     var saveRAMState: ByteArray? = null
     var shader: Int = LibretroDroid.SHADER_DEFAULT
     var rumbleEventsEnabled: Boolean = true
+    var preferLowInputAudioStream: Boolean = false
 }

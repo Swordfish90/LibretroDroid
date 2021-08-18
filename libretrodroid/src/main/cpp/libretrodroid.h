@@ -76,6 +76,7 @@ public:
         std::vector<Variable> variables,
         int shaderType,
         float refreshRate,
+        bool lowInputStream,
         const std::string& language
     );
     void resume();
@@ -132,6 +133,7 @@ protected:
 private:
     unsigned int frameSpeed = 1;
     bool audioEnabled = true;
+    bool preferLowInputStream = true;
 
     std::mutex retroStateMutex;
 

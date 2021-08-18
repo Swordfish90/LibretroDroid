@@ -81,7 +81,7 @@ int16_t LibretroDroid::callback_set_input_state(
 
 void LibretroDroid::updateAudioSampleRateMultiplier() {
     if (audio) {
-        audio->setSampleRateMultiplier(frameSpeed);
+        audio->setPlaybackSpeed(frameSpeed);
     }
 }
 
@@ -253,6 +253,7 @@ void LibretroDroid::create(
     std::vector<Variable> variables,
     int shaderType,
     float refreshRate,
+    bool lowInputStream,
     const std::string& language
 ) {
     LOGD("Performing libretrodroid create");
@@ -283,6 +284,7 @@ void LibretroDroid::create(
     core->retro_init();
 
     fragmentShaderType = ShaderManager::Type(shaderType);
+    this->preferLowInputStream = lowInputStream;
 
     // HW accelerated cores are only supported on opengles 3.
     if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
@@ -373,7 +375,7 @@ void LibretroDroid::resume() {
 
     double audioSamplingRate =
         system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
-    audio = std::make_unique<Audio>(std::lround(audioSamplingRate));
+    audio = std::make_unique<Audio>(std::lround(audioSamplingRate), preferLowInputStream);
     updateAudioSampleRateMultiplier();
     audio->start();
 }

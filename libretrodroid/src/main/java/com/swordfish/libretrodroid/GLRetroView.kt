@@ -82,6 +82,7 @@ class GLRetroView(
             data.variables,
             data.shader,
             getDefaultRefreshRate(),
+            data.preferLowInputAudioStream,
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)

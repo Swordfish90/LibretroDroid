@@ -27,36 +27,62 @@
 
 namespace libretrodroid {
 
-class Audio: public oboe::AudioStreamDataCallback {
+class Audio: public oboe::AudioStreamDataCallback, oboe::AudioStreamErrorCallback {
 public:
-    Audio(int32_t sampleRate);
+    Audio(int32_t sampleRate, bool lowInputStream);
     ~Audio() = default;
 
     void start();
     void stop();
 
-    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
+    oboe::DataCallbackResult onAudioReady(
+        oboe::AudioStream *oboeStream,
+        void *audioData,
+        int32_t numFrames
+    ) override;
 
+    void onErrorAfterClose(oboe::AudioStream *oldStream, oboe::Result result) override;
+
+public:
     void write(const int16_t *data, size_t frames);
-    void setSampleRateMultiplier(const double multiplier);
+    void setPlaybackSpeed(const double newPlaybackSpeed);
 
 private:
-    const double MAX_AUDIO_SPEED_PROPORTIONAL = 0.005;
-    const double MAX_AUDIO_SPEED_INTEGRAL = 0.02;
-    const int32_t AUDIO_LATENCY_MAX_MS = 125;
-
     static int32_t roundToEven(int32_t x);
-    double computeAudioSpeedCoefficient(double dt);
+    double computeDynamicBufferConversionFactor(double dt);
+    int32_t computeAudioBufferSize();
+    bool initializeStream();
 
-    std::unique_ptr<oboe::FifoBuffer> fifo = nullptr;
-    std::unique_ptr<int16_t[]> audioBuffer = nullptr;
-    oboe::ManagedStream stream = nullptr;
+private:
+    struct AudioPISettings {
+        double maxLatencyMs;
+        double kp;
+        double ki;
+    };
+
+    const AudioPISettings PI_SETTINGS_STANDARD {128, 0.005, 0.000005 };
+    const AudioPISettings PI_SETTINGS_LOW_LATENCY {64, 0.01, 0.00002 };
+
+private:
+    const double MAX_AUDIO_SPEED_INTEGRAL = 0.02;
+
     LinearResampler resampler;
+    std::unique_ptr<oboe::FifoBuffer> fifoBuffer = nullptr;
+    std::unique_ptr<int16_t[]> temporaryAudioBuffer = nullptr;
 
-    double defaultSampleRate;
-    double errorMeasure = 0.0;
+    oboe::ManagedStream stream = nullptr;
+
+    bool startRequested = false;
+
+    bool preferLowInputStream = true;
+    int32_t inputSampleRate;
+
+    double baseConversionFactor = 1.0;
     double errorIntegral = 0.0;
-    double sampleRateMultiplier = 1.0;
+
+    double playbackSpeed = 1.0;
+
+    std::unique_ptr<AudioPISettings> piSettings = std::make_unique<AudioPISettings>(PI_SETTINGS_STANDARD);
 };
 
 }

@@ -39,7 +39,18 @@ class LibretroDroid {
     public static final int ERROR_SERIALIZATION = 3;
     public static final int ERROR_GENERIC = 4;
 
-    public static native void create(int GLESVersion, String coreFilePath, String systemDir, String savesDir, Variable[] variables, int shaderType, float refreshRate, String language);
+    public static native void create(
+        int GLESVersion,
+        String coreFilePath,
+        String systemDir,
+        String savesDir,
+        Variable[] variables,
+        int shaderType,
+        float refreshRate,
+        boolean preferLowInputStream,
+        String language
+    );
+
     public static native void loadGameFromPath(String gameFilePath);
     public static native void loadGameFromBytes(byte[] gameFileBytes);
     public static native void resume();

@@ -305,6 +305,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jobjectArray jVariables,
     jint shaderType,
     jfloat refreshRate,
+    jboolean preferLowInputStream,
     jstring language
 ) {
     try {
@@ -329,6 +330,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             variables,
             shaderType,
             refreshRate,
+            preferLowInputStream,
             deviceLanguage.stdString()
         );
 

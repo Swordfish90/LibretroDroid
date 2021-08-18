@@ -23,91 +23,128 @@
 
 namespace libretrodroid {
 
-Audio::Audio(int32_t sampleRate) {
-    LOGI("Audio initialization has been called with sample rate %d", sampleRate);
+Audio::Audio(int32_t sampleRate, bool lowInputStream) {
+    LOGI("Audio initialization has been called with input sample rate %d", sampleRate);
 
-    int32_t sampleRateDivisor = 500 / AUDIO_LATENCY_MAX_MS;
-    int32_t sampleRateBufferSize = sampleRate / sampleRateDivisor;
+    preferLowInputStream = lowInputStream;
+    inputSampleRate = sampleRate;
+    initializeStream();
+}
 
-    fifo = std::make_unique<oboe::FifoBuffer>(2, roundToEven(sampleRateBufferSize));
-    audioBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleRateBufferSize]);
+bool Audio::initializeStream() {
+    bool useLowLatencyStream = oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowInputStream;
+    LOGI("Using low latency stream: %d", useLowLatencyStream);
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
     builder.setDataCallback(this);
-    builder.setFramesPerCallback(sampleRateBufferSize / 8);
+    builder.setErrorCallback(this);
+
+    if (useLowLatencyStream) {
+        builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
+    }
+
+    piSettings = std::make_unique<AudioPISettings>(
+        useLowLatencyStream ? PI_SETTINGS_LOW_LATENCY : PI_SETTINGS_STANDARD
+    );
+
+    int32_t audioBufferSize = computeAudioBufferSize();
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
-        defaultSampleRate = (double) sampleRate / stream->getSampleRate();
+        baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
+        fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
+        temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
+        return true;
     } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
         stream = nullptr;
+        return false;
     }
 }
 
+int32_t Audio::computeAudioBufferSize() {
+    double sampleRateDivisor = 500.0 / piSettings->maxLatencyMs;
+    return roundToEven(inputSampleRate / sampleRateDivisor);
+}
+
 void Audio::start() {
+    startRequested = true;
     if (stream != nullptr)
         stream->requestStart();
 }
 
 void Audio::stop() {
+    startRequested = false;
     if (stream != nullptr)
         stream->requestStop();
 }
 
 void Audio::write(const int16_t *data, size_t frames) {
-    size_t size = frames * 2;
-    fifo->write(data, size);
+    fifoBuffer->write(data, frames * 2);
 }
 
-void Audio::setSampleRateMultiplier(const double multiplier) {
-    sampleRateMultiplier = multiplier;
+void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {
+    playbackSpeed = newPlaybackSpeed;
 }
 
 oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    double finalSampleRate = defaultSampleRate *
-            computeAudioSpeedCoefficient(0.001 * numFrames) *
-            sampleRateMultiplier;
+    double finalConversionFactor = baseConversionFactor *
+            computeDynamicBufferConversionFactor(0.001 * numFrames) *
+            playbackSpeed;
 
-    int32_t adjustedTotalFrames = numFrames * finalSampleRate;
+    int32_t adjustedTotalFrames = numFrames * finalConversionFactor;
 
-    fifo->readNow(audioBuffer.get(), adjustedTotalFrames * 2);
+    fifoBuffer->readNow(temporaryAudioBuffer.get(), adjustedTotalFrames * 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
-    resampler.resample(audioBuffer.get(), adjustedTotalFrames, outputArray, numFrames);
+    resampler.resample(temporaryAudioBuffer.get(), adjustedTotalFrames, outputArray, numFrames);
     return oboe::DataCallbackResult::Continue;
 }
 
 // To prevent audio buffer overruns or underruns we set up a PI controller. The idea is to run the
 // audio slower when the buffer is empty and faster when it's full.
-double Audio::computeAudioSpeedCoefficient(double dt) {
-    double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
-    double framesAvailableInBuffer = fifo->getFullFramesAvailable();
+double Audio::computeDynamicBufferConversionFactor(double dt) {
+    double framesCapacityInBuffer = fifoBuffer->getBufferCapacityInFrames();
+    double framesAvailableInBuffer = fifoBuffer->getFullFramesAvailable();
 
     // Error is represented by normalized distance to half buffer utilization. Range [-1.0, 1.0]
-    double error = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
-
-    // Low-pass filter to error measure since it's very noisy.
-    errorMeasure = errorMeasure * 0.8 + error * 0.2;
+    double errorMeasure = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
 
     errorIntegral += errorMeasure * dt;
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
-    double proportionalAdjustment = std::clamp(0.005 * errorMeasure, -MAX_AUDIO_SPEED_PROPORTIONAL, MAX_AUDIO_SPEED_PROPORTIONAL);
+    double proportionalAdjustment = piSettings->kp * errorMeasure;
 
     // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
     // be slow enough to be not perceptible. We need to battle test this value.
-    double integralAdjustment = std::clamp(0.000005 * errorIntegral, -MAX_AUDIO_SPEED_INTEGRAL, MAX_AUDIO_SPEED_INTEGRAL);
+    double integralAdjustment = std::clamp(
+        piSettings->ki * errorIntegral,
+        -MAX_AUDIO_SPEED_INTEGRAL,
+        MAX_AUDIO_SPEED_INTEGRAL
+    );
 
     return 1.0 - (proportionalAdjustment + integralAdjustment);
 }
 
 int32_t Audio::roundToEven(int32_t x) {
     return (x / 2) * 2;
+}
+
+void Audio::onErrorAfterClose(oboe::AudioStream* oldStream, oboe::Result result) {
+    AudioStreamErrorCallback::onErrorAfterClose(oldStream, result);
+    LOGI("Stream error in oboe::onErrorAfterClose %s", oboe::convertToText(result));
+
+    if (result != oboe::Result::ErrorDisconnected)
+        return;
+
+    initializeStream();
+    if (startRequested) {
+        start();
+    }
 }
 
 } //namespace libretrodroid
