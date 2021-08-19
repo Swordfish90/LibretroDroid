@@ -145,13 +145,9 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
             audioLatencySettings->maxi
     );
 
-    double finalAdjustment = std::clamp(
-            proportionalAdjustment + integralAdjustment,
-            -audioLatencySettings->finalMax,
-            audioLatencySettings->finalMax
-    );
+    double finalAdjustment = proportionalAdjustment + integralAdjustment;
 
-    LOGD("Spped adjustments (p: %f) (i: %f) (%f)", proportionalAdjustment, integralAdjustment);
+    LOGD("Audio speed adjustments (p: %f) (i: %f) (%f)", proportionalAdjustment, integralAdjustment);
 
     return 1.0 - (finalAdjustment);
 }

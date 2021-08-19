@@ -35,18 +35,15 @@ private:
         double ki;
         double maxp;
         double maxi;
-        double finalMax;
         bool useLowLatencyStream;
     };
 
-    // TODO FILIPPO Remove finalMax if useless (as it currently is).
     const AudioLatencySettings PI_SETTINGS_STANDARD {
         128,
         0.005,
         0.000005,
         0.005,
-        0.01,
-        0.015,
+        0.02,
         false
     };
 
@@ -55,8 +52,7 @@ private:
         0.01,
         0.00002,
         0.005,
-        0.01,
-        0.015,
+        0.02,
         true
     };
 
@@ -66,7 +62,6 @@ private:
         0.00002,
         0.004,
         0.01,
-        0.015,
         true
     };
 
