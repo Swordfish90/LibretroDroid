@@ -52,10 +52,12 @@ bool Audio::initializeStream() {
         baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
+        latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
         return true;
     } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
         stream = nullptr;
+        latencyTuner = nullptr;
         return false;
     }
 }
@@ -101,16 +103,18 @@ void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {
 }
 
 oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    double finalConversionFactor = baseConversionFactor *
-            computeDynamicBufferConversionFactor(0.001 * numFrames) *
-            playbackSpeed;
+    double dynamicBufferFactor = computeDynamicBufferConversionFactor(0.001 * numFrames);
+    double finalConversionFactor = baseConversionFactor * dynamicBufferFactor * playbackSpeed;
 
-    int32_t adjustedTotalFrames = numFrames * finalConversionFactor;
+    int32_t adjustedTotalFrames = std::round(numFrames * finalConversionFactor);
 
     fifoBuffer->readNow(temporaryAudioBuffer.get(), adjustedTotalFrames * 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
     resampler.resample(temporaryAudioBuffer.get(), adjustedTotalFrames, outputArray, numFrames);
+
+    latencyTuner->tune();
+
     return oboe::DataCallbackResult::Continue;
 }
 
@@ -127,17 +131,29 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
-    double proportionalAdjustment = audioLatencySettings->kp * errorMeasure;
+    double proportionalAdjustment = std::clamp(
+            audioLatencySettings->kp * errorMeasure,
+            -audioLatencySettings->maxp,
+            audioLatencySettings->maxp
+    );
 
     // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
     // be slow enough to be not perceptible. We need to battle test this value.
     double integralAdjustment = std::clamp(
             audioLatencySettings->ki * errorIntegral,
-            -MAX_AUDIO_SPEED_INTEGRAL,
-            MAX_AUDIO_SPEED_INTEGRAL
+            -audioLatencySettings->maxi,
+            audioLatencySettings->maxi
     );
 
-    return 1.0 - (proportionalAdjustment + integralAdjustment);
+    double finalAdjustment = std::clamp(
+            proportionalAdjustment + integralAdjustment,
+            -audioLatencySettings->finalMax,
+            audioLatencySettings->finalMax
+    );
+
+    LOGD("Spped adjustments (p: %f) (i: %f) (%f)", proportionalAdjustment, integralAdjustment);
+
+    return 1.0 - (finalAdjustment);
 }
 
 int32_t Audio::roundToEven(int32_t x) {

@@ -33,12 +33,42 @@ private:
         double maxLatencyMs;
         double kp;
         double ki;
+        double maxp;
+        double maxi;
+        double finalMax;
         bool useLowLatencyStream;
     };
 
-    const AudioLatencySettings PI_SETTINGS_STANDARD { 128, 0.005, 0.000005, false };
-    const AudioLatencySettings PI_SETTINGS_LOW_64 { 128, 0.005, 0.000005, true };
-    const AudioLatencySettings PI_SETTINGS_LOW_32 { 64, 0.0025, 0.000005, true };
+    // TODO FILIPPO Remove finalMax if useless (as it currently is).
+    const AudioLatencySettings PI_SETTINGS_STANDARD {
+        128,
+        0.005,
+        0.000005,
+        0.005,
+        0.01,
+        0.015,
+        false
+    };
+
+    const AudioLatencySettings PI_SETTINGS_LOW_64 {
+        128,
+        0.01,
+        0.00002,
+        0.005,
+        0.01,
+        0.015,
+        true
+    };
+
+    const AudioLatencySettings PI_SETTINGS_LOW_32 {
+        64,
+        0.008,
+        0.00002,
+        0.004,
+        0.01,
+        0.015,
+        true
+    };
 
 public:
     static const int AUDIO_LATENCY_MODE_STANDARD = 0;
@@ -71,13 +101,12 @@ private:
     std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(int latencyMode);
 
 private:
-    const double MAX_AUDIO_SPEED_INTEGRAL = 0.02;
-
     LinearResampler resampler;
     std::unique_ptr<oboe::FifoBuffer> fifoBuffer = nullptr;
     std::unique_ptr<int16_t[]> temporaryAudioBuffer = nullptr;
 
     oboe::ManagedStream stream = nullptr;
+    std::unique_ptr<oboe::LatencyTuner> latencyTuner = nullptr;
 
     bool startRequested = false;
     int32_t inputSampleRate;
@@ -90,6 +119,6 @@ private:
     std::unique_ptr<AudioLatencySettings> audioLatencySettings;
 };
 
-}
+} // namespace libretrodroid
 
 #endif //LIBRETRODROID_AUDIO_H

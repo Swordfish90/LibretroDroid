@@ -319,6 +319,8 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
+
+    afterGameLoad();
 }
 
 void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
@@ -344,6 +346,8 @@ void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
+
+    afterGameLoad();
 }
 
 void LibretroDroid::destroy() {
@@ -359,6 +363,8 @@ void LibretroDroid::destroy() {
     video = nullptr;
     core = nullptr;
     rumble = nullptr;
+    fpsSync = nullptr;
+    audio = nullptr;
 
     Environment::getInstance().deinitialize();
 }
@@ -368,24 +374,15 @@ void LibretroDroid::resume() {
 
     input = std::make_unique<Input>();
 
-    struct retro_system_av_info system_av_info {};
-    core->retro_get_system_av_info(&system_av_info);
-
-    fpsSync = std::make_unique<FPSSync>(system_av_info.timing.fps, screenRefreshRate);
-
-    double audioSamplingRate =
-        system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
-    audio = std::make_unique<Audio>(std::lround(audioSamplingRate), audioLatencyMode);
-    updateAudioSampleRateMultiplier();
+    fpsSync->reset();
     audio->start();
 }
 
 void LibretroDroid::pause() {
     LOGD("Performing libretrodroid pause");
+    audio->stop();
 
     input = nullptr;
-    audio = nullptr;
-    fpsSync = nullptr;
 }
 
 void LibretroDroid::step() {
@@ -523,6 +520,17 @@ bool LibretroDroid::requiresVideoRefresh() const {
 
 void LibretroDroid::clearRequiresVideoRefresh() {
     dirtyVideo = false;
+}
+
+void LibretroDroid::afterGameLoad() {
+    struct retro_system_av_info system_av_info {};
+    core->retro_get_system_av_info(&system_av_info);
+
+    fpsSync = std::make_unique<FPSSync>(system_av_info.timing.fps, screenRefreshRate);
+
+    double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
+    audio = std::make_unique<Audio>(std::lround(audioSamplingRate), audioLatencyMode);
+    updateAudioSampleRateMultiplier();
 }
 
 } //namespace libretrodroid

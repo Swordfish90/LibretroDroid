@@ -121,6 +121,7 @@ public:
 
 private:
     void updateAudioSampleRateMultiplier();
+    void afterGameLoad();
 
 protected:
     static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);
