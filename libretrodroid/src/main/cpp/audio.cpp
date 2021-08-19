@@ -68,9 +68,9 @@ std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(int 
     }
 
     switch (latencyMode) {
-        case AUDIO_LATENCY_MODE_LOW_64:
+        case AUDIO_LATENCY_MODE_LOW_64_MS:
             return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_64);
-        case AUDIO_LATENCY_MODE_LOW_32:
+        case AUDIO_LATENCY_MODE_LOW_32_MS:
             return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_32);
         default:
             return std::make_unique<AudioLatencySettings>(PI_SETTINGS_STANDARD);

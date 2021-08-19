@@ -67,8 +67,8 @@ private:
 
 public:
     static const int AUDIO_LATENCY_MODE_STANDARD = 0;
-    static const int AUDIO_LATENCY_MODE_LOW_64 = 1;
-    static const int AUDIO_LATENCY_MODE_LOW_32 = 2;
+    static const int AUDIO_LATENCY_MODE_LOW_64_MS = 1;
+    static const int AUDIO_LATENCY_MODE_LOW_32_MS = 2;
 
     Audio(int32_t sampleRate, int requestedLatencyMode);
     ~Audio() = default;
