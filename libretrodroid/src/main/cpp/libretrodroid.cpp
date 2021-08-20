@@ -253,7 +253,7 @@ void LibretroDroid::create(
     std::vector<Variable> variables,
     int shaderType,
     float refreshRate,
-    int requestedAudioLatencyMode,
+    bool lowLatencyAudio,
     const std::string& language
 ) {
     LOGD("Performing libretrodroid create");
@@ -284,7 +284,7 @@ void LibretroDroid::create(
     core->retro_init();
 
     fragmentShaderType = ShaderManager::Type(shaderType);
-    this->audioLatencyMode = requestedAudioLatencyMode;
+    preferLowLatencyAudio = lowLatencyAudio;
 
     // HW accelerated cores are only supported on opengles 3.
     if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
@@ -529,7 +529,7 @@ void LibretroDroid::afterGameLoad() {
     fpsSync = std::make_unique<FPSSync>(system_av_info.timing.fps, screenRefreshRate);
 
     double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
-    audio = std::make_unique<Audio>(std::lround(audioSamplingRate), audioLatencyMode);
+    audio = std::make_unique<Audio>(std::lround(audioSamplingRate), preferLowLatencyAudio);
     updateAudioSampleRateMultiplier();
 }
 

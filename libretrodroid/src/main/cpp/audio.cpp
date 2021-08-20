@@ -23,11 +23,11 @@
 
 namespace libretrodroid {
 
-Audio::Audio(int32_t sampleRate, int requestedLatencyMode) {
+Audio::Audio(int32_t sampleRate, bool preferLowLatencyAudio) {
     LOGI("Audio initialization has been called with input sample rate %d", sampleRate);
 
     inputSampleRate = sampleRate;
-    audioLatencySettings = findBestLatencySettings(requestedLatencyMode);
+    audioLatencySettings = findBestLatencySettings(preferLowLatencyAudio);
     initializeStream();
 }
 
@@ -66,18 +66,11 @@ bool Audio::initializeStream() {
     }
 }
 
-std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(int latencyMode) {
-    if (!oboe::AudioStreamBuilder::isAAudioRecommended()) {
+std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool preferLowLatencyAudio) {
+    if (oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowLatencyAudio) {
+        return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_32);
+    } else {
         return std::make_unique<AudioLatencySettings>(PI_SETTINGS_STANDARD);
-    }
-
-    switch (latencyMode) {
-        case AUDIO_LATENCY_MODE_LOW_64_MS:
-            return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_64);
-        case AUDIO_LATENCY_MODE_LOW_32_MS:
-            return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_32);
-        default:
-            return std::make_unique<AudioLatencySettings>(PI_SETTINGS_STANDARD);
     }
 }
 

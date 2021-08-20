@@ -82,7 +82,7 @@ class GLRetroView(
             data.variables,
             data.shader,
             getDefaultRefreshRate(),
-            data.audioLatencyMode,
+            data.preferLowLatencyAudio,
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
@@ -333,10 +333,6 @@ class GLRetroView(
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
         const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
-
-        const val AUDIO_LATENCY_MODE_STANDARD = LibretroDroid.AUDIO_LATENCY_MODE_STANDARD
-        const val AUDIO_LATENCY_MODE_LOW_64_MS = LibretroDroid.AUDIO_LATENCY_MODE_LOW_64_MS
-        const val AUDIO_LATENCY_MODE_LOW_32_MS = LibretroDroid.AUDIO_LATENCY_MODE_LOW_32_MS
 
         const val ERROR_LOAD_LIBRARY = LibretroDroid.ERROR_LOAD_LIBRARY
         const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME

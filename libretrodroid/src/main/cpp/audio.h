@@ -47,15 +47,6 @@ private:
         false
     };
 
-    const AudioLatencySettings PI_SETTINGS_LOW_64 {
-        128,
-        0.01,
-        0.00002,
-        0.005,
-        0.02,
-        true
-    };
-
     const AudioLatencySettings PI_SETTINGS_LOW_32 {
         64,
         0.006,
@@ -66,11 +57,7 @@ private:
     };
 
 public:
-    static const int AUDIO_LATENCY_MODE_STANDARD = 0;
-    static const int AUDIO_LATENCY_MODE_LOW_64_MS = 1;
-    static const int AUDIO_LATENCY_MODE_LOW_32_MS = 2;
-
-    Audio(int32_t sampleRate, int requestedLatencyMode);
+    Audio(int32_t sampleRate, bool preferLowLatencyAudio);
     ~Audio() = default;
 
     void start();
@@ -93,7 +80,7 @@ private:
     double computeDynamicBufferConversionFactor(double dt);
     int32_t computeAudioBufferSize();
     bool initializeStream();
-    std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(int latencyMode);
+    std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(bool preferLowLatencyAudio);
 
 private:
     LinearResampler resampler;
