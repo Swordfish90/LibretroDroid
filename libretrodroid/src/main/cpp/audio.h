@@ -58,9 +58,9 @@ private:
 
     const AudioLatencySettings PI_SETTINGS_LOW_32 {
         64,
-        0.008,
+        0.006,
         0.00002,
-        0.004,
+        0.003,
         0.01,
         true
     };
