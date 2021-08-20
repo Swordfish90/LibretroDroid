@@ -34,6 +34,8 @@ Audio::Audio(int32_t sampleRate, int requestedLatencyMode) {
 bool Audio::initializeStream() {
     LOGI("Using low latency stream: %d", audioLatencySettings->useLowLatencyStream);
 
+    int32_t audioBufferSize = computeAudioBufferSize();
+
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
     builder.setDirection(oboe::Direction::Output);
@@ -45,7 +47,9 @@ bool Audio::initializeStream() {
         builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
     }
 
-    int32_t audioBufferSize = computeAudioBufferSize();
+    if (!audioLatencySettings->useLowLatencyStream) {
+        builder.setFramesPerCallback(audioBufferSize / 10);
+    }
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
@@ -106,12 +110,16 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     double dynamicBufferFactor = computeDynamicBufferConversionFactor(0.001 * numFrames);
     double finalConversionFactor = baseConversionFactor * dynamicBufferFactor * playbackSpeed;
 
-    int32_t adjustedTotalFrames = std::round(numFrames * finalConversionFactor);
+    // When using low-latency stream, numFrames is very low (~100) and the dynamic buffer scaling doesn't work with rounding.
+    // By keeping track of the "fractional" frames we can keep the error smaller.
+    framesToSubmit += numFrames * finalConversionFactor;
+    int32_t currentFramesToSubmit = std::round(framesToSubmit);
+    framesToSubmit -= currentFramesToSubmit;
 
-    fifoBuffer->readNow(temporaryAudioBuffer.get(), adjustedTotalFrames * 2);
+    fifoBuffer->readNow(temporaryAudioBuffer.get(), currentFramesToSubmit * 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
-    resampler.resample(temporaryAudioBuffer.get(), adjustedTotalFrames, outputArray, numFrames);
+    resampler.resample(temporaryAudioBuffer.get(), currentFramesToSubmit, outputArray, numFrames);
 
     latencyTuner->tune();
 
@@ -147,7 +155,7 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
 
     double finalAdjustment = proportionalAdjustment + integralAdjustment;
 
-    LOGD("Audio speed adjustments (p: %f) (i: %f) (%f)", proportionalAdjustment, integralAdjustment);
+    LOGD("Audio speed adjustments (p: %f) (i: %f)", proportionalAdjustment, integralAdjustment);
 
     return 1.0 - (finalAdjustment);
 }

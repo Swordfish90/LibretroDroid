@@ -107,6 +107,8 @@ private:
     int32_t inputSampleRate;
 
     double baseConversionFactor = 1.0;
+
+    double framesToSubmit = 0.0;
     double errorIntegral = 0.0;
 
     double playbackSpeed = 1.0;
