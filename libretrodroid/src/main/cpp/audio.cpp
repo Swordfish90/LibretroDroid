@@ -23,9 +23,10 @@
 
 namespace libretrodroid {
 
-Audio::Audio(int32_t sampleRate, bool preferLowLatencyAudio) {
+Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio) {
     LOGI("Audio initialization has been called with input sample rate %d", sampleRate);
 
+    contentRefreshRate = refreshRate;
     inputSampleRate = sampleRate;
     audioLatencySettings = findBestLatencySettings(preferLowLatencyAudio);
     initializeStream();
@@ -75,8 +76,16 @@ std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool
 }
 
 int32_t Audio::computeAudioBufferSize() {
-    double sampleRateDivisor = 500.0 / audioLatencySettings->maxLatencyMs;
+    double maxLatency = computeMaximumLatency();
+    LOGI("Average audio latency set to: %f ms", maxLatency * 0.5);
+    double sampleRateDivisor = 500.0 / maxLatency;
     return roundToEven(inputSampleRate / sampleRateDivisor);
+}
+
+double Audio::computeMaximumLatency() const {
+    double numberOfVideoFramesInBuffer = audioLatencySettings->useLowLatencyStream ? 4 : 8;
+    double maxLatency = (numberOfVideoFramesInBuffer / contentRefreshRate) * 1000;
+    return std::max(maxLatency, 32.0);
 }
 
 void Audio::start() {
