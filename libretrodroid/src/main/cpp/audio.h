@@ -30,28 +30,12 @@ namespace libretrodroid {
 class Audio: public oboe::AudioStreamDataCallback, oboe::AudioStreamErrorCallback {
 private:
     struct AudioLatencySettings {
-        double kp;
-        double ki;
-        double maxp;
-        double maxi;
+        unsigned bufferSizeInVideoFrames;
         bool useLowLatencyStream;
     };
 
-    const AudioLatencySettings PI_SETTINGS_STANDARD {
-        0.006,
-        0.00002,
-        0.003,
-        0.02,
-        false
-    };
-
-    const AudioLatencySettings PI_SETTINGS_LOW_32 {
-        0.006,
-        0.00002,
-        0.003,
-        0.02,
-        true
-    };
+    const AudioLatencySettings DEFAULT_LATENCY_SETTINGS { 8, false };
+    const AudioLatencySettings LOW_LATENCY_SETTINGS { 4, true };
 
 public:
     Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio);
@@ -81,6 +65,11 @@ private:
     double computeMaximumLatency() const;
 
 private:
+    const double kp = 0.006;
+    const double ki = 0.00002;
+    const double maxp = 0.003;
+    const double maxi = 0.02;
+
     LinearResampler resampler;
     std::unique_ptr<oboe::FifoBuffer> fifoBuffer = nullptr;
     std::unique_ptr<int16_t[]> temporaryAudioBuffer = nullptr;

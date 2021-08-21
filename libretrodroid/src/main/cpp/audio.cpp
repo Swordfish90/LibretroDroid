@@ -46,9 +46,7 @@ bool Audio::initializeStream() {
 
     if (audioLatencySettings->useLowLatencyStream) {
         builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
-    }
-
-    if (!audioLatencySettings->useLowLatencyStream) {
+    } else {
         builder.setFramesPerCallback(audioBufferSize / 10);
     }
 
@@ -69,9 +67,9 @@ bool Audio::initializeStream() {
 
 std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool preferLowLatencyAudio) {
     if (oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowLatencyAudio) {
-        return std::make_unique<AudioLatencySettings>(PI_SETTINGS_LOW_32);
+        return std::make_unique<AudioLatencySettings>(LOW_LATENCY_SETTINGS);
     } else {
-        return std::make_unique<AudioLatencySettings>(PI_SETTINGS_STANDARD);
+        return std::make_unique<AudioLatencySettings>(DEFAULT_LATENCY_SETTINGS);
     }
 }
 
@@ -83,8 +81,7 @@ int32_t Audio::computeAudioBufferSize() {
 }
 
 double Audio::computeMaximumLatency() const {
-    double numberOfVideoFramesInBuffer = audioLatencySettings->useLowLatencyStream ? 4 : 8;
-    double maxLatency = (numberOfVideoFramesInBuffer / contentRefreshRate) * 1000;
+    double maxLatency = (audioLatencySettings->bufferSizeInVideoFrames / contentRefreshRate) * 1000;
     return std::max(maxLatency, 32.0);
 }
 
@@ -141,19 +138,11 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
-    double proportionalAdjustment = std::clamp(
-            audioLatencySettings->kp * errorMeasure,
-            -audioLatencySettings->maxp,
-            audioLatencySettings->maxp
-    );
+    double proportionalAdjustment = std::clamp(kp * errorMeasure, -maxp, maxp);
 
     // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
     // be slow enough to be not perceptible. We need to battle test this value.
-    double integralAdjustment = std::clamp(
-            audioLatencySettings->ki * errorIntegral,
-            -audioLatencySettings->maxi,
-            audioLatencySettings->maxi
-    );
+    double integralAdjustment = std::clamp(ki * errorIntegral, -maxi, maxi);
 
     double finalAdjustment = proportionalAdjustment + integralAdjustment;
 
