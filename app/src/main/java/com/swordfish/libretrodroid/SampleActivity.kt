@@ -85,6 +85,9 @@ class SampleActivity : AppCompatActivity() {
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
+
+            /* Use low-latency audio on supported devices */
+            preferLowLatencyAudio = true
         }
 
         /* Initialize the main emulator view */

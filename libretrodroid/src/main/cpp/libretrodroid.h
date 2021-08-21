@@ -76,6 +76,7 @@ public:
         std::vector<Variable> variables,
         int shaderType,
         float refreshRate,
+        bool lowLatencyAudio,
         const std::string& language
     );
     void resume();
@@ -120,6 +121,7 @@ public:
 
 private:
     void updateAudioSampleRateMultiplier();
+    void afterGameLoad();
 
 protected:
     static void callback_hw_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch);
@@ -132,6 +134,7 @@ protected:
 private:
     unsigned int frameSpeed = 1;
     bool audioEnabled = true;
+    bool preferLowLatencyAudio = false;
 
     std::mutex retroStateMutex;
 

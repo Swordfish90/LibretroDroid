@@ -23,91 +23,149 @@
 
 namespace libretrodroid {
 
-Audio::Audio(int32_t sampleRate) {
-    LOGI("Audio initialization has been called with sample rate %d", sampleRate);
+Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio) {
+    LOGI("Audio initialization has been called with input sample rate %d", sampleRate);
 
-    int32_t sampleRateDivisor = 500 / AUDIO_LATENCY_MAX_MS;
-    int32_t sampleRateBufferSize = sampleRate / sampleRateDivisor;
+    contentRefreshRate = refreshRate;
+    inputSampleRate = sampleRate;
+    audioLatencySettings = findBestLatencySettings(preferLowLatencyAudio);
+    initializeStream();
+}
 
-    fifo = std::make_unique<oboe::FifoBuffer>(2, roundToEven(sampleRateBufferSize));
-    audioBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleRateBufferSize]);
+bool Audio::initializeStream() {
+    LOGI("Using low latency stream: %d", audioLatencySettings->useLowLatencyStream);
+
+    int32_t audioBufferSize = computeAudioBufferSize();
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
     builder.setDirection(oboe::Direction::Output);
     builder.setFormat(oboe::AudioFormat::I16);
     builder.setDataCallback(this);
-    builder.setFramesPerCallback(sampleRateBufferSize / 8);
+    builder.setErrorCallback(this);
+
+    if (audioLatencySettings->useLowLatencyStream) {
+        builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
+    } else {
+        builder.setFramesPerCallback(audioBufferSize / 10);
+    }
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
-        defaultSampleRate = (double) sampleRate / stream->getSampleRate();
+        baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
+        fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
+        temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
+        latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
+        return true;
     } else {
         LOGE("Failed to create stream. Error: %s", oboe::convertToText(result));
         stream = nullptr;
+        latencyTuner = nullptr;
+        return false;
     }
 }
 
+std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool preferLowLatencyAudio) {
+    if (oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowLatencyAudio) {
+        return std::make_unique<AudioLatencySettings>(LOW_LATENCY_SETTINGS);
+    } else {
+        return std::make_unique<AudioLatencySettings>(DEFAULT_LATENCY_SETTINGS);
+    }
+}
+
+int32_t Audio::computeAudioBufferSize() {
+    double maxLatency = computeMaximumLatency();
+    LOGI("Average audio latency set to: %f ms", maxLatency * 0.5);
+    double sampleRateDivisor = 500.0 / maxLatency;
+    return roundToEven(inputSampleRate / sampleRateDivisor);
+}
+
+double Audio::computeMaximumLatency() const {
+    double maxLatency = (audioLatencySettings->bufferSizeInVideoFrames / contentRefreshRate) * 1000;
+    return std::max(maxLatency, 32.0);
+}
+
 void Audio::start() {
+    startRequested = true;
     if (stream != nullptr)
         stream->requestStart();
 }
 
 void Audio::stop() {
+    startRequested = false;
     if (stream != nullptr)
         stream->requestStop();
 }
 
 void Audio::write(const int16_t *data, size_t frames) {
-    size_t size = frames * 2;
-    fifo->write(data, size);
+    fifoBuffer->write(data, frames * 2);
 }
 
-void Audio::setSampleRateMultiplier(const double multiplier) {
-    sampleRateMultiplier = multiplier;
+void Audio::setPlaybackSpeed(const double newPlaybackSpeed) {
+    playbackSpeed = newPlaybackSpeed;
 }
 
 oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-    double finalSampleRate = defaultSampleRate *
-            computeAudioSpeedCoefficient(0.001 * numFrames) *
-            sampleRateMultiplier;
+    double dynamicBufferFactor = computeDynamicBufferConversionFactor(0.001 * numFrames);
+    double finalConversionFactor = baseConversionFactor * dynamicBufferFactor * playbackSpeed;
 
-    int32_t adjustedTotalFrames = numFrames * finalSampleRate;
+    // When using low-latency stream, numFrames is very low (~100) and the dynamic buffer scaling doesn't work with rounding.
+    // By keeping track of the "fractional" frames we can keep the error smaller.
+    framesToSubmit += numFrames * finalConversionFactor;
+    int32_t currentFramesToSubmit = std::round(framesToSubmit);
+    framesToSubmit -= currentFramesToSubmit;
 
-    fifo->readNow(audioBuffer.get(), adjustedTotalFrames * 2);
+    fifoBuffer->readNow(temporaryAudioBuffer.get(), currentFramesToSubmit * 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
-    resampler.resample(audioBuffer.get(), adjustedTotalFrames, outputArray, numFrames);
+    resampler.resample(temporaryAudioBuffer.get(), currentFramesToSubmit, outputArray, numFrames);
+
+    latencyTuner->tune();
+
     return oboe::DataCallbackResult::Continue;
 }
 
 // To prevent audio buffer overruns or underruns we set up a PI controller. The idea is to run the
 // audio slower when the buffer is empty and faster when it's full.
-double Audio::computeAudioSpeedCoefficient(double dt) {
-    double framesCapacityInBuffer = fifo->getBufferCapacityInFrames();
-    double framesAvailableInBuffer = fifo->getFullFramesAvailable();
+double Audio::computeDynamicBufferConversionFactor(double dt) {
+    double framesCapacityInBuffer = fifoBuffer->getBufferCapacityInFrames();
+    double framesAvailableInBuffer = fifoBuffer->getFullFramesAvailable();
 
     // Error is represented by normalized distance to half buffer utilization. Range [-1.0, 1.0]
-    double error = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
-
-    // Low-pass filter to error measure since it's very noisy.
-    errorMeasure = errorMeasure * 0.8 + error * 0.2;
+    double errorMeasure = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
 
     errorIntegral += errorMeasure * dt;
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
-    double proportionalAdjustment = std::clamp(0.005 * errorMeasure, -MAX_AUDIO_SPEED_PROPORTIONAL, MAX_AUDIO_SPEED_PROPORTIONAL);
+    double proportionalAdjustment = std::clamp(kp * errorMeasure, -maxp, maxp);
 
     // Ki is a lot lower, so it's safe if it exceeds the ear threshold. Hopefully convergence will
     // be slow enough to be not perceptible. We need to battle test this value.
-    double integralAdjustment = std::clamp(0.000005 * errorIntegral, -MAX_AUDIO_SPEED_INTEGRAL, MAX_AUDIO_SPEED_INTEGRAL);
+    double integralAdjustment = std::clamp(ki * errorIntegral, -maxi, maxi);
 
-    return 1.0 - (proportionalAdjustment + integralAdjustment);
+    double finalAdjustment = proportionalAdjustment + integralAdjustment;
+
+    LOGD("Audio speed adjustments (p: %f) (i: %f)", proportionalAdjustment, integralAdjustment);
+
+    return 1.0 - (finalAdjustment);
 }
 
 int32_t Audio::roundToEven(int32_t x) {
     return (x / 2) * 2;
+}
+
+void Audio::onErrorAfterClose(oboe::AudioStream* oldStream, oboe::Result result) {
+    AudioStreamErrorCallback::onErrorAfterClose(oldStream, result);
+    LOGI("Stream error in oboe::onErrorAfterClose %s", oboe::convertToText(result));
+
+    if (result != oboe::Result::ErrorDisconnected)
+        return;
+
+    initializeStream();
+    if (startRequested) {
+        start();
+    }
 }
 
 } //namespace libretrodroid

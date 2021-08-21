@@ -31,6 +31,7 @@ public:
     FPSSync(double contentRefreshRate, double screenRefreshRate);
     ~FPSSync() { }
 
+    void reset();
     unsigned advanceFrames();
     void wait();
     double getTimeStretchFactor();
@@ -43,8 +44,6 @@ private:
 
     const TimePoint MIN_TIME = TimePoint::min();
     void start();
-
-    void reset();
 
     TimePoint lastFrame = MIN_TIME;
     Duration sampleInterval;
