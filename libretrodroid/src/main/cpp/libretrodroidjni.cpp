@@ -47,6 +47,7 @@ namespace libretrodroid {
 extern "C" {
 #include "utils/utils.h"
 #include "libretro/libretro.h"
+#include "utils/libretrodroidexception.h"
 }
 
 extern "C" {
@@ -334,6 +335,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             deviceLanguage.stdString()
         );
 
+    } catch (libretrodroid::LibretroDroidError& exception) {
+        JavaUtils::throwRetroException(env, exception.getErrorCode());
     } catch (std::exception &exception) {
         JavaUtils::throwRetroException(env, ERROR_LOAD_LIBRARY);
     }

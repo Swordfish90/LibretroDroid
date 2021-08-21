@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2021  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -15,15 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_ERRORCODES_H
-#define LIBRETRODROID_ERRORCODES_H
+#include "libretrodroidexception.h"
 
-namespace libretrodroid {
-    extern int ERROR_LOAD_LIBRARY;
-    extern int ERROR_LOAD_GAME;
-    extern int ERROR_GL_NOT_COMPATIBLE;
-    extern int ERROR_SERIALIZATION;
-    extern int ERROR_GENERIC;
-}
-
-#endif //LIBRETRODROID_ERRORCODES_H
+libretrodroid::LibretroDroidError::LibretroDroidError(const std::string& msg, int errorCode)
+    : runtime_error(msg)
+    , errorCode(errorCode) { }

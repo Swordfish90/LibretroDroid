@@ -50,6 +50,10 @@ add_library(libretrodroid SHARED
         utils/utils.h
         utils/jnistring.h
         utils/jnistring.cpp
+        utils/libretrodroidexception.h
+        utils/libretrodroidexception.cpp
+        errorcodes.h
+        errorcodes.cpp
         libretro/libretro.h
 )
 

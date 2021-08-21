@@ -26,6 +26,7 @@
 #include <mutex>
 
 #include "libretrodroid.h"
+#include "utils/libretrodroidexception.h"
 #include "log.h"
 #include "core.h"
 #include "audio.h"
@@ -41,6 +42,7 @@
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/utils.h"
+#include "errorcodes.h"
 
 namespace libretrodroid {
 
@@ -288,7 +290,7 @@ void LibretroDroid::create(
 
     // HW accelerated cores are only supported on opengles 3.
     if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
-        // TODO FILIPPO... Throw custom cpp exception here to handle unsupported opengles version.
+        throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
     }
 
     fragmentShaderType = ShaderManager::Type(shaderType);

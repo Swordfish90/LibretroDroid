@@ -19,11 +19,11 @@
 #define LIBRETRODROID_ERRORCODES_H
 
 namespace libretrodroid {
-    extern int ERROR_LOAD_LIBRARY;
-    extern int ERROR_LOAD_GAME;
-    extern int ERROR_GL_NOT_COMPATIBLE;
-    extern int ERROR_SERIALIZATION;
-    extern int ERROR_GENERIC;
+    int ERROR_LOAD_LIBRARY = 0;
+    int ERROR_LOAD_GAME = 1;
+    int ERROR_GL_NOT_COMPATIBLE = 2;
+    int ERROR_SERIALIZATION = 3;
+    int ERROR_GENERIC = 4;
 }
 
 #endif //LIBRETRODROID_ERRORCODES_H
