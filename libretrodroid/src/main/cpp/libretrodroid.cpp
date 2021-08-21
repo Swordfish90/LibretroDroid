@@ -528,8 +528,14 @@ void LibretroDroid::afterGameLoad() {
 
     fpsSync = std::make_unique<FPSSync>(system_av_info.timing.fps, screenRefreshRate);
 
-    double audioSamplingRate = system_av_info.timing.sample_rate / fpsSync->getTimeStretchFactor();
-    audio = std::make_unique<Audio>(std::lround(audioSamplingRate), preferLowLatencyAudio);
+    double inputSampleRate = system_av_info.timing.sample_rate * fpsSync->getTimeStretchFactor();
+
+    audio = std::make_unique<Audio>(
+        (int32_t) std::lround(inputSampleRate),
+        system_av_info.timing.fps,
+        preferLowLatencyAudio
+    );
+
     updateAudioSampleRateMultiplier();
 }
 
