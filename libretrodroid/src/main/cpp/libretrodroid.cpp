@@ -426,6 +426,12 @@ void LibretroDroid::step() {
             Environment::getInstance().getGameGeometryHeight()
         );
 
+        dirtyVideo = true;
+    }
+
+    if (video && Environment::getInstance().isScreenRotationUpdated()) {
+        Environment::getInstance().clearScreenRotationUpdated();
+
         video->updateRotation(Environment::getInstance().getScreenRotation());
 
         dirtyVideo = true;

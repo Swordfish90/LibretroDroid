@@ -86,7 +86,10 @@ public:
     bool isUseDepth() const;
     bool isUseStencil() const;
     bool isBottomLeftOrigin() const;
+
     float getScreenRotation() const;
+    bool isScreenRotationUpdated() const;
+    void clearScreenRotationUpdated();
 
     unsigned int getGameGeometryWidth() const;
     unsigned int getGameGeometryHeight() const;
@@ -124,7 +127,9 @@ private:
     bool useDepth = false;
     bool useStencil = false;
     bool bottomLeftOrigin = false;
+
     float screenRotation = 0;
+    bool screenRotationUpdated = false;
 
     bool gameGeometryUpdated = false;
     unsigned gameGeometryWidth = 0;
