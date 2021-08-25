@@ -29,6 +29,7 @@ public:
     void initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation);
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateRendererSize(unsigned width, unsigned height);
+    void updateRotation(float rotation);
 
     void renderFrame();
 

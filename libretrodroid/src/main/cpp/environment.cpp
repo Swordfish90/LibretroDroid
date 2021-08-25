@@ -269,6 +269,7 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
             unsigned screenRotationIndex = (*static_cast<unsigned*>(data));
             screenRotation = screenRotationIndex * (float) (-M_PI / 2.0);
+            gameGeometryUpdated = true;
             return true;
         }
 
