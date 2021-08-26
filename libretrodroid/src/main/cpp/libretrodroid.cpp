@@ -433,8 +433,6 @@ void LibretroDroid::step() {
         Environment::getInstance().clearScreenRotationUpdated();
 
         video->updateRotation(Environment::getInstance().getScreenRotation());
-
-        dirtyVideo = true;
     }
 }
 
