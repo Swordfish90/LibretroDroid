@@ -428,6 +428,12 @@ void LibretroDroid::step() {
 
         dirtyVideo = true;
     }
+
+    if (video && Environment::getInstance().isScreenRotationUpdated()) {
+        Environment::getInstance().clearScreenRotationUpdated();
+
+        video->updateRotation(Environment::getInstance().getScreenRotation());
+    }
 }
 
 float LibretroDroid::getAspectRatio() {
