@@ -22,6 +22,7 @@ import android.content.Context
 import android.opengl.GLSurfaceView
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -309,6 +310,7 @@ class GLRetroView(
             retroGLIssuesErrors.accept(e.errorCode)
             abort = true
         } catch (e: Exception) {
+            Log.e(TAG_LOG, "Error in GLRetroView", e)
             retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)
         }
     }
@@ -324,6 +326,8 @@ class GLRetroView(
     }
 
     companion object {
+        private val TAG_LOG = GLRetroView::class.java.simpleName
+
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
         const val MOTION_SOURCE_ANALOG_RIGHT = LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT
