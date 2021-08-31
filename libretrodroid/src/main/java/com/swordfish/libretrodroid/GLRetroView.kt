@@ -294,8 +294,11 @@ class GLRetroView(
             data.saveRAMState = null
         }
         LibretroDroid.onSurfaceCreated()
-        lifecycle?.addObserver(RenderLifecycleObserver())
         gameLoaded = true
+
+        runOnUIThread {
+            lifecycle?.addObserver(RenderLifecycleObserver())
+        }
     }
 
     private fun runOnUIThread(runnable: () -> Unit) {
