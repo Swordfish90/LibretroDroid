@@ -46,7 +46,7 @@ open class AspectRatioGLSurfaceView(context: Context) : GLSurfaceView(context) {
      * @param widthHeightRatio The width to height ratio.
      */
     fun setAspectRatio(widthHeightRatio: Float) {
-        if (abs(videoAspectRatio - widthHeightRatio) < MAX_ASPECT_RATIO_DEFORMATION_FRACTION) {
+        if (abs(videoAspectRatio - widthHeightRatio) > MAX_ASPECT_RATIO_DEFORMATION_FRACTION) {
             videoAspectRatio = widthHeightRatio
             requestLayout()
         }
