@@ -248,6 +248,7 @@ class GLRetroView(
         private fun resume() = catchExceptions {
             LibretroDroid.resume()
             onResume()
+            refreshAspectRatio()
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
@@ -273,7 +274,6 @@ class GLRetroView(
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
-            refreshAspectRatio()
         }
     }
 
@@ -302,7 +302,19 @@ class GLRetroView(
     }
 
     private fun runOnUIThread(runnable: () -> Unit) {
-        Handler(Looper.getMainLooper()).post(runnable)
+        if (isUIThread()) {
+            runnable()
+        } else {
+            Handler(Looper.getMainLooper()).post(runnable)
+        }
+    }
+
+    private fun isUIThread(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            Looper.getMainLooper().isCurrentThread
+        } else {
+            Thread.currentThread() == Looper.getMainLooper().thread
+        }
     }
 
     private fun catchExceptions(block: () -> Unit) {

@@ -3,6 +3,7 @@ package com.swordfish.libretrodroid
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.widget.FrameLayout
+import kotlin.math.abs
 
 open class AspectRatioGLSurfaceView(context: Context) : GLSurfaceView(context) {
     companion object {
@@ -45,7 +46,7 @@ open class AspectRatioGLSurfaceView(context: Context) : GLSurfaceView(context) {
      * @param widthHeightRatio The width to height ratio.
      */
     fun setAspectRatio(widthHeightRatio: Float) {
-        if (videoAspectRatio != widthHeightRatio) {
+        if (abs(videoAspectRatio - widthHeightRatio) < MAX_ASPECT_RATIO_DEFORMATION_FRACTION) {
             videoAspectRatio = widthHeightRatio
             requestLayout()
         }
