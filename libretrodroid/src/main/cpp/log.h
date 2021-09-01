@@ -22,7 +22,7 @@
 
 #define MODULE_NAME "libretrodroid"
 
-#define VERBOSE_LOGGING false
+#define VERBOSE_LOGGING true
 
 #if VERBOSE_LOGGING
 

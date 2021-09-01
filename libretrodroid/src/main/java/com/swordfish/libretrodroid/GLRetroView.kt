@@ -61,6 +61,7 @@ class GLRetroView(
     private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var gameLoaded: Boolean = false
+    private var isReady = false
 
     private var lifecycle: Lifecycle? = null
 
@@ -249,10 +250,12 @@ class GLRetroView(
             LibretroDroid.resume()
             onResume()
             refreshAspectRatio()
+            isReady = true
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         private fun pause() = catchExceptions {
+            isReady = false
             onPause()
             LibretroDroid.pause()
         }
@@ -260,13 +263,16 @@ class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) = catchExceptions {
-            LibretroDroid.step(this@GLRetroView)
-            retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+            if (isReady) {
+                LibretroDroid.step(this@GLRetroView)
+                retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+            }
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceChanged(width, height)
+            Log.i("FILIPPO", "Called onSurfaceChanged ${Thread.currentThread().name}");
         }
 
 
@@ -274,10 +280,12 @@ class GLRetroView(
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
+            Log.i("FILIPPO", "Called onSurfaceCreated ${Thread.currentThread().name}");
         }
     }
 
     private fun refreshAspectRatio() {
+        Log.i("FILIPPO", "Called refreshAspectRatio ${Thread.currentThread().name}")
         val aspectRatio = LibretroDroid.getAspectRatio()
         runOnUIThread { setAspectRatio(aspectRatio) }
     }
