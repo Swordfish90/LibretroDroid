@@ -54,13 +54,15 @@ class GLRetroView(
     }
 
     private val openGLESVersion: Int
-    private var abort = false
+
+    private var isGameLoaded = false
+    private var isEmulationReady = false
+    private var isAborted = false
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
     private val retroGLIssuesErrors = PublishRelay.create<Int>()
-    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
-    private var gameLoaded: Boolean = false
+    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var lifecycle: Lifecycle? = null
 
@@ -248,10 +250,13 @@ class GLRetroView(
         private fun resume() = catchExceptions {
             LibretroDroid.resume()
             onResume()
+            refreshAspectRatio()
+            isEmulationReady = true
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         private fun pause() = catchExceptions {
+            isEmulationReady = false
             onPause()
             LibretroDroid.pause()
         }
@@ -259,8 +264,10 @@ class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) = catchExceptions {
-            LibretroDroid.step(this@GLRetroView)
-            retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+            if (isEmulationReady) {
+                LibretroDroid.step(this@GLRetroView)
+                retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+            }
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
@@ -273,18 +280,17 @@ class GLRetroView(
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
-            refreshAspectRatio()
         }
     }
 
     private fun refreshAspectRatio() {
         val aspectRatio = LibretroDroid.getAspectRatio()
-        runOnUIThread { setAspectRatio(aspectRatio) }
+        KtUtils.runOnUIThread { setAspectRatio(aspectRatio) }
     }
 
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
-        if (gameLoaded) return@catchExceptions
+        if (isGameLoaded) return@catchExceptions
         if (data.gameFilePath != null)
             LibretroDroid.loadGameFromPath(data.gameFilePath)
         else if (data.gameFileBytes != null)
@@ -294,24 +300,20 @@ class GLRetroView(
             data.saveRAMState = null
         }
         LibretroDroid.onSurfaceCreated()
-        gameLoaded = true
+        isGameLoaded = true
 
-        runOnUIThread {
+        KtUtils.runOnUIThread {
             lifecycle?.addObserver(RenderLifecycleObserver())
         }
     }
 
-    private fun runOnUIThread(runnable: () -> Unit) {
-        Handler(Looper.getMainLooper()).post(runnable)
-    }
-
     private fun catchExceptions(block: () -> Unit) {
         try {
-            if (abort) return
+            if (isAborted) return
             block()
         } catch (e: RetroException) {
             retroGLIssuesErrors.accept(e.errorCode)
-            abort = true
+            isAborted = true
         } catch (e: Exception) {
             Log.e(TAG_LOG, "Error in GLRetroView", e)
             retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)

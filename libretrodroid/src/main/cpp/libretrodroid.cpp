@@ -437,23 +437,8 @@ void LibretroDroid::step() {
 }
 
 float LibretroDroid::getAspectRatio() {
-    float aspectRatio = Environment::getInstance().retrieveGameSpecificAspectRatio();
-    if (aspectRatio > 0) {
-        return aspectRatio;
-    }
-
-    struct retro_system_av_info system_av_info {};
-    core->retro_get_system_av_info(&system_av_info);
-
-    aspectRatio = system_av_info.geometry.aspect_ratio;
-    if (aspectRatio > 0) {
-        return aspectRatio;
-    }
-
-    aspectRatio =
-        (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
-
-    return aspectRatio;
+    float gameAspectRatio = Environment::getInstance().retrieveGameSpecificAspectRatio();
+    return gameAspectRatio > 0 ? gameAspectRatio : defaultAspectRatio;
 }
 
 void LibretroDroid::setRumbleEnabled(bool enabled) {
@@ -545,6 +530,17 @@ void LibretroDroid::afterGameLoad() {
     );
 
     updateAudioSampleRateMultiplier();
+
+    defaultAspectRatio = findDefaultAspectRatio(system_av_info);
+}
+
+float LibretroDroid::findDefaultAspectRatio(const retro_system_av_info& system_av_info) {
+    float result = system_av_info.geometry.aspect_ratio;
+    if (result < 0) {
+        result =
+            (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
+    }
+    return result;
 }
 
 } //namespace libretrodroid
