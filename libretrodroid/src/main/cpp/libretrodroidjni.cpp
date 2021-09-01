@@ -183,6 +183,7 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
         return result ? JNI_TRUE : JNI_FALSE;
 
     } catch (std::exception &exception) {
+        LOGE("Error in unserializeState: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
@@ -201,6 +202,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
         return result;
 
     } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
     }
 
@@ -222,6 +224,7 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
         env->ReleaseByteArrayElements(sram, data, JNI_ABORT);
 
     } catch (std::exception &exception) {
+        LOGE("Error in unserializeSRAM: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
@@ -242,6 +245,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
         return result;
 
     } catch (std::exception &exception) {
+        LOGE("Error in serializeSRAM: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
     }
 
@@ -255,6 +259,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(
     try {
         LibretroDroid::getInstance().reset();
     } catch (std::exception &exception) {
+        LOGE("Error in reset: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }
@@ -336,8 +341,10 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
         );
 
     } catch (libretrodroid::LibretroDroidError& exception) {
+        LOGE("Error in create: %s", exception.what());
         JavaUtils::throwRetroException(env, exception.getErrorCode());
     } catch (std::exception &exception) {
+        LOGE("Error in create: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_LOAD_LIBRARY);
     }
 }
@@ -352,6 +359,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
     try {
         LibretroDroid::getInstance().loadGameFromPath(gamePath.stdString());
     } catch (std::exception &exception) {
+        LOGE("Error in loadGameFromPath: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
     }
 }
@@ -372,6 +380,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
         );
         LibretroDroid::getInstance().loadGameFromBytes(data, size);
     } catch (std::exception &exception) {
+        LOGE("Error in loadGameFromBytes: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
     }
 }
@@ -383,6 +392,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_destroy(
     try {
         LibretroDroid::getInstance().destroy();
     } catch (std::exception &exception) {
+        LOGE("Error in destroy: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }
@@ -394,6 +404,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(
     try {
         LibretroDroid::getInstance().resume();
     } catch (std::exception &exception) {
+        LOGE("Error in resume: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }
@@ -405,6 +416,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(
     try {
         LibretroDroid::getInstance().pause();
     } catch (std::exception &exception) {
+        LOGE("Error in pause: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }

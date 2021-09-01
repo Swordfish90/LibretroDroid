@@ -121,6 +121,7 @@ public:
 
 private:
     void updateAudioSampleRateMultiplier();
+    float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
     void afterGameLoad();
 
 protected:
@@ -142,6 +143,7 @@ private:
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
 
+    float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;
 
     std::unique_ptr<Core> core;

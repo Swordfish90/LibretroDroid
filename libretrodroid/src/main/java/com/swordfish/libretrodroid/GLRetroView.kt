@@ -22,6 +22,7 @@ import android.content.Context
 import android.opengl.GLSurfaceView
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -53,13 +54,15 @@ class GLRetroView(
     }
 
     private val openGLESVersion: Int
-    private var abort = false
+
+    private var isGameLoaded = false
+    private var isEmulationReady = false
+    private var isAborted = false
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
     private val retroGLIssuesErrors = PublishRelay.create<Int>()
-    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
-    private var gameLoaded: Boolean = false
+    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
 
     private var lifecycle: Lifecycle? = null
 
@@ -247,10 +250,13 @@ class GLRetroView(
         private fun resume() = catchExceptions {
             LibretroDroid.resume()
             onResume()
+            refreshAspectRatio()
+            isEmulationReady = true
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         private fun pause() = catchExceptions {
+            isEmulationReady = false
             onPause()
             LibretroDroid.pause()
         }
@@ -258,8 +264,10 @@ class GLRetroView(
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) = catchExceptions {
-            LibretroDroid.step(this@GLRetroView)
-            retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+            if (isEmulationReady) {
+                LibretroDroid.step(this@GLRetroView)
+                retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+            }
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
@@ -272,18 +280,17 @@ class GLRetroView(
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
             retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
-            refreshAspectRatio()
         }
     }
 
     private fun refreshAspectRatio() {
         val aspectRatio = LibretroDroid.getAspectRatio()
-        runOnUIThread { setAspectRatio(aspectRatio) }
+        KtUtils.runOnUIThread { setAspectRatio(aspectRatio) }
     }
 
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
-        if (gameLoaded) return@catchExceptions
+        if (isGameLoaded) return@catchExceptions
         if (data.gameFilePath != null)
             LibretroDroid.loadGameFromPath(data.gameFilePath)
         else if (data.gameFileBytes != null)
@@ -293,22 +300,22 @@ class GLRetroView(
             data.saveRAMState = null
         }
         LibretroDroid.onSurfaceCreated()
-        lifecycle?.addObserver(RenderLifecycleObserver())
-        gameLoaded = true
-    }
+        isGameLoaded = true
 
-    private fun runOnUIThread(runnable: () -> Unit) {
-        Handler(Looper.getMainLooper()).post(runnable)
+        KtUtils.runOnUIThread {
+            lifecycle?.addObserver(RenderLifecycleObserver())
+        }
     }
 
     private fun catchExceptions(block: () -> Unit) {
         try {
-            if (abort) return
+            if (isAborted) return
             block()
         } catch (e: RetroException) {
             retroGLIssuesErrors.accept(e.errorCode)
-            abort = true
+            isAborted = true
         } catch (e: Exception) {
+            Log.e(TAG_LOG, "Error in GLRetroView", e)
             retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)
         }
     }
@@ -324,6 +331,8 @@ class GLRetroView(
     }
 
     companion object {
+        private val TAG_LOG = GLRetroView::class.java.simpleName
+
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
         const val MOTION_SOURCE_ANALOG_RIGHT = LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT
