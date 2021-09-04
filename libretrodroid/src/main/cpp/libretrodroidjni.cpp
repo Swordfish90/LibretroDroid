@@ -428,12 +428,19 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
 ) {
     LibretroDroid::getInstance().step();
 
-    // TODO Refactor this into a more generic solution.
     if (LibretroDroid::getInstance().requiresVideoRefresh()) {
         LibretroDroid::getInstance().clearRequiresVideoRefresh();
         jclass cls = env->GetObjectClass(glRetroView);
         jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
         env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
+    }
+
+    if (LibretroDroid::getInstance().isRumbleEnabled()) {
+        LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
+            jclass cls = env->GetObjectClass(glRetroView);
+            jmethodID sendRumbleStrengthMethod = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
+            env->CallVoidMethod(glRetroView, sendRumbleStrengthMethod, port, weak, strong);
+        });
     }
 }
 

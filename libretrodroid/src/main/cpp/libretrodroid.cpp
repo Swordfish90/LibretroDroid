@@ -413,8 +413,8 @@ void LibretroDroid::step() {
         fpsSync->wait();
     }
 
-    if (rumble) {
-        rumble->update(Environment::getInstance().getLastRumbleStrength());
+    if (rumble && rumbleEnabled) {
+        rumble->fetchFromEnvironment();
     }
 
     // Some games override the core geometry at runtime. These fields get updated in retro_run().
@@ -442,7 +442,11 @@ float LibretroDroid::getAspectRatio() {
 }
 
 void LibretroDroid::setRumbleEnabled(bool enabled) {
-    rumble->setEnabled(enabled);
+    rumbleEnabled = enabled;
+}
+
+bool LibretroDroid::isRumbleEnabled() const {
+    return rumbleEnabled;
 }
 
 void LibretroDroid::setFrameSpeed(unsigned int speed) {
@@ -541,6 +545,12 @@ float LibretroDroid::findDefaultAspectRatio(const retro_system_av_info& system_a
             (float) system_av_info.geometry.base_width / (float) system_av_info.geometry.base_height;
     }
     return result;
+}
+
+void LibretroDroid::handleRumbleUpdates(const std::function<void(int, float, float)> &handler) {
+    if (rumble && rumbleEnabled) {
+        rumble->handleRumbleUpdates(handler);
+    }
 }
 
 } //namespace libretrodroid

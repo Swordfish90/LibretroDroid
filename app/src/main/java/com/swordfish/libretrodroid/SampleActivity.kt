@@ -183,4 +183,52 @@ class SampleActivity : AppCompatActivity() {
             port
         )
     }
+
+    override fun onResume() {
+        super.onResume()
+        resumeDisposables.add(
+            leftPad.events()
+                .subscribe { handleEvent(it) }
+        )
+        resumeDisposables.add(
+            rightPad.events()
+                .subscribe { handleEvent(it) }
+        )
+        resumeDisposables.add(
+            retroView.getRumbleEvents()
+                .subscribeOn(Schedulers.single())
+                .subscribe { handleRumbleEvent(it) }
+        )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        resumeDisposables.dispose()
+    }
+
+    private fun handleEvent(event: Event) {
+        when (event) {
+            is Event.Button -> retroView.sendKeyEvent(event.action, event.id)
+            is Event.Direction -> retroView.sendMotionEvent(event.id, event.xAxis, event.yAxis)
+        }
+    }
+
+    private fun handleRumbleEvent(rumbleEvent: RumbleEvent) {
+        Log.i(TAG_LOG, "Received rumble event: $rumbleEvent")
+    }
+
+    private fun initializeVirtualGamePad() {
+        leftPad = RadialGamePad(VirtualGamePadConfigs.RETRO_PAD_LEFT, 8f, this)
+        rightPad = RadialGamePad(VirtualGamePadConfigs.RETRO_PAD_RIGHT, 8f,this)
+
+        // We want the pad anchored to the bottom of the screen
+        leftPad.gravityX = -1f
+        leftPad.gravityY = 1f
+
+        rightPad.gravityX = 1f
+        rightPad.gravityY = 1f
+
+        findViewById<FrameLayout>(R.id.leftcontainer).addView(leftPad)
+        findViewById<FrameLayout>(R.id.rightcontainer).addView(rightPad)
+    }
 }

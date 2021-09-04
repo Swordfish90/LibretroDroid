@@ -46,6 +46,8 @@ add_library(libretrodroid SHARED
         utils/javautils.cpp
         rumble.h
         rumble.cpp
+        rumblestate.h
+        rumblestate.cpp
         utils/utils.cpp
         utils/utils.h
         utils/jnistring.h
