@@ -18,18 +18,34 @@
 package com.swordfish.libretrodroid
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import com.android.libretrodroid.R
+import com.swordfish.radialgamepad.library.RadialGamePad
+import com.swordfish.radialgamepad.library.event.Event
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 class SampleActivity : AppCompatActivity() {
 
+    companion object {
+        private val TAG_LOG = SampleActivity::class.java.simpleName
+    }
+
     private lateinit var retroView: GLRetroView
+
+    private lateinit var leftPad: RadialGamePad
+    private lateinit var rightPad: RadialGamePad
+
+    private val resumeDisposables = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.sample_activity)
 
         /* Prepare config for GLRetroView */
         val data = GLRetroViewData(this).apply {
@@ -95,9 +111,8 @@ class SampleActivity : AppCompatActivity() {
 
         lifecycle.addObserver(retroView)
 
-        /* Create a FrameLayout to house the GLRetroView */
-        val frameLayout = FrameLayout(this)
-        setContentView(frameLayout)
+        /* Get the FrameLayout to house the GLRetroView */
+        val frameLayout = findViewById<FrameLayout>(R.id.gamecontainer)
 
         /* Add and center the GLRetroView */
         frameLayout.addView(retroView)
@@ -107,6 +122,8 @@ class SampleActivity : AppCompatActivity() {
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL
         }
+
+        initializeVirtualGamePad()
     }
 
     /* Pipe motion events to the GLRetroView */

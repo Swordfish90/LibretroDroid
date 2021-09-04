@@ -20,8 +20,6 @@ package com.swordfish.libretrodroid
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
