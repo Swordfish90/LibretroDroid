@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2020  Filippo Scognamiglio
+ *     Copyright (C) 2021  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -15,25 +15,12 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBRETRODROID_RUMBLE_H
-#define LIBRETRODROID_RUMBLE_H
-
-#include <array>
-
 #include "rumblestate.h"
 
 namespace libretrodroid {
 
-class Rumble {
-public:
-    void fetchFromEnvironment();
-    void handleRumbleUpdates(const std::function<void(int, float, float)> &handler);
-
-private:
-    std::array<RumbleState, 4> rumbleStates;
-    std::array<bool, 4> dirtyStates;
-};
-
+bool libretrodroid::RumbleState::operator==(const libretrodroid::RumbleState &other) const {
+    return strengthWeak == other.strengthWeak && strengthStrong == other.strengthStrong;
 }
 
-#endif //LIBRETRODROID_RUMBLE_H
+} // namespace libretrodroid

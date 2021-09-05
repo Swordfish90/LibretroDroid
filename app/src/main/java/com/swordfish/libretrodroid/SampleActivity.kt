@@ -18,18 +18,34 @@
 package com.swordfish.libretrodroid
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import com.android.libretrodroid.R
+import com.swordfish.radialgamepad.library.RadialGamePad
+import com.swordfish.radialgamepad.library.event.Event
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 class SampleActivity : AppCompatActivity() {
 
+    companion object {
+        private val TAG_LOG = SampleActivity::class.java.simpleName
+    }
+
     private lateinit var retroView: GLRetroView
+
+    private lateinit var leftPad: RadialGamePad
+    private lateinit var rightPad: RadialGamePad
+
+    private val resumeDisposables = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.sample_activity)
 
         /* Prepare config for GLRetroView */
         val data = GLRetroViewData(this).apply {
@@ -95,9 +111,8 @@ class SampleActivity : AppCompatActivity() {
 
         lifecycle.addObserver(retroView)
 
-        /* Create a FrameLayout to house the GLRetroView */
-        val frameLayout = FrameLayout(this)
-        setContentView(frameLayout)
+        /* Get the FrameLayout to house the GLRetroView */
+        val frameLayout = findViewById<FrameLayout>(R.id.gamecontainer)
 
         /* Add and center the GLRetroView */
         frameLayout.addView(retroView)
@@ -107,6 +122,8 @@ class SampleActivity : AppCompatActivity() {
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL
         }
+
+        initializeVirtualGamePad()
     }
 
     /* Pipe motion events to the GLRetroView */
@@ -165,5 +182,53 @@ class SampleActivity : AppCompatActivity() {
             event.getAxisValue(yAxis),
             port
         )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        resumeDisposables.add(
+            leftPad.events()
+                .subscribe { handleEvent(it) }
+        )
+        resumeDisposables.add(
+            rightPad.events()
+                .subscribe { handleEvent(it) }
+        )
+        resumeDisposables.add(
+            retroView.getRumbleEvents()
+                .subscribeOn(Schedulers.single())
+                .subscribe { handleRumbleEvent(it) }
+        )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        resumeDisposables.dispose()
+    }
+
+    private fun handleEvent(event: Event) {
+        when (event) {
+            is Event.Button -> retroView.sendKeyEvent(event.action, event.id)
+            is Event.Direction -> retroView.sendMotionEvent(event.id, event.xAxis, event.yAxis)
+        }
+    }
+
+    private fun handleRumbleEvent(rumbleEvent: RumbleEvent) {
+        Log.i(TAG_LOG, "Received rumble event: $rumbleEvent")
+    }
+
+    private fun initializeVirtualGamePad() {
+        leftPad = RadialGamePad(VirtualGamePadConfigs.RETRO_PAD_LEFT, 8f, this)
+        rightPad = RadialGamePad(VirtualGamePadConfigs.RETRO_PAD_RIGHT, 8f,this)
+
+        // We want the pad anchored to the bottom of the screen
+        leftPad.gravityX = -1f
+        leftPad.gravityY = 1f
+
+        rightPad.gravityX = 1f
+        rightPad.gravityY = 1f
+
+        findViewById<FrameLayout>(R.id.leftcontainer).addView(leftPad)
+        findViewById<FrameLayout>(R.id.rightcontainer).addView(rightPad)
     }
 }

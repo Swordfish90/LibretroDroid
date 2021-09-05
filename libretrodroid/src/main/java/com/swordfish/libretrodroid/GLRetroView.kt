@@ -20,8 +20,6 @@ package com.swordfish.libretrodroid
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -62,7 +60,7 @@ class GLRetroView(
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
     private val retroGLIssuesErrors = PublishRelay.create<Int>()
 
-    private val rumbleEventsSubject = BehaviorRelay.createDefault<Float>(0f)
+    private val rumbleEventsSubject = BehaviorRelay.create<RumbleEvent>()
 
     private var lifecycle: Lifecycle? = null
 
@@ -162,7 +160,7 @@ class GLRetroView(
         return retroGLIssuesErrors
     }
 
-    fun getRumbleEvents(): Observable<Float> {
+    fun getRumbleEvents(): Observable<RumbleEvent> {
         return rumbleEventsSubject
     }
 
@@ -321,8 +319,8 @@ class GLRetroView(
     }
 
     /** This function gets called from the jni side.*/
-    private fun sendRumbleStrength(strength: Float) {
-        rumbleEventsSubject.accept(strength)
+    private fun sendRumbleEvent(port: Int, strengthWeak: Float, strengthStrong: Float) {
+        rumbleEventsSubject.accept(RumbleEvent(port, strengthWeak, strengthStrong))
     }
 
     sealed class GLRetroEvents {

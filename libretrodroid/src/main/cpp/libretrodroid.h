@@ -108,7 +108,11 @@ public:
     void changeDisk(unsigned int index);
 
     void setRumbleEnabled(bool enabled);
+    bool isRumbleEnabled() const;
+    void handleRumbleUpdates(const std::function<void(int, float, float)> &handler);
+
     void setFrameSpeed(unsigned int speed);
+
     void setAudioEnabled(bool enabled);
 
     void resetGlobalVariables();
@@ -136,6 +140,7 @@ private:
     unsigned int frameSpeed = 1;
     bool audioEnabled = true;
     bool preferLowLatencyAudio = false;
+    bool rumbleEnabled = false;
 
     std::mutex retroStateMutex;
 

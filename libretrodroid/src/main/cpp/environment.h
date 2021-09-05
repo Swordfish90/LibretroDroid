@@ -26,9 +26,11 @@
 #include <cmath>
 #include <EGL/egl.h>
 #include <unordered_map>
+#include <array>
 
 #include "libretro/libretro.h"
 #include "log.h"
+#include "rumblestate.h"
 
 class Environment {
 public:
@@ -97,7 +99,7 @@ public:
     bool isGameGeometryUpdated() const;
     void clearGameGeometryUpdated();
 
-    uint16_t getLastRumbleStrength() const;
+    std::array<libretrodroid::RumbleState, 4> & getLastRumbleStates();
 
     const std::vector<struct Variable> &getVariables() const;
 
@@ -136,9 +138,7 @@ private:
     unsigned gameGeometryHeight = 0;
     float gameGeometryAspectRatio = -1.0f;
 
-    uint16_t vibrationStrengthWeak = 0;
-    uint16_t vibrationStrengthStrong = 0;
-    uint16_t lastRumbleStrength = 0;
+    std::array<libretrodroid::RumbleState, 4> rumbleStates;
 
     std::vector<struct Variable> variables;
     bool dirtyVariables = false;

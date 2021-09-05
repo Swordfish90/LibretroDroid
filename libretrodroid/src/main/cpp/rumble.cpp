@@ -16,27 +16,36 @@
  */
 
 #include "rumble.h"
+#include "log.h"
+#include "environment.h"
 
 namespace libretrodroid {
 
-void Rumble::update(uint16_t currentStrength) {
-    if (!enabled || currentStrength == currentRumbleStrength) return;
+void Rumble::fetchFromEnvironment() {
+    auto environmentStates = Environment::getInstance().getLastRumbleStates();
 
-    currentRumbleStrength = currentStrength;
-    dirty = true;
+    for (int i = 0; i < environmentStates.size(); ++i) {
+        if (rumbleStates[i] == environmentStates[i]) {
+            continue;
+        }
+
+        dirtyStates[i] = true;
+        rumbleStates[i] = environmentStates[i];
+    }
 }
 
-void Rumble::setEnabled(bool enabled) {
-    this->enabled = enabled;
-}
+void Rumble::handleRumbleUpdates(const std::function<void(int, float, float)>& handler) {
+    for (int i = 0; i < rumbleStates.size(); ++i) {
+        if (!dirtyStates[i]) {
+            continue;
+        }
 
-bool Rumble::hasUpdate() {
-    return dirty;
-}
+        dirtyStates[i] = false;
 
-float Rumble::getCurrentValue() {
-    dirty = false;
-    return (float) currentRumbleStrength / 0xFFFF;
+        float normalizedWeak = (float) rumbleStates[i].strengthWeak / 0xFFFF;
+        float normalizedStrong = (float) rumbleStates[i].strengthStrong / 0xFFFF;
+        handler(i, normalizedWeak, normalizedStrong);
+    }
 }
 
 } //namespace libretrodroid
