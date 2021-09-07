@@ -376,7 +376,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
             gameFileBytes,
             0,
             size,
-            reinterpret_cast<int8_t*>(size)
+            reinterpret_cast<int8_t*>(data)
         );
         LibretroDroid::getInstance().loadGameFromBytes(data, size);
     } catch (std::exception &exception) {
