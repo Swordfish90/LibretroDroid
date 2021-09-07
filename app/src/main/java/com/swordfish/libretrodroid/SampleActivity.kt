@@ -56,7 +56,7 @@ class SampleActivity : AppCompatActivity() {
              *
              * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
              */
-            coreFilePath = "mgba_libretro_android.so"
+            coreFilePath = "libmgba_libretro_android.so"
 
             /*
              * The path to the ROM to load.
