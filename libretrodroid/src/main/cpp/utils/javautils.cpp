@@ -40,4 +40,25 @@ Variable JavaUtils::variableFromJava(JNIEnv *env, jobject obj) {
     return Variable { key.stdString(), value.stdString() };
 }
 
+void JavaUtils::javaListForEach(
+    JNIEnv *env,
+    jobject jList,
+    const std::function<void(jobject)> &lambda
+) {
+    auto jListClass = env->GetObjectClass(jList);
+
+    jobject jIterator = env->CallObjectMethod(
+        jList,
+        env->GetMethodID(jListClass, "iterator", "()Ljava/util/Iterator;")
+    );
+    jclass jIteratorClass = env->GetObjectClass(jIterator);
+
+    jmethodID nextMethodID = env->GetMethodID(jIteratorClass, "next", "()Ljava/lang/Object;");
+    jmethodID hasNextMethodID = env->GetMethodID(jIteratorClass, "hasNext", "()Z");
+
+    while (env->CallBooleanMethod(jIterator, hasNextMethodID)) {
+        lambda(env->CallObjectMethod(jIterator, nextMethodID));
+    }
+}
+
 } //namespace libretrodroid

@@ -17,6 +17,8 @@
 
 package com.swordfish.libretrodroid;
 
+import java.util.List;
+
 class LibretroDroid {
 
     static {
@@ -48,11 +50,13 @@ class LibretroDroid {
         int shaderType,
         float refreshRate,
         boolean preferLowLatencyAudio,
+        boolean enableVirtualFileSystem,
         String language
     );
 
     public static native void loadGameFromPath(String gameFilePath);
     public static native void loadGameFromBytes(byte[] gameFileBytes);
+    public static native void loadGameFromVirtualFiles(List<VirtualFile> virtualFiles);
     public static native void resume();
 
     public static native void onSurfaceCreated();

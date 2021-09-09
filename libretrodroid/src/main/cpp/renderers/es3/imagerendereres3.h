@@ -19,7 +19,7 @@
 #define LIBRETRODROID_IMAGERENDERERES3_H
 
 #include "../renderer.h"
-#include "../../libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 
 #include "GLES3/gl3.h"
 

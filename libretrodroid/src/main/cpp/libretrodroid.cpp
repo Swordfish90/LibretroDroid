@@ -43,6 +43,7 @@
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/utils.h"
 #include "errorcodes.h"
+#include "vfs/vfs.h"
 
 namespace libretrodroid {
 
@@ -256,6 +257,7 @@ void LibretroDroid::create(
     int shaderType,
     float refreshRate,
     bool lowLatencyAudio,
+    bool enableVirtualFileSystem,
     const std::string& language
 ) {
     LOGD("Performing libretrodroid create");
@@ -264,6 +266,7 @@ void LibretroDroid::create(
 
     Environment::getInstance().initialize(systemDir, savesDir, &callback_get_current_framebuffer);
     Environment::getInstance().setLanguage(language);
+    Environment::getInstance().setEnableVirtualFileSystem(enableVirtualFileSystem);
 
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;
@@ -352,6 +355,47 @@ void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
     afterGameLoad();
 }
 
+void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) {
+    LOGD("Performing libretrodroid loadGameFromVirtualFiles");
+    struct retro_system_info system_info {};
+    core->retro_get_system_info(&system_info);
+
+    if (virtualFiles.empty()) {
+        LOGE("Calling loadGameFromVirtualFiles without any file.");
+        throw std::runtime_error("Calling loadGameFromVirtualFiles without any file.");
+    }
+
+    std::string firstFilePath = virtualFiles[0].getFileName();
+    int firstFileFD = virtualFiles[0].getFD();
+
+    bool loadUsingVFS = system_info.need_fullpath || virtualFiles.size() > 1;
+
+    struct retro_game_info game_info {};
+    game_info.path = Utils::cloneToCString(firstFilePath);
+    game_info.meta = nullptr;
+
+    if (loadUsingVFS) {
+        VFS::getInstance().initialize(std::move(virtualFiles));
+    }
+
+    if (loadUsingVFS) {
+        game_info.data = nullptr;
+        game_info.size = 0;
+    } else {
+        struct Utils::ReadResult file = Utils::readFileAsBytes(firstFileFD);
+        game_info.data = file.data;
+        game_info.size = file.size;
+    }
+
+    bool result = core->retro_load_game(&game_info);
+    if (!result) {
+        LOGE("Cannot load game. Leaving.");
+        throw std::runtime_error("Cannot load game");
+    }
+
+    afterGameLoad();
+}
+
 void LibretroDroid::destroy() {
     LOGD("Performing libretrodroid destroy");
 
@@ -369,6 +413,7 @@ void LibretroDroid::destroy() {
     audio = nullptr;
 
     Environment::getInstance().deinitialize();
+    VFS::getInstance().deinitialize();
 }
 
 void LibretroDroid::resume() {

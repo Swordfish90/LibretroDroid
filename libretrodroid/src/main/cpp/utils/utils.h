@@ -28,7 +28,11 @@ public:
     };
 
     static ReadResult readFileAsBytes(const std::string &filePath);
+    static ReadResult readFileAsBytes(const int fileDescriptor);
+
     static const char* cloneToCString(const std::string &input);
+
+    static size_t getFileSize(FILE* file);
 };
 
 }

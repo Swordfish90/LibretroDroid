@@ -15,21 +15,20 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "jnistring.h"
+#include "vfsfile.h"
+#include <cstring>
+#include <utility>
+#include <unistd.h>
 
-JniString::JniString(JNIEnv *env, jstring javaString) :
-    env(env), javaString(javaString) {
-    nativeString = env->GetStringUTFChars(javaString, 0);
+libretrodroid::VFSFile::VFSFile(std::string path, const int fd)
+    : virtualPath(std::move(path))
+    , fd(new FDWrapper(fd))
+{ }
+
+const std::string &libretrodroid::VFSFile::getFileName() const {
+    return virtualPath;
 }
 
-JniString::~JniString() {
-    env->ReleaseStringUTFChars(javaString, nativeString);
-}
-
-const char* JniString::cString() {
-    return strdup(nativeString);
-}
-
-std::string JniString::stdString() {
-    return std::string(nativeString);
+int libretrodroid::VFSFile::getFD() const {
+    return fd->getFD();
 }

@@ -1,11 +1,13 @@
 package com.swordfish.libretrodroid
 
 import android.content.Context
+import android.net.Uri
 
 class GLRetroViewData(context: Context) {
     var coreFilePath: String? = null
     var gameFilePath: String? = null
     var gameFileBytes: ByteArray? = null
+    var gameVirtualFiles: List<VirtualFile> = listOf()
     var systemDirectory: String = context.filesDir.absolutePath
     var savesDirectory: String = context.filesDir.absolutePath
     var variables: Array<Variable> = arrayOf()

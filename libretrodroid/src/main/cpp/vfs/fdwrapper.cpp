@@ -15,21 +15,15 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "jnistring.h"
+#include "fdwrapper.h"
 
-JniString::JniString(JNIEnv *env, jstring javaString) :
-    env(env), javaString(javaString) {
-    nativeString = env->GetStringUTFChars(javaString, 0);
+libretrodroid::FDWrapper::~FDWrapper() {
+    if (fd > 0) {
+        close(fd);
+        fd = -1;
+    }
 }
 
-JniString::~JniString() {
-    env->ReleaseStringUTFChars(javaString, nativeString);
-}
-
-const char* JniString::cString() {
-    return strdup(nativeString);
-}
-
-std::string JniString::stdString() {
-    return std::string(nativeString);
+int libretrodroid::FDWrapper::getFD() {
+    return fd;
 }
