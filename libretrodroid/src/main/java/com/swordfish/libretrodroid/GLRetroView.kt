@@ -84,6 +84,7 @@ class GLRetroView(
             data.shader,
             getDefaultRefreshRate(),
             data.preferLowLatencyAudio,
+            data.gameVirtualFiles.isNotEmpty(),
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
@@ -289,10 +290,11 @@ class GLRetroView(
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
         if (isGameLoaded) return@catchExceptions
-        if (data.gameFilePath != null)
-            LibretroDroid.loadGameFromPath(data.gameFilePath)
-        else if (data.gameFileBytes != null)
-            LibretroDroid.loadGameFromBytes(data.gameFileBytes)
+        when {
+            data.gameFilePath != null -> loadGameFromPath(data.gameFilePath!!)
+            data.gameFileBytes != null -> loadGameFromBytes(data.gameFileBytes!!)
+            data.gameVirtualFiles.isNotEmpty() -> loadGameFromVirtualFiles(data.gameVirtualFiles)
+        }
         data.saveRAMState?.let {
             LibretroDroid.unserializeSRAM(data.saveRAMState)
             data.saveRAMState = null
@@ -303,6 +305,18 @@ class GLRetroView(
         KtUtils.runOnUIThread {
             lifecycle?.addObserver(RenderLifecycleObserver())
         }
+    }
+
+    private fun loadGameFromVirtualFiles(virtualFiles: List<VirtualFile>) {
+        LibretroDroid.loadGameFromVirtualFiles(virtualFiles)
+    }
+
+    private fun loadGameFromBytes(gameFileBytes: ByteArray) {
+        LibretroDroid.loadGameFromBytes(gameFileBytes)
+    }
+
+    private fun loadGameFromPath(gameFilePath: String) {
+        LibretroDroid.loadGameFromPath(gameFilePath)
     }
 
     private fun catchExceptions(block: () -> Unit) {

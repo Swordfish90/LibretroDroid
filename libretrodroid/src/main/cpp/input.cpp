@@ -22,7 +22,7 @@
 #include <android/input.h>
 #include <android/keycodes.h>
 
-#include "libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 
 namespace libretrodroid {
 

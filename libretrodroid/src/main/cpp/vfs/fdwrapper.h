@@ -15,21 +15,30 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "jnistring.h"
+#ifndef LIBRETRODROID_FDWRAPPER_H
+#define LIBRETRODROID_FDWRAPPER_H
 
-JniString::JniString(JNIEnv *env, jstring javaString) :
-    env(env), javaString(javaString) {
-    nativeString = env->GetStringUTFChars(javaString, 0);
+#include <unistd.h>
+
+namespace libretrodroid {
+
+class FDWrapper {
+public:
+    // Delete copy and move to make sure the close function is never called.
+    FDWrapper(const FDWrapper& other) = delete;
+    FDWrapper(FDWrapper&& other) = delete;
+    FDWrapper& operator=(const FDWrapper&) = delete;
+    FDWrapper& operator=(FDWrapper&&) = delete;
+
+    int getFD();
+
+    FDWrapper(int fd) : fd(fd) { }
+    ~FDWrapper();
+
+private:
+    int fd;
+};
+
 }
 
-JniString::~JniString() {
-    env->ReleaseStringUTFChars(javaString, nativeString);
-}
-
-const char* JniString::cString() {
-    return strdup(nativeString);
-}
-
-std::string JniString::stdString() {
-    return std::string(nativeString);
-}
+#endif //LIBRETRODROID_FDWRAPPER_H

@@ -39,6 +39,7 @@
 #include "shadermanager.h"
 #include "utils/javautils.h"
 #include "environment.h"
+#include "vfs/vfsfile.h"
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
@@ -77,6 +78,7 @@ public:
         int shaderType,
         float refreshRate,
         bool lowLatencyAudio,
+        bool enableVirtualFileSystem,
         const std::string& language
     );
     void resume();
@@ -88,6 +90,7 @@ public:
 
     void loadGameFromPath(const std::string &gamePath);
     void loadGameFromBytes(const int8_t *data, size_t size);
+    void loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles);
 
     void onKeyEvent(unsigned int port, int action, int keyCode);
     void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);

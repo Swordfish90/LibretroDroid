@@ -15,21 +15,34 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "jnistring.h"
+#ifndef LIBRETRODROID_VFSFILE_H
+#define LIBRETRODROID_VFSFILE_H
 
-JniString::JniString(JNIEnv *env, jstring javaString) :
-    env(env), javaString(javaString) {
-    nativeString = env->GetStringUTFChars(javaString, 0);
+#include <string>
+
+#include "fdwrapper.h"
+
+namespace libretrodroid {
+
+class VFSFile {
+public:
+    VFSFile(std::string path, const int fd);
+
+    VFSFile(VFSFile&& other) = default;
+    VFSFile& operator=(VFSFile&&) = default;
+
+    // Delete copy constructor. File ownership has to be preserved.
+    VFSFile(const VFSFile& other) = delete;
+    VFSFile& operator=(const VFSFile&) = delete;
+
+    const std::string& getFileName() const;
+    int getFD() const;
+
+private:
+    std::string virtualPath;
+    std::unique_ptr<FDWrapper> fd;
+};
+
 }
 
-JniString::~JniString() {
-    env->ReleaseStringUTFChars(javaString, nativeString);
-}
-
-const char* JniString::cString() {
-    return strdup(nativeString);
-}
-
-std::string JniString::stdString() {
-    return std::string(nativeString);
-}
+#endif //LIBRETRODROID_VFSFILE_H

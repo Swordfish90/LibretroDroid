@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2021  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 #include <EGL/egl.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <unordered_set>
@@ -46,7 +47,7 @@ namespace libretrodroid {
 
 extern "C" {
 #include "utils/utils.h"
-#include "libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 #include "utils/libretrodroidexception.h"
 }
 
@@ -88,13 +89,13 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
     jclass obj
 ) {
     jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
-    jmethodID variableMethod = env->GetMethodID(variableClass, "<init>", "()V");
+    jmethodID variableMethodID = env->GetMethodID(variableClass, "<init>", "()V");
 
     auto variables = Environment::getInstance().getVariables();
     jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
 
     for (int i = 0; i < variables.size(); i++) {
-        jobject jVariable = env->NewObject(variableClass, variableMethod);
+        jobject jVariable = env->NewObject(variableClass, variableMethodID);
 
         jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
         jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
@@ -132,10 +133,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_ge
             variableClass2,
             nullptr
         );
-        jmethodID variableMethod = env->GetMethodID(variableClass2, "<init>", "()V");
+        jmethodID variableMethodID = env->GetMethodID(variableClass2, "<init>", "()V");
 
         for (int j = 0; j < controllers[i].size(); j++) {
-            jobject jController = env->NewObject(variableClass2, variableMethod);
+            jobject jController = env->NewObject(variableClass2, variableMethodID);
 
             jfieldID jIdField = env->GetFieldID(variableClass2, "id", "I");
             jfieldID jDescriptionField = env->GetFieldID(
@@ -259,7 +260,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(
     try {
         LibretroDroid::getInstance().reset();
     } catch (std::exception &exception) {
-        LOGE("Error in reset: %s", exception.what());
+        LOGE("Error in clear: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }
@@ -312,6 +313,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jint shaderType,
     jfloat refreshRate,
     jboolean preferLowLatencyAudio,
+    jboolean enableVirtualFileSystem,
     jstring language
 ) {
     try {
@@ -337,6 +339,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             shaderType,
             refreshRate,
             preferLowLatencyAudio,
+            enableVirtualFileSystem,
             deviceLanguage.stdString()
         );
 
@@ -381,6 +384,39 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
         LibretroDroid::getInstance().loadGameFromBytes(data, size);
     } catch (std::exception &exception) {
         LOGE("Error in loadGameFromBytes: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
+    }
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromVirtualFiles(
+        JNIEnv* env,
+        jclass obj,
+        jobject virtualFileList
+) {
+
+    try {
+        jmethodID getVirtualFileMethodID = env->GetMethodID(
+                env->FindClass("com/swordfish/libretrodroid/VirtualFile"),
+                "getVirtualPath",
+                "()Ljava/lang/String;"
+        );
+        jmethodID getFileDescriptorMethodID = env->GetMethodID(
+                env->FindClass("com/swordfish/libretrodroid/VirtualFile"),
+                "getFileDescriptor",
+                "()I"
+        );
+
+        std::vector<VFSFile> virtualFiles;
+
+        JavaUtils::javaListForEach(env, virtualFileList, [&](jobject item) {
+            JniString virtualFileName(env, (jstring) env->CallObjectMethod(item, getVirtualFileMethodID));
+            int fileDescriptor = env->CallIntMethod(item, getFileDescriptorMethodID);
+            virtualFiles.emplace_back(VFSFile(virtualFileName.stdString(), fileDescriptor));
+        });
+
+        LibretroDroid::getInstance().loadGameFromVirtualFiles(std::move(virtualFiles));
+    } catch (std::exception &exception) {
+        LOGE("Error in loadGameFromDescriptors: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
     }
 }
@@ -438,8 +474,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     if (LibretroDroid::getInstance().isRumbleEnabled()) {
         LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
             jclass cls = env->GetObjectClass(glRetroView);
-            jmethodID sendRumbleStrengthMethod = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
-            env->CallVoidMethod(glRetroView, sendRumbleStrengthMethod, port, weak, strong);
+            jmethodID sendRumbleStrengthMethodID = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
+            env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
         });
     }
 }

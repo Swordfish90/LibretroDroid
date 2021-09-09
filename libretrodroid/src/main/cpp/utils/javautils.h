@@ -27,6 +27,7 @@ class JavaUtils {
 public:
     static jint throwRetroException(JNIEnv *env, int errorCode);
     static Variable variableFromJava(JNIEnv *env, jobject obj);
+    static void javaListForEach(JNIEnv* env, jobject jList, const std::function<void(jobject)> &lambda);
 };
 
 }

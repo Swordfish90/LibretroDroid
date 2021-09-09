@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <array>
 
-#include "libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 #include "log.h"
 #include "rumblestate.h"
 
@@ -51,6 +51,8 @@ public:
     );
 
     static bool callback_environment(unsigned cmd, void *data);
+
+    void setEnableVirtualFileSystem(bool useVirtualFileSystem);
 
 private:
     Environment() {}
@@ -106,13 +108,11 @@ public:
     const std::vector<std::vector<struct Controller>> &getControllers() const;
 
 private:
-    bool environment_handle_set_variables(const struct retro_variable *received);
-
-    bool environment_handle_get_variable(struct retro_variable *requested);
-
-    bool environment_handle_set_controller_info(const struct retro_controller_info *received);
-
-    bool environment_handle_set_hw_render(struct retro_hw_render_callback *hw_render_callback);
+    bool environment_handle_set_variables(const struct retro_variable* received);
+    bool environment_handle_get_variable(struct retro_variable* requested);
+    bool environment_handle_set_controller_info(const struct retro_controller_info* received);
+    bool environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback);
+    bool environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfs_interface_info);
 
 private:
     retro_hw_context_reset_t hw_context_reset = nullptr;
@@ -123,6 +123,7 @@ private:
     std::string systemDirectory;
     retro_hw_get_current_framebuffer_t callback_get_current_framebuffer = nullptr;
     unsigned language = RETRO_LANGUAGE_ENGLISH;
+    bool useVirtualFileSystem = false;
 
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
     bool useHWAcceleration = false;

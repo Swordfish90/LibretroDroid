@@ -16,7 +16,7 @@
  */
 
 #include "imagerendereres3.h"
-#include "../../libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 
 namespace libretrodroid {
 

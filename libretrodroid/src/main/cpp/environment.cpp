@@ -25,9 +25,10 @@
 #include <EGL/egl.h>
 #include <unordered_map>
 
-#include "libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 #include "log.h"
 #include "environment.h"
+#include "vfs/vfs.h"
 
 void Environment::initialize(
     const std::string &requiredSystemDirectory,
@@ -150,6 +151,16 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
     hw_render_callback->get_current_framebuffer = callback_get_current_framebuffer;
     hw_render_callback->get_proc_address = &eglGetProcAddress;
 
+    return true;
+}
+
+bool Environment::environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfsInterfaceInfo) {
+    if (!useVirtualFileSystem) {
+        return false;
+    }
+
+    vfsInterfaceInfo->required_interface_version = libretrodroid::VFS::SUPPORTED_VERSION;
+    vfsInterfaceInfo->iface = libretrodroid::VFS::getInterface();
     return true;
 }
 
@@ -302,6 +313,10 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             *((unsigned*) data) = language;
             return true;
 
+        case RETRO_ENVIRONMENT_GET_VFS_INTERFACE:
+            LOGD("Called RETRO_ENVIRONMENT_GET_VFS_INTERFACE");
+            return environment_handle_get_vfs_interface(static_cast<struct retro_vfs_interface_info*>(data));
+
         default:
             LOGD("callback environment has been called: %u", cmd);
             return false;
@@ -420,4 +435,8 @@ void Environment::clearScreenRotationUpdated() {
 
 std::array<libretrodroid::RumbleState, 4>& Environment::getLastRumbleStates() {
     return rumbleStates;
+}
+
+void Environment::setEnableVirtualFileSystem(bool useVirtualFileSystem) {
+    this->useVirtualFileSystem = useVirtualFileSystem;
 }

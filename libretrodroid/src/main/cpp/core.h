@@ -20,7 +20,7 @@
 
 #include <string>
 
-#include "libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 
 namespace libretrodroid {
 

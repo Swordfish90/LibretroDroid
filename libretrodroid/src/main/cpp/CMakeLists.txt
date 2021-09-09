@@ -3,11 +3,23 @@ cmake_minimum_required(VERSION 3.4.1)
 # now build app's shared lib
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 
+add_definitions("-DVFS_FRONTEND -DHAVE_STRL")
+
 # Let's include oboe
 set (OBOE_DIR oboe)
 add_subdirectory (${OBOE_DIR} oboe)
 include_directories (${OBOE_DIR}/include)
 include_directories (${OBOE_DIR}/src)
+
+include_directories("libretro/libretro-common/include")
+
+set (LIBRETRO_COMMON
+        libretro/libretro-common/vfs/vfs_implementation.c
+        libretro/libretro-common/string/stdstring.c
+        libretro/libretro-common/encodings/encoding_utf.c
+        libretro/libretro-common/file/file_path.c
+        libretro/libretro-common/time/rtime.c
+)
 
 add_library(libretrodroid SHARED
         libretrodroidjni.h
@@ -56,7 +68,13 @@ add_library(libretrodroid SHARED
         utils/libretrodroidexception.cpp
         errorcodes.h
         errorcodes.cpp
-        libretro/libretro.h
+        vfs/vfs.h
+        vfs/vfs.cpp
+        vfs/vfsfile.h
+        vfs/vfsfile.cpp
+        vfs/fdwrapper.h
+        vfs/fdwrapper.cpp
+        ${LIBRETRO_COMMON}
 )
 
 # add lib dependencies

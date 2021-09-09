@@ -21,7 +21,7 @@
 #include "GLES2/gl2.h"
 
 #include "../renderer.h"
-#include "../../libretro/libretro.h"
+#include "../../libretro-common/include/libretro.h"
 
 #include <cstdint>
 #include <utility>
