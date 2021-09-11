@@ -308,7 +308,9 @@ class GLRetroView(
     }
 
     private fun loadGameFromVirtualFiles(virtualFiles: List<VirtualFile>) {
-        LibretroDroid.loadGameFromVirtualFiles(virtualFiles)
+        val detachedVirtualFiles = virtualFiles
+            .map { DetachedVirtualFile(it.virtualPath, it.fileDescriptor.detachFd()) }
+        LibretroDroid.loadGameFromVirtualFiles(detachedVirtualFiles)
     }
 
     private fun loadGameFromBytes(gameFileBytes: ByteArray) {

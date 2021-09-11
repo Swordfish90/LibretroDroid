@@ -396,12 +396,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
 
     try {
         jmethodID getVirtualFileMethodID = env->GetMethodID(
-                env->FindClass("com/swordfish/libretrodroid/VirtualFile"),
+                env->FindClass("com/swordfish/libretrodroid/DetachedVirtualFile"),
                 "getVirtualPath",
                 "()Ljava/lang/String;"
         );
         jmethodID getFileDescriptorMethodID = env->GetMethodID(
-                env->FindClass("com/swordfish/libretrodroid/VirtualFile"),
+                env->FindClass("com/swordfish/libretrodroid/DetachedVirtualFile"),
                 "getFileDescriptor",
                 "()I"
         );

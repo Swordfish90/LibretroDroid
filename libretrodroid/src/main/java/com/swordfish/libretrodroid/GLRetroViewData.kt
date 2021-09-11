@@ -1,7 +1,6 @@
 package com.swordfish.libretrodroid
 
 import android.content.Context
-import android.net.Uri
 
 class GLRetroViewData(context: Context) {
     var coreFilePath: String? = null
