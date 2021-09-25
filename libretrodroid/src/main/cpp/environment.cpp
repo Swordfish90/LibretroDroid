@@ -42,15 +42,13 @@ void Environment::initialize(
 
 void Environment::deinitialize() {
     callback_get_current_framebuffer = nullptr;
-    systemDirectory = nullptr;
-    savesDirectory = nullptr;
     hw_context_reset = nullptr;
     hw_context_destroy = nullptr;
 
     retro_disk_control_callback = nullptr;
 
-    savesDirectory = nullptr;
-    systemDirectory = nullptr;
+    savesDirectory = std::string();
+    systemDirectory = std::string();
     language = RETRO_LANGUAGE_ENGLISH;
 
     pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
