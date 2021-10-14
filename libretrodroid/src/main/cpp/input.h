@@ -40,11 +40,16 @@ private:
     };
 
 public:
-    static const int MOTION_SOURCE_DPAD = 0;
-    static const int MOTION_SOURCE_ANALOG_LEFT = 1;
-    static const int MOTION_SOURCE_ANALOG_RIGHT = 2;
-    static const int MOTION_SOURCE_POINTER = 3;
-    static const int MAX_RANGE_MOTION = 0x7fff;
+    const int MOTION_SOURCE_DPAD = 0;
+    const int MOTION_SOURCE_ANALOG_LEFT = 1;
+    const int MOTION_SOURCE_ANALOG_RIGHT = 2;
+    const int MOTION_SOURCE_POINTER = 3;
+    const int MAX_RANGE_MOTION = 0x7fff;
+
+    const int RETRO_DEVICE_ID_JOYPAD_UP_LEFT = 50;
+    const int RETRO_DEVICE_ID_JOYPAD_UP_RIGHT = 51;
+    const int RETRO_DEVICE_ID_JOYPAD_DOWN_LEFT = 52;
+    const int RETRO_DEVICE_ID_JOYPAD_DOWN_RIGHT = 53;
 
     int16_t getInputState(unsigned port, unsigned device, unsigned index, unsigned id);
 
@@ -54,6 +59,9 @@ public:
 private:
     const int UNKNOWN_KEY = -1;
 
+    template<typename ...T>
+    bool anyPressed(unsigned int port, unsigned int id, T&... args) const;
+    bool anyPressed(unsigned int port, unsigned int id) const;
     int convertAndroidToLibretroKey(int keyCode) const;
 
     GamePadState pads[4];
