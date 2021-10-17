@@ -32,16 +32,48 @@ int16_t Input::getInputState(unsigned port, unsigned device, unsigned index, uns
     switch (device) {
         case RETRO_DEVICE_JOYPAD: {
             switch (id) {
-                case RETRO_DEVICE_ID_JOYPAD_LEFT:
-                    return pads[port].dpadXAxis == -1;
-                case RETRO_DEVICE_ID_JOYPAD_RIGHT:
-                    return pads[port].dpadXAxis == 1;
-                case RETRO_DEVICE_ID_JOYPAD_UP:
-                    return pads[port].dpadYAxis == -1;
-                case RETRO_DEVICE_ID_JOYPAD_DOWN:
-                    return pads[port].dpadYAxis == 1;
+                case RETRO_DEVICE_ID_JOYPAD_LEFT: {
+                    bool axis = pads[port].dpadXAxis == -1;
+                    bool buttons = anyPressed(
+                        port,
+                        RETRO_DEVICE_ID_JOYPAD_LEFT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_DOWN_LEFT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_UP_LEFT
+                    );
+                    return axis || buttons;
+                }
+                case RETRO_DEVICE_ID_JOYPAD_RIGHT: {
+                    bool axis = pads[port].dpadXAxis == 1;
+                    bool buttons = anyPressed(
+                        port,
+                        RETRO_DEVICE_ID_JOYPAD_RIGHT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_UP_RIGHT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_DOWN_RIGHT
+                    );
+                    return axis || buttons;
+                }
+                case RETRO_DEVICE_ID_JOYPAD_UP: {
+                    bool axis = pads[port].dpadYAxis == -1;
+                    bool buttons = anyPressed(
+                        port,
+                        RETRO_DEVICE_ID_JOYPAD_UP,
+                        Input::RETRO_DEVICE_ID_JOYPAD_UP_LEFT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_UP_RIGHT
+                    );
+                    return axis || buttons;
+                }
+                case RETRO_DEVICE_ID_JOYPAD_DOWN: {
+                    bool axis = pads[port].dpadYAxis == 1;
+                    bool buttons = anyPressed(
+                        port,
+                        RETRO_DEVICE_ID_JOYPAD_DOWN,
+                        Input::RETRO_DEVICE_ID_JOYPAD_DOWN_LEFT,
+                        Input::RETRO_DEVICE_ID_JOYPAD_DOWN_RIGHT
+                    );
+                    return axis || buttons;
+                }
                 default:
-                    return pads[port].pressedKeys.count(id) > 0;
+                    return anyPressed(port, id);
             }
         }
 
@@ -125,6 +157,22 @@ int Input::convertAndroidToLibretroKey(int keyCode) const {
             return RETRO_DEVICE_ID_JOYPAD_L3;
         case AKEYCODE_BUTTON_THUMBR:
             return RETRO_DEVICE_ID_JOYPAD_R3;
+        case AKEYCODE_DPAD_UP:
+            return RETRO_DEVICE_ID_JOYPAD_UP;
+        case AKEYCODE_DPAD_DOWN:
+            return RETRO_DEVICE_ID_JOYPAD_DOWN;
+        case AKEYCODE_DPAD_LEFT:
+            return RETRO_DEVICE_ID_JOYPAD_LEFT;
+        case AKEYCODE_DPAD_RIGHT:
+            return RETRO_DEVICE_ID_JOYPAD_RIGHT;
+        case AKEYCODE_DPAD_UP_RIGHT:
+            return Input::RETRO_DEVICE_ID_JOYPAD_UP_RIGHT;
+        case AKEYCODE_DPAD_UP_LEFT:
+            return Input::RETRO_DEVICE_ID_JOYPAD_UP_LEFT;
+        case AKEYCODE_DPAD_DOWN_RIGHT:
+            return Input::RETRO_DEVICE_ID_JOYPAD_DOWN_RIGHT;
+        case AKEYCODE_DPAD_DOWN_LEFT:
+            return Input::RETRO_DEVICE_ID_JOYPAD_DOWN_LEFT;
         default:
             return UNKNOWN_KEY;
     }
@@ -165,6 +213,15 @@ void Input::onMotionEvent(int port, int motionSource, float xAxis, float yAxis) 
             pads[port].pointerScreenYAxis = yAxis;
             break;
     }
+}
+
+template<typename... T>
+bool Input::anyPressed(unsigned int port, unsigned int id, T &... args) const {
+    return anyPressed(port, id) || anyPressed(port, args...);
+}
+
+bool Input::anyPressed(unsigned int port, unsigned int id) const {
+    return pads[port].pressedKeys.count(id) > 0;
 }
 
 } //namespace libretrodroid
