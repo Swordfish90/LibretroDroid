@@ -23,6 +23,10 @@
 
 #include "log.h"
 
+#if defined(VERBOSE_LOGGING)
+#include <GLES3/gl32.h>
+#endif
+
 #include "video.h"
 
 namespace libretrodroid {
