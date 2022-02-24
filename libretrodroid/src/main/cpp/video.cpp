@@ -23,7 +23,7 @@
 
 #include "log.h"
 
-#if defined(VERBOSE_LOGGING)
+#if VERBOSE_LOGGING
 #include <GLES3/gl32.h>
 #endif
 
@@ -150,7 +150,7 @@ void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentSh
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
-#ifdef VERBOSE_LOGGING
+#if VERBOSE_LOGGING
     initializeDebugCallback();
 #endif
 
