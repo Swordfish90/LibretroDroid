@@ -111,4 +111,8 @@ void ImageRendererES3::convertDataFrom0RGB1555(const void *data, unsigned int wi
 
 void ImageRendererES3::updateRenderedResolution(unsigned int width, unsigned int height) {}
 
+bool ImageRendererES3::rendersInVideoCallback() {
+    return false;
+}
+
 } //namespace libretrodroid

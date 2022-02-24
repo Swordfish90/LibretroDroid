@@ -39,6 +39,10 @@ public:
         return renderer->getFramebuffer();
     };
 
+    bool rendersInVideoCallback() {
+        return renderer->rendersInVideoCallback();
+    }
+
 private:
     void updateViewModelMatrix();
     float getScreenDensity();

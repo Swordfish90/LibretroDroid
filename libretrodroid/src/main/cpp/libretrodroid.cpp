@@ -450,7 +450,7 @@ void LibretroDroid::step() {
 
     retroStateMutex.unlock();
 
-    if (video) {
+    if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();
     }
 
@@ -511,6 +511,10 @@ void LibretroDroid::handleVideoRefresh(
 ) {
     if (video) {
         video->onNewFrame(data, width, height, pitch);
+
+        if (video->rendersInVideoCallback()) {
+            video->renderFrame();
+        }
     }
 }
 

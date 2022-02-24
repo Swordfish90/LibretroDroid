@@ -85,4 +85,8 @@ void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned 
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
+bool FramebufferRenderer::rendersInVideoCallback() {
+    return true;
+}
+
 } //namespace libretrodroid

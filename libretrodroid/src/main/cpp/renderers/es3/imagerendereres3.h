@@ -38,6 +38,8 @@ public:
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
 
+    bool rendersInVideoCallback() override;
+
 private:
     void applyGLSwizzle(int r, int g, int b, int a);
     void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const;

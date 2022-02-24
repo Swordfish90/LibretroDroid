@@ -32,14 +32,6 @@ static void printGLString(const char *name, GLenum s) {
     LOGI("GL %s = %s\n", name, v);
 }
 
-static void checkGlError(const char* op) {
-#if VERBOSE_LOGGING
-    for (GLint error = glGetError(); error; error = glGetError()) {
-        LOGE("after %s() glError (0x%x)\n", op, error);
-    }
-#endif
-}
-
 const char* gVertexShader =
         "attribute vec4 vPosition;\n"
         "attribute vec2 vCoordinate;\n"
@@ -100,9 +92,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     GLuint program = glCreateProgram();
     if (program) {
         glAttachShader(program, vertexShader);
-        checkGlError("glAttachShader");
         glAttachShader(program, pixelShader);
-        checkGlError("glAttachShader");
         glLinkProgram(program);
         GLint linkStatus = GL_FALSE;
         glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
@@ -124,11 +114,41 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
+void MessageCallback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam
+) {
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        LOGE("GL CALLBACK: \"** GL ERROR **\" type = 0x%x, severity = 0x%x, message = %s\n",
+             type,
+             severity,
+             message);
+    }
+}
+
+bool initializeDebugCallback() {
+    auto debugCallback = (void (*)(void *, void *)) eglGetProcAddress("glDebugMessageCallback");
+    if (debugCallback) {
+        glEnable(GL_DEBUG_OUTPUT);
+        debugCallback((void*) MessageCallback, nullptr);
+    }
+}
+
+
 void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
+
+#ifdef VERBOSE_LOGGING
+    initializeDebugCallback();
+#endif
 
     this->renderer = renderer;
     this->rotation = rotation;
@@ -144,28 +164,20 @@ void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentSh
     }
 
     gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
-    checkGlError("glGetAttribLocation");
 
     gvCoordinateHandle = glGetAttribLocation(gProgram, "vCoordinate");
-    checkGlError("glGetAttribLocation");
 
     gTextureHandle = glGetUniformLocation(gProgram, "texture");
-    checkGlError("glGetUniformLocation");
 
     gTextureSizeHandle = glGetUniformLocation(gProgram, "textureSize");
-    checkGlError("glGetUniformLocation");
 
     gScreenDensityHandle = glGetUniformLocation(gProgram, "screenDensity");
-    checkGlError("glGetUniformLocation");
 
     gFlipYHandle = glGetUniformLocation(gProgram, "vFlipY");
-    checkGlError("glGetUniformLocation");
 
     gViewModelMatrixHandle = glGetUniformLocation(gProgram, "vViewModel");
-    checkGlError("glGetUniformLocation");
 
     glViewport(0, 0, screenWidth, screenHeight);
-    checkGlError("glViewport");
 
     glUseProgram(0);
 }
@@ -176,53 +188,40 @@ void Video::renderFrame() {
     glViewport(0, 0, screenWidth, screenHeight);
 
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(gProgram);
-    checkGlError("glUseProgram");
 
     glDisable(GL_DEPTH_TEST);
 
     updateViewModelMatrix();
 
     glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
-    checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle);
-    checkGlError("glEnableVertexAttribArray");
 
     glVertexAttribPointer(gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
-    checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvCoordinateHandle);
-    checkGlError("glEnableVertexAttribArray");
 
     glActiveTexture(GL_TEXTURE0);
-    checkGlError("glActiveTexture");
     glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
-    checkGlError("glBindTexture");
 
     glUniform1i(gTextureHandle, 0);
-    checkGlError("glUniform1i");
 
     glUniform2f(gTextureSizeHandle, getTextureWidth(), getTextureHeight());
-    checkGlError("glUniform2f");
 
     glUniform1f(gScreenDensityHandle, getScreenDensity());
-    checkGlError("glUniform1f");
 
     glUniform1f(gFlipYHandle, gFlipY);
-    checkGlError("glUniform1f");
 
     glUniformMatrix4fv(gViewModelMatrixHandle, 1, false, gViewModelMatrix);
-    checkGlError("glUniformMatrix4fv");
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    checkGlError("glDrawArrays");
 
     glDisableVertexAttribArray(gvPositionHandle);
     glDisableVertexAttribArray(gvCoordinateHandle);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    checkGlError("glBindTexture");
 
     glUseProgram(0);
 }
@@ -260,7 +259,7 @@ void Video::updateScreenSize(unsigned screenWidth, unsigned screenHeight) {
 }
 
 void Video::updateRendererSize(unsigned int width, unsigned int height) {
-    LOGD("Updating renderer size: %d x %d", screenWidth, screenHeight);
+    LOGD("Updating renderer size: %d x %d", width, height);
     renderer->updateRenderedResolution(width, height);
 }
 

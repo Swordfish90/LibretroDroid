@@ -34,6 +34,8 @@ public:
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
 
+    bool rendersInVideoCallback() override;
+
 private:
     unsigned int currentFramebuffer = 0;
     unsigned int currentTexture = 0;
