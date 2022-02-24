@@ -117,7 +117,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     }
     return program;
 }
-
+#if VERBOSE_LOGGING
 void MessageCallback(
     GLenum source,
     GLenum type,
@@ -142,7 +142,7 @@ bool initializeDebugCallback() {
         debugCallback((void*) MessageCallback, nullptr);
     }
 }
-
+#endif
 
 void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation) {
     printGLString("Version", GL_VERSION);
