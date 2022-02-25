@@ -101,6 +101,7 @@ private:
     unsigned screenHeight = 0;
 
     float rotation = 0;
+    bool isDirty = false;
 
     GLuint gProgram = 0;
     GLint gvPositionHandle = 0;

@@ -187,6 +187,9 @@ void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentSh
 }
 
 void Video::renderFrame() {
+    if (!isDirty) return;
+    isDirty = false;
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, screenWidth, screenHeight);
@@ -245,6 +248,7 @@ float Video::getTextureHeight() {
 void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
+        isDirty = true;
     }
 }
 
