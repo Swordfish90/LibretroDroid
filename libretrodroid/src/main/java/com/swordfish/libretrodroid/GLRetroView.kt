@@ -32,7 +32,9 @@ import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
+import io.reactivex.Completable
 import io.reactivex.Observable
+import io.reactivex.Single
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -133,23 +135,23 @@ class GLRetroView(
         sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
     }
 
-    fun serializeState(): ByteArray {
-        return LibretroDroid.serializeState()
+    fun serializeState(): Single<ByteArray> = queueToSingle {
+        LibretroDroid.serializeState()
     }
 
-    fun unserializeState(data: ByteArray): Boolean {
-        return LibretroDroid.unserializeState(data)
+    fun unserializeState(data: ByteArray): Single<Boolean> = queueToSingle {
+        LibretroDroid.unserializeState(data)
     }
 
-    fun serializeSRAM(): ByteArray {
-        return LibretroDroid.serializeSRAM()
+    fun serializeSRAM(): Single<ByteArray> = queueToSingle {
+        LibretroDroid.serializeSRAM()
     }
 
-    fun unserializeSRAM(data: ByteArray): Boolean {
-        return LibretroDroid.unserializeSRAM(data)
+    fun unserializeSRAM(data: ByteArray): Single<Boolean> = queueToSingle {
+        LibretroDroid.unserializeSRAM(data)
     }
 
-    fun reset() {
+    fun reset() = queueToCompletable {
         LibretroDroid.reset()
     }
 
@@ -331,6 +333,27 @@ class GLRetroView(
         } catch (e: Exception) {
             Log.e(TAG_LOG, "Error in GLRetroView", e)
             retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)
+        }
+    }
+
+    private fun <T> queueToSingle(producer: () -> T): Single<T> = Single.create { emitter ->
+        queueEvent {
+            try {
+                emitter.onSuccess(producer())
+            } catch (e: Exception) {
+                emitter.onError(e)
+            }
+        }
+    }
+
+    private fun queueToCompletable(runnable: Runnable): Completable = Completable.create { emitter ->
+        queueEvent {
+            try {
+                runnable.run()
+                emitter.onComplete()
+            } catch (e: Exception) {
+                emitter.onError(e)
+            }
         }
     }
 
