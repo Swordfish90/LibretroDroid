@@ -32,10 +32,9 @@ import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
-import io.reactivex.Completable
 import io.reactivex.Observable
-import io.reactivex.Single
 import java.util.*
+import java.util.concurrent.FutureTask
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
@@ -135,23 +134,23 @@ class GLRetroView(
         sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
     }
 
-    fun serializeState(): Single<ByteArray> = queueToSingle {
+    fun serializeState(): ByteArray = runOnGLThread {
         LibretroDroid.serializeState()
     }
 
-    fun unserializeState(data: ByteArray): Single<Boolean> = queueToSingle {
+    fun unserializeState(data: ByteArray): Boolean = runOnGLThread {
         LibretroDroid.unserializeState(data)
     }
 
-    fun serializeSRAM(): Single<ByteArray> = queueToSingle {
+    fun serializeSRAM(): ByteArray = runOnGLThread {
         LibretroDroid.serializeSRAM()
     }
 
-    fun unserializeSRAM(data: ByteArray): Single<Boolean> = queueToSingle {
+    fun unserializeSRAM(data: ByteArray): Boolean = runOnGLThread {
         LibretroDroid.unserializeSRAM(data)
     }
 
-    fun reset() = queueToCompletable {
+    fun reset() = runOnGLThread {
         LibretroDroid.reset()
     }
 
@@ -185,9 +184,9 @@ class GLRetroView(
         }
     }
 
-    fun getAvailableDisks() = LibretroDroid.availableDisks()
-    fun getCurrentDisk() = LibretroDroid.currentDisk()
-    fun changeDisk(index: Int) = LibretroDroid.changeDisk(index)
+    fun getAvailableDisks() = runOnGLThread { LibretroDroid.availableDisks() }
+    fun getCurrentDisk() = runOnGLThread { LibretroDroid.currentDisk() }
+    fun changeDisk(index: Int) = runOnGLThread { LibretroDroid.changeDisk(index) }
 
     private fun getGLESVersion(context: Context): Int {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -336,25 +335,10 @@ class GLRetroView(
         }
     }
 
-    private fun <T> queueToSingle(producer: () -> T): Single<T> = Single.create { emitter ->
-        queueEvent {
-            try {
-                emitter.onSuccess(producer())
-            } catch (e: Exception) {
-                emitter.onError(e)
-            }
-        }
-    }
-
-    private fun queueToCompletable(runnable: Runnable): Completable = Completable.create { emitter ->
-        queueEvent {
-            try {
-                runnable.run()
-                emitter.onComplete()
-            } catch (e: Exception) {
-                emitter.onError(e)
-            }
-        }
+    private fun <T> runOnGLThread(block: () -> T): T {
+        val task = FutureTask(block)
+        queueEvent(task)
+        return task.get()
     }
 
     /** This function gets called from the jni side.*/
