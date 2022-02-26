@@ -336,6 +336,9 @@ class GLRetroView(
     }
 
     private fun <T> runOnGLThread(block: () -> T): T {
+        if (Thread.currentThread().name.startsWith("GLThread")) {
+            return block()
+        }
         val task = FutureTask(block)
         queueEvent(task)
         return task.get()
