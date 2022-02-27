@@ -34,6 +34,7 @@ import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.FutureTask
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -339,9 +340,16 @@ class GLRetroView(
         if (Thread.currentThread().name.startsWith("GLThread")) {
             return block()
         }
-        val task = FutureTask(block)
-        queueEvent(task)
-        return task.get()
+
+        val latch = CountDownLatch(1)
+        var result: T? = null
+        queueEvent {
+            result = block()
+            latch.countDown()
+        }
+
+        latch.await()
+        return result!!
     }
 
     /** This function gets called from the jni side.*/
