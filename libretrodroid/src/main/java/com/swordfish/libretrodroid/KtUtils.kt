@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2021  Filippo Scognamiglio
+ *     Copyright (C) 1  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package com.swordfish.libretrodroid
 
 import android.os.Handler
 import android.os.Looper
+import java.util.concurrent.CountDownLatch
 
 object KtUtils {
     fun runOnUIThread(runnable: () -> Unit) {
@@ -34,6 +35,20 @@ object KtUtils {
             Looper.getMainLooper().isCurrentThread
         } else {
             Thread.currentThread() == Looper.getMainLooper().thread
+        }
+    }
+
+    fun CountDownLatch.awaitUninterruptibly() {
+        try {
+            while (true) {
+                try {
+                    await()
+                    return
+                } catch (e: InterruptedException) {
+
+                }
+            }
+        } finally {
         }
     }
 }

@@ -31,9 +31,12 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.PublishRelay
+import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.FutureTask
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
@@ -85,6 +88,7 @@ class GLRetroView(
             getDefaultRefreshRate(),
             data.preferLowLatencyAudio,
             data.gameVirtualFiles.isNotEmpty(),
+            data.skipDuplicateFrames,
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
@@ -133,23 +137,23 @@ class GLRetroView(
         sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
     }
 
-    fun serializeState(): ByteArray {
-        return LibretroDroid.serializeState()
+    fun serializeState(): ByteArray = runOnGLThread {
+        LibretroDroid.serializeState()
     }
 
-    fun unserializeState(data: ByteArray): Boolean {
-        return LibretroDroid.unserializeState(data)
+    fun unserializeState(data: ByteArray): Boolean = runOnGLThread {
+        LibretroDroid.unserializeState(data)
     }
 
-    fun serializeSRAM(): ByteArray {
-        return LibretroDroid.serializeSRAM()
+    fun serializeSRAM(): ByteArray = runOnGLThread {
+        LibretroDroid.serializeSRAM()
     }
 
-    fun unserializeSRAM(data: ByteArray): Boolean {
-        return LibretroDroid.unserializeSRAM(data)
+    fun unserializeSRAM(data: ByteArray): Boolean = runOnGLThread {
+        LibretroDroid.unserializeSRAM(data)
     }
 
-    fun reset() {
+    fun reset() = runOnGLThread {
         LibretroDroid.reset()
     }
 
@@ -183,9 +187,9 @@ class GLRetroView(
         }
     }
 
-    fun getAvailableDisks() = LibretroDroid.availableDisks()
-    fun getCurrentDisk() = LibretroDroid.currentDisk()
-    fun changeDisk(index: Int) = LibretroDroid.changeDisk(index)
+    fun getAvailableDisks() = runOnGLThread { LibretroDroid.availableDisks() }
+    fun getCurrentDisk() = runOnGLThread { LibretroDroid.currentDisk() }
+    fun changeDisk(index: Int) = runOnGLThread { LibretroDroid.changeDisk(index) }
 
     private fun getGLESVersion(context: Context): Int {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -332,6 +336,22 @@ class GLRetroView(
             Log.e(TAG_LOG, "Error in GLRetroView", e)
             retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)
         }
+    }
+
+    private fun <T> runOnGLThread(block: () -> T): T {
+        if (Thread.currentThread().name.startsWith("GLThread")) {
+            return block()
+        }
+
+        val latch = CountDownLatch(1)
+        var result: T? = null
+        queueEvent {
+            result = block()
+            latch.countDown()
+        }
+
+        latch.awaitUninterruptibly()
+        return result!!
     }
 
     /** This function gets called from the jni side.*/

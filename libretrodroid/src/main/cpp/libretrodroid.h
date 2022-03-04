@@ -79,6 +79,7 @@ public:
         float refreshRate,
         bool lowLatencyAudio,
         bool enableVirtualFileSystem,
+        bool duplicateFrames,
         const std::string& language
     );
     void resume();
@@ -150,6 +151,7 @@ private:
     ShaderManager::Type fragmentShaderType = ShaderManager::Type::SHADER_DEFAULT;
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
+    bool skipDuplicateFrames = false;
 
     float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;

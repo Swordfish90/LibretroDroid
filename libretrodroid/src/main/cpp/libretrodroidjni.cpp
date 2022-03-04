@@ -314,6 +314,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jfloat refreshRate,
     jboolean preferLowLatencyAudio,
     jboolean enableVirtualFileSystem,
+    jboolean skipDuplicateFrames,
     jstring language
 ) {
     try {
@@ -340,6 +341,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             refreshRate,
             preferLowLatencyAudio,
             enableVirtualFileSystem,
+            skipDuplicateFrames,
             deviceLanguage.stdString()
         );
 
