@@ -23,7 +23,6 @@
 #include <utility>
 #include <vector>
 #include <unordered_set>
-#include <mutex>
 
 #include "libretrodroid.h"
 #include "utils/libretrodroidexception.h"
@@ -99,21 +98,18 @@ void LibretroDroid::resetGlobalVariables() {
 }
 
 int LibretroDroid::availableDisks() {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
     return Environment::getInstance().getRetroDiskControlCallback() != nullptr
            ? Environment::getInstance().getRetroDiskControlCallback()->get_num_images()
            : 0;
 }
 
 int LibretroDroid::currentDisk() {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
     return Environment::getInstance().getRetroDiskControlCallback() != nullptr
            ? Environment::getInstance().getRetroDiskControlCallback()->get_image_index()
            : 0;
 }
 
 void LibretroDroid::changeDisk(unsigned int index) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
     if (Environment::getInstance().getRetroDiskControlCallback() == nullptr) {
         LOGE("Cannot swap disk. This platform does not support it.");
         return;
@@ -148,13 +144,10 @@ void LibretroDroid::setControllerType(unsigned int port, unsigned int type) {
 }
 
 bool LibretroDroid::unserializeState(int8_t *data, size_t size) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
     return core->retro_unserialize(data, size);
 }
 
 JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t size) {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
     size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
     void *sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
 
@@ -174,8 +167,6 @@ JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t s
 }
 
 std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
     size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
     auto* data = new int8_t[size];
     memcpy(data, (int8_t*) core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM), size);
@@ -438,8 +429,6 @@ void LibretroDroid::pause() {
 void LibretroDroid::step() {
     LOGD("Stepping into retro_run()");
 
-    retroStateMutex.lock();
-
     unsigned frames = 1;
     if (fpsSync) {
         unsigned requestedFrames = fpsSync->advanceFrames();
@@ -450,8 +439,6 @@ void LibretroDroid::step() {
 
     for (size_t i = 0; i < frames * frameSpeed; i++)
         core->retro_run();
-
-    retroStateMutex.unlock();
 
     if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();
@@ -548,13 +535,10 @@ uintptr_t LibretroDroid::handleGetCurrentFrameBuffer() {
 }
 
 void LibretroDroid::reset() {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
     core->retro_reset();
 }
 
 std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
-    std::lock_guard<std::mutex> lock(retroStateMutex);
-
     size_t size = core->retro_serialize_size();
     auto data = new int8_t[size];
 
