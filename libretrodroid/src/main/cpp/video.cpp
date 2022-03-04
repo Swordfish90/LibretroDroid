@@ -144,7 +144,13 @@ bool initializeDebugCallback() {
 }
 #endif
 
-void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation) {
+void Video::initializeGraphics(
+    Renderer* renderer,
+    const std::string& fragmentShader,
+    bool bottomLeftOrigin,
+    float rotation,
+    bool skipDuplicateFrames
+) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
@@ -156,6 +162,7 @@ void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentSh
 
     this->renderer = renderer;
     this->rotation = rotation;
+    this->skipDuplicateFrames = skipDuplicateFrames;
 
     gFlipY = bottomLeftOrigin ? 0 : 1;
 
@@ -187,7 +194,7 @@ void Video::initializeGraphics(Renderer* renderer, const std::string& fragmentSh
 }
 
 void Video::renderFrame() {
-    if (!isDirty) return;
+    if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

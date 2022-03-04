@@ -26,7 +26,13 @@ namespace libretrodroid {
 
 class Video {
 public:
-    void initializeGraphics(Renderer* renderer, const std::string& fragmentShader, bool bottomLeftOrigin, float rotation);
+    void initializeGraphics(
+        Renderer* renderer,
+        const std::string& fragmentShader,
+        bool bottomLeftOrigin,
+        float rotation,
+        bool skipDuplicateFrames
+    );
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateRendererSize(unsigned width, unsigned height);
     void updateRotation(float rotation);
@@ -102,6 +108,7 @@ private:
 
     float rotation = 0;
     bool isDirty = false;
+    bool skipDuplicateFrames = false;
 
     GLuint gProgram = 0;
     GLint gvPositionHandle = 0;

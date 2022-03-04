@@ -217,7 +217,8 @@ void LibretroDroid::onSurfaceCreated() {
         renderer,
         ShaderManager::getShader(fragmentShaderType),
         Environment::getInstance().isBottomLeftOrigin(),
-        Environment::getInstance().getScreenRotation()
+        Environment::getInstance().getScreenRotation(),
+        skipDuplicateFrames
     );
 
     renderer->setPixelFormat(Environment::getInstance().getPixelFormat());
@@ -258,6 +259,7 @@ void LibretroDroid::create(
     float refreshRate,
     bool lowLatencyAudio,
     bool enableVirtualFileSystem,
+    bool duplicateFrames,
     const std::string& language
 ) {
     LOGD("Performing libretrodroid create");
@@ -270,6 +272,7 @@ void LibretroDroid::create(
 
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;
+    skipDuplicateFrames = duplicateFrames;
     audioEnabled = true;
     frameSpeed = 1;
 
