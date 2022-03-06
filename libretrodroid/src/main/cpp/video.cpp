@@ -23,10 +23,6 @@
 
 #include "log.h"
 
-#if VERBOSE_LOGGING
-#include <GLES3/gl32.h>
-#endif
-
 #include "video.h"
 
 namespace libretrodroid {
@@ -118,30 +114,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 #if VERBOSE_LOGGING
-void MessageCallback(
-    GLenum source,
-    GLenum type,
-    GLuint id,
-    GLenum severity,
-    GLsizei length,
-    const GLchar* message,
-    const void* userParam
-) {
-    if (type == GL_DEBUG_TYPE_ERROR) {
-        LOGE("GL CALLBACK: \"** GL ERROR **\" type = 0x%x, severity = 0x%x, message = %s\n",
-             type,
-             severity,
-             message);
-    }
-}
 
-bool initializeDebugCallback() {
-    auto debugCallback = (void (*)(void *, void *)) eglGetProcAddress("glDebugMessageCallback");
-    if (debugCallback) {
-        glEnable(GL_DEBUG_OUTPUT);
-        debugCallback((void*) MessageCallback, nullptr);
-    }
-}
 #endif
 
 void Video::initializeGraphics(
@@ -155,10 +128,7 @@ void Video::initializeGraphics(
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
-
-#if VERBOSE_LOGGING
-    initializeDebugCallback();
-#endif
+    initializeGLESLogCallbackIfNeeded();
 
     this->renderer = renderer;
     this->rotation = rotation;

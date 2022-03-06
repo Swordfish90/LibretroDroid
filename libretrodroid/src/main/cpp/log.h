@@ -18,11 +18,17 @@
 #ifndef LIBRETRODROID_LOG_H
 #define LIBRETRODROID_LOG_H
 
-#include <android/log.h>
-
 #define MODULE_NAME "libretrodroid"
 
 #define VERBOSE_LOGGING false
+#define GLES_LOGGING false
+
+#if GLES_LOGGING
+#include <EGL/egl.h>
+#include <GLES3/gl32.h>
+#endif
+
+#include <android/log.h>
 
 #if VERBOSE_LOGGING
 
@@ -41,6 +47,42 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, MODULE_NAME, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, MODULE_NAME, __VA_ARGS__)
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL, MODULE_NAME, __VA_ARGS__)
+
+#endif
+
+#if GLES_LOGGING
+
+static void MessageCallback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam
+) {
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        LOGE("GL CALLBACK: \"** GL ERROR **\" type = 0x%x, severity = 0x%x, message = %s\n",
+             type,
+             severity,
+             message);
+    }
+}
+
+static bool initializeGLESLogCallbackIfNeeded() {
+    auto debugCallback = (void (*)(void *, void *)) eglGetProcAddress("glDebugMessageCallback");
+    if (debugCallback) {
+        glEnable(GL_DEBUG_OUTPUT);
+        debugCallback((void*) MessageCallback, nullptr);
+    }
+    return true;
+}
+
+#else
+
+static bool initializeGLESLogCallbackIfNeeded() {
+    return false;
+}
 
 #endif
 
