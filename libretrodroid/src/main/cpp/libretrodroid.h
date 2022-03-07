@@ -146,8 +146,6 @@ private:
     bool preferLowLatencyAudio = false;
     bool rumbleEnabled = false;
 
-    std::mutex retroStateMutex;
-
     ShaderManager::Type fragmentShaderType = ShaderManager::Type::SHADER_DEFAULT;
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
