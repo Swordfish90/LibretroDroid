@@ -15,7 +15,8 @@ public:
         SHADER_DEFAULT = 0,
         SHADER_CRT = 1,
         SHADER_LCD = 2,
-        SHADER_SHARP = 3
+        SHADER_SHARP = 3,
+        SHADER_TRIANGLE_UPSCALE = 4
     };
 
 private:
@@ -23,6 +24,7 @@ private:
     static const std::string crtShader;
     static const std::string lcdShader;
     static const std::string defaultSharp;
+    static const std::string triangleUpscale;
 
 public:
     static std::string getShader(Type type);

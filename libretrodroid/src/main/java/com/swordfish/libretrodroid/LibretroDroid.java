@@ -34,6 +34,7 @@ class LibretroDroid {
     public static final int SHADER_CRT = 1;
     public static final int SHADER_LCD = 2;
     public static final int SHADER_SHARP = 3;
+    public static final int SHADER_TRIANGLE_UPSCALE = 4;
 
     public static final int ERROR_LOAD_LIBRARY = 0;
     public static final int ERROR_LOAD_GAME = 1;
