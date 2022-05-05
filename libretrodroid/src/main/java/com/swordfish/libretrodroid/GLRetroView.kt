@@ -54,7 +54,7 @@ class GLRetroView(
         LibretroDroid.setFrameSpeed(value)
     }
 
-    var shaderType: Int by Delegates.observable(LibretroDroid.SHADER_DEFAULT) { _, _, value ->
+    var shaderType: Int by Delegates.observable(data.shader) { _, _, value ->
         LibretroDroid.setShaderType(value)
     }
 
