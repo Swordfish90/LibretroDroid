@@ -113,36 +113,21 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     }
     return program;
 }
-#if VERBOSE_LOGGING
 
-#endif
+void Video::updateProgram() {
+    if (loadedShaderType.has_value() && loadedShaderType == requestedShaderType) {
+        return;
+    }
 
-void Video::initializeGraphics(
-    Renderer* renderer,
-    const std::string& fragmentShader,
-    bool bottomLeftOrigin,
-    float rotation,
-    bool skipDuplicateFrames
-) {
-    printGLString("Version", GL_VERSION);
-    printGLString("Vendor", GL_VENDOR);
-    printGLString("Renderer", GL_RENDERER);
-    printGLString("Extensions", GL_EXTENSIONS);
-    initializeGLESLogCallbackIfNeeded();
+    std::string shaderString = ShaderManager::getShader(requestedShaderType);
 
-    this->renderer = renderer;
-    this->rotation = rotation;
-    this->skipDuplicateFrames = skipDuplicateFrames;
-
-    gFlipY = bottomLeftOrigin ? 0 : 1;
-
-    LOGI("Initializing graphics");
-
-    gProgram = createProgram(gVertexShader, fragmentShader.data());
+    gProgram = createProgram(gVertexShader, shaderString.data());
     if (!gProgram) {
         LOGE("Could not create gl program.");
         throw std::runtime_error("Cannot create gl program");
     }
+
+    loadedShaderType = requestedShaderType;
 
     gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
 
@@ -157,13 +142,11 @@ void Video::initializeGraphics(
     gFlipYHandle = glGetUniformLocation(gProgram, "vFlipY");
 
     gViewModelMatrixHandle = glGetUniformLocation(gProgram, "vViewModel");
-
-    glViewport(0, 0, screenWidth, screenHeight);
-
-    glUseProgram(0);
 }
 
 void Video::renderFrame() {
+    updateProgram();
+
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
 
@@ -252,4 +235,33 @@ void Video::updateRotation(float rotation) {
     this->rotation = rotation;
 }
 
+Video::Video(
+    Renderer* renderer,
+    ShaderManager::Type shaderType,
+    bool bottomLeftOrigin,
+    float rotation,
+    bool skipDuplicateFrames
+) :
+    requestedShaderType(shaderType),
+    rotation(rotation),
+    skipDuplicateFrames(skipDuplicateFrames),
+    gFlipY(bottomLeftOrigin ? 0 : 1),
+    renderer(renderer) {
+
+    printGLString("Version", GL_VERSION);
+    printGLString("Vendor", GL_VENDOR);
+    printGLString("Renderer", GL_RENDERER);
+    printGLString("Extensions", GL_EXTENSIONS);
+    initializeGLESLogCallbackIfNeeded();
+
+    LOGI("Initializing graphics");
+
+    glViewport(0, 0, screenWidth, screenHeight);
+
+    glUseProgram(0);
+}
+
+void Video::updateShaderType(ShaderManager::Type shaderType) {
+    requestedShaderType = shaderType;
+}
 } //namespace libretrodroid

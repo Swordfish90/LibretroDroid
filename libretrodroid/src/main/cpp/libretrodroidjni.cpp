@@ -513,6 +513,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEn
     LibretroDroid::getInstance().setAudioEnabled(enabled);
 }
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderType(
+    JNIEnv* env,
+    jclass obj,
+    jint shaderType
+) {
+    LibretroDroid::getInstance().setShaderType(shaderType);
+}
+
 }
 
 }

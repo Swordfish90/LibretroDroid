@@ -203,10 +203,9 @@ void LibretroDroid::onSurfaceCreated() {
         }
     }
 
-    auto newVideo = new Video();
-    newVideo->initializeGraphics(
+    auto newVideo = new Video(
         renderer,
-        ShaderManager::getShader(fragmentShaderType),
+        fragmentShaderType,
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
         skipDuplicateFrames
@@ -282,7 +281,6 @@ void LibretroDroid::create(
 
     core->retro_init();
 
-    fragmentShaderType = ShaderManager::Type(shaderType);
     preferLowLatencyAudio = lowLatencyAudio;
 
     // HW accelerated cores are only supported on opengles 3.
@@ -491,6 +489,13 @@ void LibretroDroid::setFrameSpeed(unsigned int speed) {
 
 void LibretroDroid::setAudioEnabled(bool enabled) {
     audioEnabled = enabled;
+}
+
+void LibretroDroid::setShaderType(int shaderType) {
+    fragmentShaderType = ShaderManager::Type(shaderType);
+    if (video) {
+        video->updateShaderType(fragmentShaderType);
+    }
 }
 
 void LibretroDroid::handleVideoRefresh(
