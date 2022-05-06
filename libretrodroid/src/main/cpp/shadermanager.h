@@ -1,6 +1,19 @@
-//
-// Created by swordfish on 18/11/19.
-//
+/*
+ *     Copyright (C) 2022  Filippo Scognamiglio
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef LIBRETRODROID_SHADERMANAGER_H
 #define LIBRETRODROID_SHADERMANAGER_H
@@ -20,14 +33,18 @@ public:
     };
 
 private:
-    static const std::string defaultShader;
-    static const std::string crtShader;
-    static const std::string lcdShader;
-    static const std::string defaultSharp;
-    static const std::string triangleUpscale;
+    static const std::string defaultShaderVertex;
+
+    static const std::string defaultShaderFragment;
+    static const std::string defaultSharpFragment;
+    static const std::string crtShaderFragment;
+    static const std::string lcdShaderFragment;
+
+    static const std::string triangleUpscaleVertex;
+    static const std::string triangleUpscaleFragment;
 
 public:
-    static std::string getShader(Type type);
+    static std::tuple<std::string, std::string> getShader(Type type);
 
 };
 

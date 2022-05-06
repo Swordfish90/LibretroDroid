@@ -32,26 +32,6 @@ static void printGLString(const char *name, GLenum s) {
     LOGI("GL %s = %s\n", name, v);
 }
 
-const char* gVertexShader =
-        "attribute vec4 vPosition;\n"
-        "attribute vec2 vCoordinate;\n"
-        "uniform mediump float vFlipY;\n"
-        "uniform mediump float screenDensity;\n"
-        "uniform lowp sampler2D texture;\n"
-        "uniform mat4 vViewModel;\n"
-        "uniform vec2 textureSize;\n"
-        "\n"
-        "varying mediump float screenMaskStrength;\n"
-        "varying vec2 coords;\n"
-        "varying vec2 screenCoords;\n"
-        "void main() {\n"
-        "  coords.x = vCoordinate.x;\n"
-        "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
-        "  screenCoords = coords * textureSize;\n"
-        "  screenMaskStrength = smoothstep(2.0, 6.0, screenDensity);\n"
-        "  gl_Position = vViewModel * vPosition;\n"
-        "}\n";
-
 GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
     if (shader) {
@@ -119,9 +99,9 @@ void Video::updateProgram() {
         return;
     }
 
-    std::string shaderString = ShaderManager::getShader(requestedShaderType);
+    auto shaders = ShaderManager::getShader(requestedShaderType);
 
-    gProgram = createProgram(gVertexShader, shaderString.data());
+    gProgram = createProgram(std::get<0>(shaders).data(), std::get<1>(shaders).data());
     if (!gProgram) {
         LOGE("Could not create gl program.");
         throw std::runtime_error("Cannot create gl program");

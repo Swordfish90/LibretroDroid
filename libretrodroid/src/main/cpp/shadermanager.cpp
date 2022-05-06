@@ -19,109 +19,145 @@
 
 namespace libretrodroid {
 
-const std::string ShaderManager::defaultShader =
-        "precision mediump float;\n"
-        "uniform lowp sampler2D texture;\n"
-        "varying vec2 coords;\n"
-        "void main() {\n"
-        "  vec4 tex = texture2D(texture, coords);"
-        "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
-        "}\n";
+const std::string ShaderManager::defaultShaderVertex =
+    "attribute vec4 vPosition;\n"
+    "attribute vec2 vCoordinate;\n"
+    "uniform mediump float vFlipY;\n"
+    "uniform mediump float screenDensity;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform mat4 vViewModel;\n"
+    "uniform vec2 textureSize;\n"
+    "\n"
+    "varying mediump float screenMaskStrength;\n"
+    "varying vec2 coords;\n"
+    "varying vec2 screenCoords;\n"
+    "void main() {\n"
+    "  coords.x = vCoordinate.x;\n"
+    "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
+    "  screenCoords = coords * textureSize;\n"
+    "  screenMaskStrength = smoothstep(2.0, 6.0, screenDensity);\n"
+    "  gl_Position = vViewModel * vPosition;\n"
+    "}\n";
 
-const std::string ShaderManager::crtShader =
-        "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
-        "#define HIGHP highp\n"
-        "#else\n"
-        "#define HIGHP mediump\n"
-        "precision mediump float;\n"
-        "#endif\n"
-        "\n"
-        "uniform HIGHP vec2 textureSize;\n"
-        "\n"
-        "uniform lowp sampler2D texture;\n"
-        "varying HIGHP vec2 coords;\n"
-        "varying HIGHP vec2 screenCoords;\n"
-        "varying mediump float screenMaskStrength;\n"
-        "\n"
-        "#define INTENSITY 0.30\n"
-        "#define BRIGHTBOOST 0.30\n"
-        "\n"
-        "void main() {\n"
-        "   lowp vec3 texel = texture2D(texture, coords).rgb;\n"
-        "   lowp vec3 pixelHigh = ((1.0 + BRIGHTBOOST) - (0.2 * texel)) * texel;\n"
-        "   lowp vec3 pixelLow  = ((1.0 - INTENSITY) + (0.1 * texel)) * texel;\n"
-        "\n"
-        "   HIGHP vec2 coords = fract(screenCoords) * 2.0 - vec2(1.0);\n"
-        "\n"
-        "   lowp float mask = 1.0 - abs(coords.y);\n"
-        "\n"
-        "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
-        "}\n";
+const std::string ShaderManager::defaultShaderFragment =
+    "precision mediump float;\n"
+    "uniform lowp sampler2D texture;\n"
+    "varying vec2 coords;\n"
+    "void main() {\n"
+    "  vec4 tex = texture2D(texture, coords);"
+    "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
+    "}\n";
 
-const std::string ShaderManager::lcdShader =
-        "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
-        "#define HIGHP highp\n"
-        "#else\n"
-        "#define HIGHP mediump\n"
-        "precision mediump float;\n"
-        "#endif\n"
-        "\n"
-        "uniform HIGHP vec2 textureSize;\n"
-        "uniform lowp sampler2D texture;\n"
-        "uniform mediump float screenDensity;\n"
-        "\n"
-        "varying HIGHP vec2 coords;\n"
-        "varying HIGHP vec2 screenCoords;\n"
-        "varying mediump float screenMaskStrength;\n"
-        "\n"
-        "#define INTENSITY 0.25\n"
-        "#define BRIGHTBOOST 0.25\n"
-        "\n"
-        "void main() {\n"
-        "  mediump vec2 threshold = vec2(1.0 / screenDensity);\n"
-        "  mediump vec2 x = fract(screenCoords);\n"
-        "  x = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
-        "  mediump vec2 sharpCoords = (floor(screenCoords) + x) / textureSize;\n"
-        "\n"
-        "  lowp vec3 texel = texture2D(texture, sharpCoords).rgb;\n"
-        "  lowp vec3 pixelHigh = ((1.0 + BRIGHTBOOST) - (0.2 * texel)) * texel;\n"
-        "  lowp vec3 pixelLow  = ((1.0 - INTENSITY) + (0.1 * texel)) * texel;\n"
-        "\n"
-        "   HIGHP vec2 coords = fract(screenCoords) * 2.0 - vec2(1.0);\n"
-        "   coords = coords * coords;\n"
-        "\n"
-        "   lowp float mask = 1.0 - coords.x - coords.y;\n"
-        "\n"
-        "   gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
-        "}\n";
+const std::string ShaderManager::crtShaderFragment =
+    "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+    "#define HIGHP highp\n"
+    "#else\n"
+    "#define HIGHP mediump\n"
+    "precision mediump float;\n"
+    "#endif\n"
+    "\n"
+    "uniform HIGHP vec2 textureSize;\n"
+    "\n"
+    "uniform lowp sampler2D texture;\n"
+    "varying HIGHP vec2 coords;\n"
+    "varying HIGHP vec2 screenCoords;\n"
+    "varying mediump float screenMaskStrength;\n"
+    "\n"
+    "#define INTENSITY 0.30\n"
+    "#define BRIGHTBOOST 0.30\n"
+    "\n"
+    "void main() {\n"
+    "  lowp vec3 texel = texture2D(texture, coords).rgb;\n"
+    "  lowp vec3 pixelHigh = ((1.0 + BRIGHTBOOST) - (0.2 * texel)) * texel;\n"
+    "  lowp vec3 pixelLow  = ((1.0 - INTENSITY) + (0.1 * texel)) * texel;\n"
+    "\n"
+    "  HIGHP vec2 coords = fract(screenCoords) * 2.0 - vec2(1.0);\n"
+    "\n"
+    "  lowp float mask = 1.0 - abs(coords.y);\n"
+    "\n"
+    "  gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
+    "}\n";
 
-const std::string ShaderManager::defaultSharp =
-        "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
-        "#define HIGHP highp\n"
-        "#else\n"
-        "#define HIGHP mediump\n"
-        "precision mediump float;\n"
-        "#endif\n"
-        "\n"
-        "precision mediump float;\n"
-        "uniform lowp sampler2D texture;\n"
-        "uniform HIGHP vec2 textureSize;\n"
-        "uniform mediump float screenDensity;\n"
-        "\n"
-        "varying vec2 coords;\n"
-        "varying vec2 screenCoords;\n"
-        "\n"
-        "void main() {\n"
-        "  mediump vec2 threshold = vec2(1.0 / screenDensity);\n"
-        "  mediump vec2 x = fract(screenCoords);\n"
-        "  x = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
-        "  mediump vec2 sharpCoords = (floor(screenCoords) + x) / textureSize;\n"
-        "\n"
-        "  vec4 tex = texture2D(texture, sharpCoords);\n"
-        "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
-        "}\n";
+const std::string ShaderManager::lcdShaderFragment =
+    "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+    "#define HIGHP highp\n"
+    "#else\n"
+    "#define HIGHP mediump\n"
+    "precision mediump float;\n"
+    "#endif\n"
+    "\n"
+    "uniform HIGHP vec2 textureSize;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform mediump float screenDensity;\n"
+    "\n"
+    "varying HIGHP vec2 coords;\n"
+    "varying HIGHP vec2 screenCoords;\n"
+    "varying mediump float screenMaskStrength;\n"
+    "\n"
+    "#define INTENSITY 0.25\n"
+    "#define BRIGHTBOOST 0.25\n"
+    "\n"
+    "void main() {\n"
+    "  mediump vec2 threshold = vec2(1.0 / screenDensity);\n"
+    "  mediump vec2 x = fract(screenCoords);\n"
+    "  x = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
+    "  mediump vec2 sharpCoords = (floor(screenCoords) + x) / textureSize;\n"
+    "\n"
+    "  lowp vec3 texel = texture2D(texture, sharpCoords).rgb;\n"
+    "  lowp vec3 pixelHigh = ((1.0 + BRIGHTBOOST) - (0.2 * texel)) * texel;\n"
+    "  lowp vec3 pixelLow  = ((1.0 - INTENSITY) + (0.1 * texel)) * texel;\n"
+    "\n"
+    "  HIGHP vec2 coords = fract(screenCoords) * 2.0 - vec2(1.0);\n"
+    "  coords = coords * coords;\n"
+    "\n"
+    "  lowp float mask = 1.0 - coords.x - coords.y;\n"
+    "\n"
+    "  gl_FragColor = vec4(mix(texel, mix(pixelLow, pixelHigh, mask), screenMaskStrength), 1.0);\n"
+    "}\n";
 
-const std::string ShaderManager::triangleUpscale =
+const std::string ShaderManager::defaultSharpFragment =
+    "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+    "#define HIGHP highp\n"
+    "#else\n"
+    "#define HIGHP mediump\n"
+    "precision mediump float;\n"
+    "#endif\n"
+    "\n"
+    "precision mediump float;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform HIGHP vec2 textureSize;\n"
+    "uniform mediump float screenDensity;\n"
+    "\n"
+    "varying vec2 coords;\n"
+    "varying vec2 screenCoords;\n"
+    "\n"
+    "void main() {\n"
+    "  mediump vec2 threshold = vec2(1.0 / screenDensity);\n"
+    "  mediump vec2 x = fract(screenCoords);\n"
+    "  x = 0.5 * (smoothstep(vec2(0.0), threshold, x) + smoothstep(vec2(1.0) - threshold, vec2(1.0), x));\n"
+    "  mediump vec2 sharpCoords = (floor(screenCoords) + x) / textureSize;\n"
+    "\n"
+    "  vec4 tex = texture2D(texture, sharpCoords);\n"
+    "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
+    "}\n";
+
+const std::string ShaderManager::triangleUpscaleVertex =
+    "attribute vec4 vPosition;\n"
+    "attribute vec2 vCoordinate;\n"
+    "uniform mediump float vFlipY;\n"
+    "uniform mediump float screenDensity;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform mat4 vViewModel;\n"
+    "uniform vec2 textureSize;\n"
+    "\n"
+    "varying vec2 screenCoords;\n"
+    "void main() {\n"
+    "  mediump vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY));\n"
+    "  screenCoords = coords * textureSize - vec2(0.5);\n"
+    "  gl_Position = vViewModel * vPosition;\n"
+    "}\n";
+
+const std::string ShaderManager::triangleUpscaleFragment =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
     "#else\n"
@@ -136,7 +172,6 @@ const std::string ShaderManager::triangleUpscale =
     "uniform HIGHP vec2 textureSize;\n"
     "uniform mediump float screenDensity;\n"
     "\n"
-    "varying mediump vec2 coords;\n"
     "varying HIGHP vec2 screenCoords;\n"
     "\n"
     "lowp float dist(lowp vec3 v1, lowp vec3 v2) {\n"
@@ -156,10 +191,11 @@ const std::string ShaderManager::triangleUpscale =
     "}\n"
     "\n"
     "void main() {\n"
-    "  mediump vec2 c1 = ((floor(screenCoords) + vec2(0.0, 0.0)) + vec2(0.5)) / textureSize;\n"
-    "  mediump vec2 c2 = ((floor(screenCoords) + vec2(1.0, 0.0)) + vec2(0.5)) / textureSize;\n"
-    "  mediump vec2 c3 = ((floor(screenCoords) + vec2(1.0, 1.0)) + vec2(0.5)) / textureSize;\n"
-    "  mediump vec2 c4 = ((floor(screenCoords) + vec2(0.0, 1.0)) + vec2(0.5)) / textureSize;\n"
+    "  HIGHP vec2 relativeCoords = floor(screenCoords);\n"
+    "  mediump vec2 c1 = ((relativeCoords + vec2(0.0, 0.0)) + vec2(0.5)) / textureSize;\n"
+    "  mediump vec2 c2 = ((relativeCoords + vec2(1.0, 0.0)) + vec2(0.5)) / textureSize;\n"
+    "  mediump vec2 c3 = ((relativeCoords + vec2(1.0, 1.0)) + vec2(0.5)) / textureSize;\n"
+    "  mediump vec2 c4 = ((relativeCoords + vec2(0.0, 1.0)) + vec2(0.5)) / textureSize;\n"
     "\n"
     "  lowp vec3 t1 = texture2D(texture, c1).rgb;\n"
     "  lowp vec3 t2 = texture2D(texture, c2).rgb;\n"
@@ -184,22 +220,22 @@ const std::string ShaderManager::triangleUpscale =
     "  gl_FragColor = vec4(final, 1.0);\n"
     "}\n";
 
-std::string ShaderManager::getShader(Type type) {
+std::tuple<std::string, std::string> ShaderManager::getShader(Type type) {
     switch (type) {
-        case Type::SHADER_DEFAULT:
-            return defaultShader;
+    case Type::SHADER_DEFAULT:
+        return { defaultShaderVertex, defaultShaderFragment };
 
-        case Type::SHADER_CRT:
-            return crtShader;
+    case Type::SHADER_CRT:
+        return { defaultShaderVertex, crtShaderFragment };
 
-        case Type::SHADER_LCD:
-            return lcdShader;
+    case Type::SHADER_LCD:
+        return { defaultShaderVertex, lcdShaderFragment };
 
-        case Type::SHADER_SHARP:
-            return defaultSharp;
+    case Type::SHADER_SHARP:
+        return { defaultShaderVertex, defaultSharpFragment };
 
-        case Type::SHADER_TRIANGLE_UPSCALE:
-            return triangleUpscale;
+    case Type::SHADER_TRIANGLE_UPSCALE:
+        return { triangleUpscaleVertex, triangleUpscaleFragment };
     }
 }
 
