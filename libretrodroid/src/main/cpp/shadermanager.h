@@ -29,7 +29,8 @@ public:
         SHADER_CRT = 1,
         SHADER_LCD = 2,
         SHADER_SHARP = 3,
-        SHADER_TRIANGLE_UPSCALE = 4
+        SHADER_TRIANGLE_UPSCALE = 4,
+        SHADER_TRIANGLE_UPSCALE_SMOOTH = 5
     };
 
 private:
@@ -42,6 +43,7 @@ private:
 
     static const std::string triangleUpscaleVertex;
     static const std::string triangleUpscaleFragment;
+    static const std::string triangleUpscaleSmoothFragment;
 
 public:
     static std::tuple<std::string, std::string> getShader(Type type);

@@ -381,6 +381,7 @@ class GLRetroView(
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
         const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
         const val SHADER_TRIANGLE_UPSCALE = LibretroDroid.SHADER_TRIANGLE_UPSCALE
+        const val SHADER_TRIANGLE_UPSCALE_SMOOTH = LibretroDroid.SHADER_TRIANGLE_UPSCALE_SMOOTH
 
         const val ERROR_LOAD_LIBRARY = LibretroDroid.ERROR_LOAD_LIBRARY
         const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME
