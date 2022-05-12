@@ -29,6 +29,8 @@ public:
     void (*retro_init)(void);
     void (*retro_deinit)(void);
     unsigned (*retro_api_version)(void);
+    void (*retro_cheat_reset)(void);
+    void (*retro_cheat_set)(unsigned index, bool enabled, const char *code);
     void (*retro_get_system_info)(struct retro_system_info *info);
     void (*retro_get_system_av_info)(struct retro_system_av_info *info);
     void (*retro_set_controller_port_device)(unsigned port, unsigned device);

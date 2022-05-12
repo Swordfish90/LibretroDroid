@@ -547,6 +547,15 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
     return std::pair(data, size);
 }
 
+void LibretroDroid::resetCheat() {
+    core->retro_cheat_reset();
+}
+
+void LibretroDroid::setCheat(unsigned index, bool enabled, const std::string& code) {
+    LOGE("retro_cheat_set %d  %d  %s" , index ,enabled, Utils::cloneToCString(code));
+    core->retro_cheat_set(index, enabled, Utils::cloneToCString(code));
+}
+
 bool LibretroDroid::requiresVideoRefresh() const {
     return dirtyVideo;
 }

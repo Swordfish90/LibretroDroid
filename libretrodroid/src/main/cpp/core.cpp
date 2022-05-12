@@ -41,7 +41,8 @@ void Core::open(const std::string& soCorePath) {
         LOGE("Cannot dlopen library, closing");
         throw std::runtime_error("Cannot dlopen library");
     }
-
+    retro_cheat_reset = (void (*)()) get_symbol(libHandle, "retro_cheat_reset");
+    retro_cheat_set = (void (*)(unsigned , bool , const char*)) get_symbol(libHandle, "retro_cheat_set");
     retro_init = (void (*)()) get_symbol(libHandle, "retro_init");
     retro_deinit = (void (*)()) get_symbol(libHandle, "retro_deinit");
     retro_api_version = (unsigned (*)()) get_symbol(libHandle, "retro_api_version");
