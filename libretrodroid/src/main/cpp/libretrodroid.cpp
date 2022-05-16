@@ -552,7 +552,6 @@ void LibretroDroid::resetCheat() {
 }
 
 void LibretroDroid::setCheat(unsigned index, bool enabled, const std::string& code) {
-    LOGE("retro_cheat_set %d  %d  %s" , index ,enabled, Utils::cloneToCString(code));
     core->retro_cheat_set(index, enabled, Utils::cloneToCString(code));
 }
 
