@@ -30,6 +30,7 @@ public:
     virtual uintptr_t getTexture() = 0;
     virtual void updateRenderedResolution(unsigned width, unsigned height) = 0;
     virtual void setPixelFormat(int pixelFormat) = 0;
+    virtual void setLinear(bool linear) = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
     std::pair<int, int> lastFrameSize;
     virtual bool rendersInVideoCallback() = 0;

@@ -101,11 +101,13 @@ void Video::updateProgram() {
 
     auto shaders = ShaderManager::getShader(requestedShaderType);
 
-    gProgram = createProgram(std::get<0>(shaders).data(), std::get<1>(shaders).data());
+    gProgram = createProgram(shaders.vertex.data(), shaders.fragment.data());
     if (!gProgram) {
         LOGE("Could not create gl program.");
         throw std::runtime_error("Cannot create gl program");
     }
+
+    renderer->setLinear(shaders.linear);
 
     loadedShaderType = requestedShaderType;
 

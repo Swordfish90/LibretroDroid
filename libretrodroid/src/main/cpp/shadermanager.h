@@ -24,6 +24,12 @@ namespace libretrodroid {
 
 class ShaderManager {
 public:
+    struct Data {
+        std::string vertex;
+        std::string fragment;
+        bool linear;
+    };
+
     enum class Type {
         SHADER_DEFAULT = 0,
         SHADER_CRT = 1,
@@ -45,7 +51,7 @@ private:
     static const std::string diamondUpscaleFragment;
 
 public:
-    static std::tuple<std::string, std::string> getShader(Type type);
+    static Data getShader(Type type);
 
 };
 

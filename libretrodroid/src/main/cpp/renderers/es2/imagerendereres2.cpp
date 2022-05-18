@@ -36,8 +36,8 @@ void ImageRendererES2::onNewFrame(const void *data, unsigned width, unsigned hei
         convertDataFrom0RGB1555(data, width, height, pitch);
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -116,6 +116,10 @@ void ImageRendererES2::updateRenderedResolution(unsigned int width, unsigned int
 
 bool ImageRendererES2::rendersInVideoCallback() {
     return false;
+}
+
+void ImageRendererES2::setLinear(bool linear) {
+    this->linear = linear;
 }
 
 } //namespace libretrodroid

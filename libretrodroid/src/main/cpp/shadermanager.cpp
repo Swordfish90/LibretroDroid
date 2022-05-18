@@ -240,25 +240,25 @@ const std::string ShaderManager::diamondUpscaleFragment =
     "}\n";
 
 
-std::tuple<std::string, std::string> ShaderManager::getShader(Type type) {
+ShaderManager::Data ShaderManager::getShader(Type type) {
     switch (type) {
     case Type::SHADER_DEFAULT:
-        return { defaultShaderVertex, defaultShaderFragment };
+        return { defaultShaderVertex, defaultShaderFragment, true };
 
     case Type::SHADER_CRT:
-        return { defaultShaderVertex, crtShaderFragment };
+        return { defaultShaderVertex, crtShaderFragment, true };
 
     case Type::SHADER_LCD:
-        return { defaultShaderVertex, lcdShaderFragment };
+        return { defaultShaderVertex, lcdShaderFragment, true };
 
     case Type::SHADER_SHARP:
-        return { defaultShaderVertex, defaultSharpFragment };
+        return { defaultShaderVertex, defaultSharpFragment, true };
 
     case Type::SHADER_DIAMOND_UPSCALE_SHARP:
-        return { diamondUpscaleVertex, "#define SMOOTHNESS 0.2\n\n" + diamondUpscaleFragment };
+        return { diamondUpscaleVertex, "#define SMOOTHNESS 0.2\n\n" + diamondUpscaleFragment, false };
 
     case Type::SHADER_DIAMOND_UPSCALE_SMOOTH:
-        return { diamondUpscaleVertex, "#define SMOOTHNESS 0.4\n\n" + diamondUpscaleFragment };
+        return { diamondUpscaleVertex, "#define SMOOTHNESS 0.4\n\n" + diamondUpscaleFragment ,false };
     }
 }
 
