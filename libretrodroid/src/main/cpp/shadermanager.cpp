@@ -256,8 +256,8 @@ const std::string ShaderManager::upscaleFragment =
     "    sharpness\n"
     "  );\n"
     "\n"
-    "  lowp float d1 = step(diagonal2Strength * 3.0 + 0.05, diagonal1Strength);\n"
-    "  lowp float d2 = step(diagonal1Strength * 3.0 + 0.05, diagonal2Strength);\n"
+    "  lowp float d1 = step(diagonal2Strength * 2.0 + 0.05, diagonal1Strength);\n"
+    "  lowp float d2 = step(diagonal1Strength * 2.0 + 0.05, diagonal2Strength);\n"
     "\n"
     "  lowp vec3 final = quadBilinear(t1, t2, t4, t3, pxCoords, sharpness);\n"
     "  final = d1 + d2 > 0.5 ? cd : final;\n"
@@ -295,7 +295,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
         return {
             upscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
-            "#define USE_SHARPENING_BIAS 0\n"
+            "#define USE_SHARPENING_BIAS 1\n"
             "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.25\n"
             "#define STATIC_SHARPNESS 0.2\n"
