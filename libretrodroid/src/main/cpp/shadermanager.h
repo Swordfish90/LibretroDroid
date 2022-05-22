@@ -35,8 +35,8 @@ public:
         SHADER_CRT = 1,
         SHADER_LCD = 2,
         SHADER_SHARP = 3,
-        SHADER_DIAMOND_UPSCALE_SHARP = 4,
-        SHADER_DIAMOND_UPSCALE_SMOOTH = 5
+        SHADER_UPSCALE_SHARP = 4,
+        SHADER_UPSCALE_SMOOTH = 5
     };
 
 private:
@@ -47,8 +47,8 @@ private:
     static const std::string crtShaderFragment;
     static const std::string lcdShaderFragment;
 
-    static const std::string diamondUpscaleVertex;
-    static const std::string diamondUpscaleFragment;
+    static const std::string upscaleVertex;
+    static const std::string upscaleFragment;
 
 public:
     static Data getShader(Type type);

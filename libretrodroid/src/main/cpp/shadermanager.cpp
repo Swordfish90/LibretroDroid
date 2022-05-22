@@ -141,7 +141,7 @@ const std::string ShaderManager::defaultSharpFragment =
     "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
     "}\n";
 
-const std::string ShaderManager::diamondUpscaleVertex =
+const std::string ShaderManager::upscaleVertex =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
     "#else\n"
@@ -165,7 +165,7 @@ const std::string ShaderManager::diamondUpscaleVertex =
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
-const std::string ShaderManager::diamondUpscaleFragment =
+const std::string ShaderManager::upscaleFragment =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
     "#else\n"
@@ -183,8 +183,11 @@ const std::string ShaderManager::diamondUpscaleFragment =
     "lowp float luma(lowp vec3 v) {\n"
     "  return dot(v, vec3(0.21, 0.72, 0.04));\n"
     "}\n"
-    "lowp float sharpSmooth(lowp float t, lowp float sharpness) {"
-    "  return clamp((t - sharpness) / (1.0 - sharpness - sharpness), 0.0, 1.0);\n"
+    "lowp float linearStep(lowp float edge0, lowp float edge1, lowp float t) {\n"
+    "  return clamp((t - edge0) / (edge1 - edge0), 0.0, 1.0);\n"
+    "}\n"
+    "lowp float sharpSmooth(lowp float t, lowp float sharpness) {\n"
+    "  return linearStep(sharpness, 1.0 - sharpness, t);\n"
     "}\n"
     "lowp vec3 quadBilinear(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, lowp vec2 p, lowp float sharpness) {\n"
     "  lowp float x = sharpSmooth(p.x, sharpness);\n"
@@ -228,7 +231,9 @@ const std::string ShaderManager::diamondUpscaleFragment =
     "  lowp float lmax = max(max(l1, l2), max(l3, l4));\n"
     "  lowp float lmin = min(min(l1, l2), min(l3, l4));\n"
     "  lowp float contrast = (lmax - lmin) / (lmax + lmin + 0.05);\n"
-    "  contrast = smoothstep(DYNAMIC_SHARPNESS_MIN_CONTRAST, DYNAMIC_SHARPNESS_MAX_CONTRAST, contrast);\n"
+    "#if USE_SHARPENING_BIAS\n"
+    "  contrast = sqrt(contrast);\n"
+    "#endif\n"
     "  lowp float sharpness = mix(DYNAMIC_SHARPNESS_MIN, DYNAMIC_SHARPNESS_MAX, contrast);\n"
     "#else\n"
     "  const lowp float sharpness = STATIC_SHARPNESS;\n"
@@ -258,12 +263,6 @@ const std::string ShaderManager::diamondUpscaleFragment =
     "  final = d1 + d2 > 0.5 ? cd : final;\n"
     "\n"
     "  gl_FragColor = vec4(final, 1.0);\n"
-    // Debug call to analyze contrast
-//    "  gl_FragColor = vec4(vec3(\n"
-//    "    step(0.0, contrast) - step(DYNAMIC_SHARPNESS_MIN_CONTRAST, contrast),\n"
-//    "    step(DYNAMIC_SHARPNESS_MIN_CONTRAST, contrast) - step(DYNAMIC_SHARPNESS_MAX_CONTRAST, contrast),\n"
-//    "    step(DYNAMIC_SHARPNESS_MAX_CONTRAST, contrast)\n"
-//    "  ), 1.0);\n"
     "}\n";
 
 ShaderManager::Data ShaderManager::getShader(Type type) {
@@ -280,29 +279,27 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
     case Type::SHADER_SHARP:
         return { defaultShaderVertex, defaultSharpFragment, true };
 
-    case Type::SHADER_DIAMOND_UPSCALE_SHARP:
+    case Type::SHADER_UPSCALE_SHARP:
         return {
-            diamondUpscaleVertex,
+            upscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
-            "#define DYNAMIC_SHARPNESS_MIN_CONTRAST 0.10\n"
-            "#define DYNAMIC_SHARPNESS_MAX_CONTRAST 0.90\n"
-            "#define DYNAMIC_SHARPNESS_MIN 0.20\n"
+            "#define USE_SHARPENING_BIAS 1\n"
+            "#define DYNAMIC_SHARPNESS_MIN 0.10\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.30\n"
             "#define STATIC_SHARPNESS 0.2\n"
-            + diamondUpscaleFragment,
+            + upscaleFragment,
             false
         };
 
-    case Type::SHADER_DIAMOND_UPSCALE_SMOOTH:
+    case Type::SHADER_UPSCALE_SMOOTH:
         return {
-            diamondUpscaleVertex,
+            upscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
-            "#define DYNAMIC_SHARPNESS_MIN_CONTRAST 0.20\n"
-            "#define DYNAMIC_SHARPNESS_MAX_CONTRAST 0.80\n"
+            "#define USE_SHARPENING_BIAS 0\n"
             "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.25\n"
             "#define STATIC_SHARPNESS 0.2\n"
-            + diamondUpscaleFragment,
+            + upscaleFragment,
             false
         };
     }
