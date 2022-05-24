@@ -141,7 +141,7 @@ const std::string ShaderManager::defaultSharpFragment =
     "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
     "}\n";
 
-const std::string ShaderManager::upscaleVertex =
+const std::string ShaderManager::cutUpscaleVertex =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
     "#else\n"
@@ -165,7 +165,7 @@ const std::string ShaderManager::upscaleVertex =
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
-const std::string ShaderManager::upscaleFragment =
+const std::string ShaderManager::cutUpscaleFragment =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
     "#else\n"
@@ -279,27 +279,27 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
     case Type::SHADER_SHARP:
         return { defaultShaderVertex, defaultSharpFragment, true };
 
-    case Type::SHADER_UPSCALE_SHARP:
+    case Type::SHADER_UPSCALE_CUT_SHARP:
         return {
-            upscaleVertex,
+            cutUpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
             "#define USE_SHARPENING_BIAS 1\n"
             "#define DYNAMIC_SHARPNESS_MIN 0.10\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.30\n"
             "#define STATIC_SHARPNESS 0.2\n"
-            + upscaleFragment,
+            + cutUpscaleFragment,
             false
         };
 
-    case Type::SHADER_UPSCALE_SMOOTH:
+    case Type::SHADER_UPSCALE_CUT_SMOOTH:
         return {
-            upscaleVertex,
+            cutUpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
             "#define USE_SHARPENING_BIAS 1\n"
             "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.25\n"
             "#define STATIC_SHARPNESS 0.2\n"
-            + upscaleFragment,
+            + cutUpscaleFragment,
             false
         };
     }
