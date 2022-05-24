@@ -258,7 +258,7 @@ const std::string ShaderManager::upscaleFragment =
     "\n"
     "  lowp float minDiagonal = min(diagonal1Strength, diagonal2Strength);\n"
     "  lowp float maxDiagonal = max(diagonal1Strength, diagonal2Strength);\n"
-    "  bool diagonal = minDiagonal * 2.0 + 0.05 < maxDiagonal;\n"
+    "  bool diagonal = minDiagonal * 4.0 + 0.05 < maxDiagonal;\n"
     "\n"
     "  lowp vec3 final = diagonal ? cd : quadBilinear(t1, t2, t4, t3, pxCoords, sharpness);\n"
     "\n"
