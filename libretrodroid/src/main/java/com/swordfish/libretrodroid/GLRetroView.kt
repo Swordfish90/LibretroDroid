@@ -390,6 +390,7 @@ class GLRetroView(
         const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME
         const val ERROR_GL_NOT_COMPATIBLE = LibretroDroid.ERROR_GL_NOT_COMPATIBLE
         const val ERROR_SERIALIZATION = LibretroDroid.ERROR_SERIALIZATION
+        const val ERROR_CHEAT = LibretroDroid.ERROR_CHEAT
         const val ERROR_GENERIC = LibretroDroid.ERROR_GENERIC
     }
 }

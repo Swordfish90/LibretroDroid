@@ -23,6 +23,7 @@ namespace libretrodroid {
     extern int ERROR_LOAD_GAME;
     extern int ERROR_GL_NOT_COMPATIBLE;
     extern int ERROR_SERIALIZATION;
+    extern int ERROR_CHEAT;
     extern int ERROR_GENERIC;
 }
 

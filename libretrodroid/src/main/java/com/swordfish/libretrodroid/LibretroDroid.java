@@ -41,7 +41,8 @@ class LibretroDroid {
     public static final int ERROR_LOAD_GAME = 1;
     public static final int ERROR_GL_NOT_COMPATIBLE = 2;
     public static final int ERROR_SERIALIZATION = 3;
-    public static final int ERROR_GENERIC = 4;
+    public static final int ERROR_CHEAT = 4;
+    public static final int ERROR_GENERIC = -1;
 
     public static native void create(
         int GLESVersion,
@@ -78,8 +79,10 @@ class LibretroDroid {
     public static native void setShaderType(int shaderType);
 
     public static native byte[] serializeState();
-    public static native void setCheat(int index, boolean enable, String code);
     public static native boolean unserializeState(byte[] state);
+
+    public static native void setCheat(int index, boolean enable, String code);
+    public static native void resetCheat();
 
     public static native byte[] serializeSRAM();
     public static native boolean unserializeSRAM(byte[] sram);

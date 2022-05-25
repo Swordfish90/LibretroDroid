@@ -23,7 +23,8 @@ namespace libretrodroid {
     int ERROR_LOAD_GAME = 1;
     int ERROR_GL_NOT_COMPATIBLE = 2;
     int ERROR_SERIALIZATION = 3;
-    int ERROR_GENERIC = 4;
+    int ERROR_CHEAT = 4;
+    int ERROR_GENERIC = -1;
 }
 
 #endif //LIBRETRODROID_ERRORCODES_H

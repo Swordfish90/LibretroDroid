@@ -219,12 +219,23 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setCheat(
 ) {
     try {
         auto codeString = JniString(env, code);
-        LibretroDroid::getInstance().setCheat(index,enabled,codeString.stdString());
+        LibretroDroid::getInstance().setCheat(index, enabled, codeString.stdString());
     } catch (std::exception &exception) {
-        LOGE("Error in serializeState: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
+        LOGE("Error in setCheat: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_CHEAT);
     }
+}
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resetCheat(
+    JNIEnv* env,
+    jclass obj
+) {
+    try {
+        LibretroDroid::getInstance().resetCheat();
+    } catch (std::exception &exception) {
+        LOGE("Error in resetCheat: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_CHEAT);
+    }
 }
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(
