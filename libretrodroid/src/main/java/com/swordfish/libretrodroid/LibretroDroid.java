@@ -78,6 +78,7 @@ class LibretroDroid {
     public static native void setShaderType(int shaderType);
 
     public static native byte[] serializeState();
+    public static native void setCheat(int index, boolean enable, String code);
     public static native boolean unserializeState(byte[] state);
 
     public static native byte[] serializeSRAM();
