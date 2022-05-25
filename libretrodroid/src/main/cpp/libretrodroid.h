@@ -119,6 +119,8 @@ public:
 
     void setAudioEnabled(bool enabled);
 
+    void setShaderType(int shaderType);
+
     void resetGlobalVariables();
 
     // Handle callbacks

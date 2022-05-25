@@ -19,23 +19,27 @@
 #define LIBRETRODROID_VIDEO_H
 
 #include <GLES2/gl2.h>
+#include <optional>
 
 #include "renderers/renderer.h"
+#include "shadermanager.h"
 
 namespace libretrodroid {
 
 class Video {
 public:
-    void initializeGraphics(
+    Video(
         Renderer* renderer,
-        const std::string& fragmentShader,
+        ShaderManager::Type shaderType,
         bool bottomLeftOrigin,
         float rotation,
         bool skipDuplicateFrames
     );
+
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateRendererSize(unsigned width, unsigned height);
     void updateRotation(float rotation);
+    void updateShaderType(ShaderManager::Type shaderType);
 
     void renderFrame();
 
@@ -50,6 +54,8 @@ public:
     }
 
 private:
+    void updateProgram();
+
     void updateViewModelMatrix();
     float getScreenDensity();
     float getTextureWidth();
@@ -105,6 +111,9 @@ private:
 
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
+
+    ShaderManager::Type requestedShaderType = ShaderManager::Type::SHADER_DEFAULT;
+    std::optional<ShaderManager::Type> loadedShaderType = std::nullopt;
 
     float rotation = 0;
     bool isDirty = false;

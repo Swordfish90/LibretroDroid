@@ -54,6 +54,10 @@ class GLRetroView(
         LibretroDroid.setFrameSpeed(value)
     }
 
+    var shaderType: Int by Delegates.observable(data.shader) { _, _, value ->
+        LibretroDroid.setShaderType(value)
+    }
+
     private val openGLESVersion: Int
 
     private var isGameLoaded = false
@@ -376,6 +380,8 @@ class GLRetroView(
         const val SHADER_CRT = LibretroDroid.SHADER_CRT
         const val SHADER_LCD = LibretroDroid.SHADER_LCD
         const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
+        const val SHADER_UPSCALE_CUT_SHARP = LibretroDroid.SHADER_UPSCALE_CUT_SHARP
+        const val SHADER_UPSCALE_CUT_SMOOTH = LibretroDroid.SHADER_UPSCALE_CUT_SMOOTH
 
         const val ERROR_LOAD_LIBRARY = LibretroDroid.ERROR_LOAD_LIBRARY
         const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME

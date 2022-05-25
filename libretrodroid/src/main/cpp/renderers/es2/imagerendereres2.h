@@ -38,6 +38,7 @@ public:
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
     bool rendersInVideoCallback() override;
+    void setLinear(bool linear) override;
 
 private:
     void convertDataFromRGB8888(const void* pixelData, size_t size);
@@ -49,6 +50,8 @@ private:
     unsigned int glType = 0;
     unsigned int glInternalFormat = 0;
     unsigned int glFormat = 0;
+
+    bool linear = false;
 
     unsigned int currentTexture = 0;
 };
