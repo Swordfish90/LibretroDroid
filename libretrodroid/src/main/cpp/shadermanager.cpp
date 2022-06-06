@@ -214,7 +214,7 @@ const std::string ShaderManager::cutUpscaleFragment =
     "}\n"
     "\n"
     "void main() {\n"
-    "  HIGHP vec2 relativeCoords = (floor(screenCoords) + vec2(0.5)) / textureSize;\n"
+    "  HIGHP vec2 relativeCoords = inverseTextureSize * (floor(screenCoords) + vec2(0.5));\n"
     "  mediump vec2 c1 = relativeCoords;\n"
     "  mediump vec2 c2 = relativeCoords + vec2(inverseTextureSize.x, 0.0);\n"
     "  mediump vec2 c3 = relativeCoords + vec2(inverseTextureSize.x, inverseTextureSize.y);\n"
@@ -230,8 +230,11 @@ const std::string ShaderManager::cutUpscaleFragment =
     "  lowp float l3 = luma(t3);\n"
     "  lowp float l4 = luma(t4);\n"
     "\n"
+    "  lowp float diagonal1Strength = abs(l1 - l3);\n"
+    "  lowp float diagonal2Strength = abs(l2 - l4);\n"
+    "\n"
     "#if USE_DYNAMIC_SHARPNESS\n"
-    "  lowp float edgeStrength = (abs(l1 - l3) + abs(l2 - l4)) * 0.5;\n"
+    "  lowp float edgeStrength = (diagonal1Strength + diagonal2Strength) * 0.5;\n"
     "#if USE_SHARPENING_BIAS\n"
     "  edgeStrength = sqrt(edgeStrength);\n"
     "#endif\n"
@@ -241,9 +244,6 @@ const std::string ShaderManager::cutUpscaleFragment =
     "#endif\n"
     "\n"
     "  lowp vec2 pxCoords = fract(screenCoords);\n"
-    "\n"
-    "  lowp float diagonal1Strength = abs(l1 - l3);\n"
-    "  lowp float diagonal2Strength = abs(l2 - l4);\n"
     "\n"
     "  // Alter colors and coordinates to compute the other triangulation.\n"
     "  bool altTriangulation = diagonal1Strength < diagonal2Strength;\n"
@@ -259,7 +259,7 @@ const std::string ShaderManager::cutUpscaleFragment =
     "\n"
     "  lowp float minDiagonal = min(diagonal1Strength, diagonal2Strength);\n"
     "  lowp float maxDiagonal = max(diagonal1Strength, diagonal2Strength);\n"
-    "  bool diagonal = minDiagonal * 4.0 + 0.05 < maxDiagonal;\n"
+    "  bool diagonal = minDiagonal * TRIANGULATION_THRESHOLD + 0.05 < maxDiagonal;\n"
     "\n"
     "  lowp vec3 final = diagonal ? cd : quadBilinear(t1, t2, t4, t3, pxCoords, sharpness);\n"
     "\n"
@@ -285,9 +285,10 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
             cutUpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
             "#define USE_SHARPENING_BIAS 1\n"
-            "#define DYNAMIC_SHARPNESS_MIN 0.10\n"
-            "#define DYNAMIC_SHARPNESS_MAX 0.30\n"
+            "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
+            "#define DYNAMIC_SHARPNESS_MAX 0.40\n"
             "#define STATIC_SHARPNESS 0.2\n"
+            "#define TRIANGULATION_THRESHOLD 4.0\n"
             + cutUpscaleFragment,
             false
         };
@@ -296,10 +297,11 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
         return {
             cutUpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
-            "#define USE_SHARPENING_BIAS 1\n"
+            "#define USE_SHARPENING_BIAS 0\n"
             "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
-            "#define DYNAMIC_SHARPNESS_MAX 0.25\n"
+            "#define DYNAMIC_SHARPNESS_MAX 0.40\n"
             "#define STATIC_SHARPNESS 0.2\n"
+            "#define TRIANGULATION_THRESHOLD 2.0\n"
             + cutUpscaleFragment,
             false
         };
