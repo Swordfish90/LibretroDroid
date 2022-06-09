@@ -158,10 +158,12 @@ const std::string ShaderManager::cutUpscaleVertex =
     "uniform HIGHP vec2 textureSize;\n"
     "\n"
     "varying HIGHP vec2 screenCoords;\n"
+    "varying mediump vec2 inverseTextureSize;\n"
     "\n"
     "void main() {\n"
     "  mediump vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.000001;\n"
     "  screenCoords = coords * textureSize - vec2(0.5);\n"
+    "  inverseTextureSize = vec2(1.0) / textureSize;\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
@@ -179,6 +181,7 @@ const std::string ShaderManager::cutUpscaleFragment =
     "uniform mediump float screenDensity;\n"
     "\n"
     "varying HIGHP vec2 screenCoords;\n"
+    "varying mediump vec2 inverseTextureSize;\n"
     "\n"
     "lowp float luma(lowp vec3 v) {\n"
     "  return v.g;\n"
@@ -211,11 +214,11 @@ const std::string ShaderManager::cutUpscaleFragment =
     "}\n"
     "\n"
     "void main() {\n"
-    "  HIGHP vec2 relativeCoords = floor(screenCoords);\n"
-    "  mediump vec2 c1 = ((relativeCoords + vec2(0.0, 0.0)) + vec2(0.5)) / textureSize;\n"
-    "  mediump vec2 c2 = ((relativeCoords + vec2(1.0, 0.0)) + vec2(0.5)) / textureSize;\n"
-    "  mediump vec2 c3 = ((relativeCoords + vec2(1.0, 1.0)) + vec2(0.5)) / textureSize;\n"
-    "  mediump vec2 c4 = ((relativeCoords + vec2(0.0, 1.0)) + vec2(0.5)) / textureSize;\n"
+    "  HIGHP vec2 relativeCoords = inverseTextureSize * (floor(screenCoords) + vec2(0.5));\n"
+    "  mediump vec2 c1 = relativeCoords;\n"
+    "  mediump vec2 c2 = relativeCoords + vec2(inverseTextureSize.x, 0.0);\n"
+    "  mediump vec2 c3 = relativeCoords + vec2(inverseTextureSize.x, inverseTextureSize.y);\n"
+    "  mediump vec2 c4 = relativeCoords + vec2(0.0, inverseTextureSize.y);\n"
     "\n"
     "  lowp vec3 t1 = texture2D(texture, c1).rgb;\n"
     "  lowp vec3 t2 = texture2D(texture, c2).rgb;\n"
@@ -258,7 +261,7 @@ const std::string ShaderManager::cutUpscaleFragment =
     "\n"
     "  lowp float minDiagonal = min(diagonal1Strength, diagonal2Strength);\n"
     "  lowp float maxDiagonal = max(diagonal1Strength, diagonal2Strength);\n"
-    "  bool diagonal = minDiagonal * 4.0 + 0.05 < maxDiagonal;\n"
+    "  bool diagonal = minDiagonal * TRIANGULATION_THRESHOLD + 0.05 < maxDiagonal;\n"
     "\n"
     "  lowp vec3 final = diagonal ? cd : quadBilinear(t1, t2, t4, t3, pxCoords, sharpness);\n"
     "\n"
@@ -287,6 +290,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
             "#define DYNAMIC_SHARPNESS_MIN 0.10\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.30\n"
             "#define STATIC_SHARPNESS 0.2\n"
+            "#define TRIANGULATION_THRESHOLD 4.0\n"
             + cutUpscaleFragment,
             false
         };
@@ -299,6 +303,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
             "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
             "#define DYNAMIC_SHARPNESS_MAX 0.25\n"
             "#define STATIC_SHARPNESS 0.2\n"
+            "#define TRIANGULATION_THRESHOLD 2.0\n"
             + cutUpscaleFragment,
             false
         };
