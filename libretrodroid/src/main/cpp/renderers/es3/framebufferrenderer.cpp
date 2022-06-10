@@ -24,13 +24,6 @@ FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool d
     this->depth = depth;
     this->stencil = stencil;
 
-    glGenFramebuffers(1, &currentFramebuffer);
-    glGenTextures(1, &currentTexture);
-
-    if (depth) {
-        glGenRenderbuffers(1, &currentDepthBuffer);
-    }
-
     FramebufferRenderer::updateRenderedResolution(width, height);
 }
 
@@ -53,6 +46,9 @@ void FramebufferRenderer::setPixelFormat(int pixelFormat) {
 }
 
 void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
+    deleteResources();
+    createResources();
+
     glBindFramebuffer(GL_FRAMEBUFFER, currentFramebuffer);
 
     glBindTexture(GL_TEXTURE_2D, currentTexture);
@@ -93,6 +89,32 @@ bool FramebufferRenderer::rendersInVideoCallback() {
 
 void FramebufferRenderer::setLinear(bool linear) {
     this->linear = linear;
+}
+
+void FramebufferRenderer::createResources() {
+    glGenFramebuffers(1, &currentFramebuffer);
+    glGenTextures(1, &currentTexture);
+
+    if (depth) {
+        glGenRenderbuffers(1, &currentDepthBuffer);
+    }
+}
+
+void FramebufferRenderer::deleteResources() {
+    if (currentFramebuffer != 0) {
+        glDeleteFramebuffers(1, &currentFramebuffer);
+        currentFramebuffer = 0;
+    }
+
+    if (currentTexture != 0) {
+        glDeleteTextures(1, &currentTexture);
+        currentTexture = 0;
+    }
+
+    if (currentDepthBuffer != 0) {
+        glDeleteRenderbuffers(1, &currentDepthBuffer);
+        currentDepthBuffer = 0;
+    }
 }
 
 } //namespace libretrodroid

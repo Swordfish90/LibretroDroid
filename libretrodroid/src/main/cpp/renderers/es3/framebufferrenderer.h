@@ -38,6 +38,10 @@ public:
     bool rendersInVideoCallback() override;
 
 private:
+    void createResources();
+    void deleteResources();
+
+private:
     unsigned int currentFramebuffer = 0;
     unsigned int currentTexture = 0;
     unsigned int currentDepthBuffer = 0;
