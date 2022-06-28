@@ -30,13 +30,11 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
 import com.jakewharton.rxrelay2.BehaviorRelay
-import com.jakewharton.rxrelay2.PublishRelay
 import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import io.reactivex.Observable
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.FutureTask
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
@@ -65,7 +63,7 @@ class GLRetroView(
     private var isAborted = false
 
     private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
-    private val retroGLIssuesErrors = PublishRelay.create<Int>()
+    private val retroGLIssuesErrors = BehaviorRelay.create<Int>()
 
     private val rumbleEventsSubject = BehaviorRelay.create<RumbleEvent>()
 
