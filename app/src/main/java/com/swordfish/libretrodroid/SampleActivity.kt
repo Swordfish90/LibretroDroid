@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2022  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -24,11 +24,14 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.android.libretrodroid.R
 import com.swordfish.radialgamepad.library.RadialGamePad
 import com.swordfish.radialgamepad.library.event.Event
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
 
 class SampleActivity : AppCompatActivity() {
 
@@ -40,8 +43,6 @@ class SampleActivity : AppCompatActivity() {
 
     private lateinit var leftPad: RadialGamePad
     private lateinit var rightPad: RadialGamePad
-
-    private val resumeDisposables = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,13 +118,21 @@ class SampleActivity : AppCompatActivity() {
         /* Add and center the GLRetroView */
         frameLayout.addView(retroView)
         retroView.layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL
         }
 
         initializeVirtualGamePad()
+
+        lifecycleScope.launch {
+            retroView.getRumbleEvents()
+                .flowWithLifecycle(lifecycle, Lifecycle.State.RESUMED)
+                .collect {
+                    handleRumbleEvent(it)
+                }
+        }
     }
 
     /* Pipe motion events to the GLRetroView */
@@ -184,28 +193,6 @@ class SampleActivity : AppCompatActivity() {
         )
     }
 
-    override fun onResume() {
-        super.onResume()
-        resumeDisposables.add(
-            leftPad.events()
-                .subscribe { handleEvent(it) }
-        )
-        resumeDisposables.add(
-            rightPad.events()
-                .subscribe { handleEvent(it) }
-        )
-        resumeDisposables.add(
-            retroView.getRumbleEvents()
-                .subscribeOn(Schedulers.single())
-                .subscribe { handleRumbleEvent(it) }
-        )
-    }
-
-    override fun onPause() {
-        super.onPause()
-        resumeDisposables.dispose()
-    }
-
     private fun handleEvent(event: Event) {
         when (event) {
             is Event.Button -> retroView.sendKeyEvent(event.action, event.id)
@@ -230,5 +217,13 @@ class SampleActivity : AppCompatActivity() {
 
         findViewById<FrameLayout>(R.id.leftcontainer).addView(leftPad)
         findViewById<FrameLayout>(R.id.rightcontainer).addView(rightPad)
+
+        lifecycleScope.launch {
+            merge(leftPad.events(), rightPad.events())
+                .flowWithLifecycle(lifecycle, Lifecycle.State.RESUMED)
+                .collect {
+                    handleEvent(it)
+                }
+        }
     }
 }
