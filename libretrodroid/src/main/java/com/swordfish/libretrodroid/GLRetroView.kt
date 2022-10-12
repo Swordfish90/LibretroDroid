@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2019  Filippo Scognamiglio
+ *     Copyright (C) 2022  Filippo Scognamiglio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -29,19 +29,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
-import com.jakewharton.rxrelay2.BehaviorRelay
+import androidx.lifecycle.coroutineScope
 import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
-import io.reactivex.Observable
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 
 class GLRetroView(
-        context: Context,
-        private val data: GLRetroViewData
+    context: Context,
+    private val data: GLRetroViewData
 ) : AspectRatioGLSurfaceView(context), LifecycleObserver {
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
@@ -62,10 +65,10 @@ class GLRetroView(
     private var isEmulationReady = false
     private var isAborted = false
 
-    private val retroGLEventsSubject = BehaviorRelay.create<GLRetroEvents>()
-    private val retroGLIssuesErrors = BehaviorRelay.create<Int>()
+    private val retroGLEventsSubject = MutableSharedFlow<GLRetroEvents>(1)
+    private val retroGLIssuesErrors = MutableSharedFlow<Int>(1)
 
-    private val rumbleEventsSubject = BehaviorRelay.create<RumbleEvent>()
+    private val rumbleEventsSubject = MutableSharedFlow<RumbleEvent>()
 
     private var lifecycle: Lifecycle? = null
 
@@ -162,15 +165,15 @@ class GLRetroView(
         LibretroDroid.reset()
     }
 
-    fun getGLRetroEvents(): Observable<GLRetroEvents> {
+    fun getGLRetroEvents(): Flow<GLRetroEvents> {
         return retroGLEventsSubject
     }
 
-    fun getGLRetroErrors(): Observable<Int> {
+    fun getGLRetroErrors(): Flow<Int> {
         return retroGLIssuesErrors
     }
 
-    fun getRumbleEvents(): Observable<RumbleEvent> {
+    fun getRumbleEvents(): Flow<RumbleEvent> {
         return rumbleEventsSubject
     }
 
@@ -274,7 +277,9 @@ class GLRetroView(
         override fun onDrawFrame(gl: GL10) = catchExceptions {
             if (isEmulationReady) {
                 LibretroDroid.step(this@GLRetroView)
-                retroGLEventsSubject.accept(GLRetroEvents.FrameRendered)
+                lifecycle?.coroutineScope?.launch {
+                    retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+                }
             }
         }
 
@@ -287,7 +292,9 @@ class GLRetroView(
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             initializeCore()
-            retroGLEventsSubject.accept(GLRetroEvents.SurfaceCreated)
+            lifecycle?.coroutineScope?.launch {
+                retroGLEventsSubject.emit(GLRetroEvents.SurfaceCreated)
+            }
         }
     }
 
@@ -335,11 +342,15 @@ class GLRetroView(
             if (isAborted) return
             block()
         } catch (e: RetroException) {
-            retroGLIssuesErrors.accept(e.errorCode)
+            GlobalScope.launch {
+                retroGLIssuesErrors.emit(e.errorCode)
+            }
             isAborted = true
         } catch (e: Exception) {
             Log.e(TAG_LOG, "Error in GLRetroView", e)
-            retroGLIssuesErrors.accept(LibretroDroid.ERROR_GENERIC)
+            GlobalScope.launch {
+                retroGLIssuesErrors.emit(LibretroDroid.ERROR_GENERIC)
+            }
         }
     }
 
@@ -361,7 +372,9 @@ class GLRetroView(
 
     /** This function gets called from the jni side.*/
     private fun sendRumbleEvent(port: Int, strengthWeak: Float, strengthStrong: Float) {
-        rumbleEventsSubject.accept(RumbleEvent(port, strengthWeak, strengthStrong))
+        lifecycle?.coroutineScope?.launch {
+            rumbleEventsSubject.emit(RumbleEvent(port, strengthWeak, strengthStrong))
+        }
     }
 
     sealed class GLRetroEvents {

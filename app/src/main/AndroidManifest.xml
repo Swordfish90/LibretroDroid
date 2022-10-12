@@ -12,10 +12,12 @@
       android:icon="@mipmap/ic_launcher"
       android:isGame="true"
       android:label="@string/activity_title">
-    <activity android:name="com.swordfish.libretrodroid.SampleActivity"
-              android:theme="@style/Theme.AppCompat.NoActionBar"
-              android:launchMode="singleTask"
-              android:configChanges="orientation|screenSize|keyboardHidden">
+    <activity
+        android:name="com.swordfish.libretrodroid.SampleActivity"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:launchMode="singleTask"
+        android:exported="false"
+        android:configChanges="orientation|screenSize|keyboardHidden">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
