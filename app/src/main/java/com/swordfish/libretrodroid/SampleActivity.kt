@@ -57,13 +57,21 @@ class SampleActivity : AppCompatActivity() {
              *
              * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
              */
+//            coreFilePath = "libpcsx_rearmed_libretro_android.so"
+//            coreFilePath = "snes9x_libretro_android.so"
             coreFilePath = "libmgba_libretro_android.so"
+//            coreFilePath = "gambatte_libretro_android.so"
 
             /*
              * The path to the ROM to load.
              * Example: /data/data/<package-id>/files/example.gba
              */
-            gameFilePath = "${filesDir}/example.gba"
+//            gameFilePath = "/sdcard/Roms Test/Pokemon Emerald Version.gba"
+//            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
+//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - The Minish Cap.gba"
+//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - Link's Awakening DX.gbc"
+            gameFilePath = "/sdcard/Roms Test/Doom.gba"
+//            gameFilePath = "/sdcard/Roms/psx/Quake II.pbp"
 
             /*
              * Direct ROM bytes to load.
@@ -98,7 +106,7 @@ class SampleActivity : AppCompatActivity() {
              * SHADER_LCD:          Grid layout, similar to Nintendo DS bottom screens.
              * SHADER_SHARP:        Raw, unfiltered image.
              */
-            shader = LibretroDroid.SHADER_DEFAULT
+            shader = LibretroDroid.SHADER_UPSCALE_CUT_SHARP
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
