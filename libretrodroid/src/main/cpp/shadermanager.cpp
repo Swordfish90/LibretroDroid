@@ -267,7 +267,7 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "\n"
     "  lowp float tannum = min(absTanDirection.x, absTanDirection.y);\n"
     "  lowp float tanden = max(absTanDirection.x, absTanDirection.y);\n"
-    "  lowp float atana = tannum / (tanden + 0.01);\n"
+    "  lowp float atana = hasAngle ? (tannum / (tanden + 0.01)) : 0.0;\n"
     "\n"
     "  lowp vec3 a = t1;\n"
     "  lowp vec3 b = invertedAngle ? t4 : t2;\n"
