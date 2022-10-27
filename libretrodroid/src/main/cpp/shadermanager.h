@@ -36,7 +36,9 @@ public:
         SHADER_LCD = 2,
         SHADER_SHARP = 3,
         SHADER_UPSCALE_CUT_SHARP = 4,
-        SHADER_UPSCALE_CUT_SMOOTH = 5
+        SHADER_UPSCALE_CUT_SMOOTH = 5,
+        SHADER_UPSCALE_CUT2_SHARP = 6,
+        SHADER_UPSCALE_CUT2_SMOOTH = 7
     };
 
 private:
@@ -49,6 +51,9 @@ private:
 
     static const std::string cutUpscaleVertex;
     static const std::string cutUpscaleFragment;
+
+    static const std::string cut2UpscaleVertex;
+    static const std::string cut2UpscaleFragment;
 
 public:
     static Data getShader(Type type);
