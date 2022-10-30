@@ -484,7 +484,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
             cut2UpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
             "#define SHARPNESS_MIN 0.10\n"
-            "#define SHARPNESS_MAX 0.30\n"
+            "#define SHARPNESS_MAX 0.40\n"
             "#define USE_FAST_LUMA 0\n"
             "#define MIN_EDGE 0.025\n"
             + cut2UpscaleFragment,
@@ -496,7 +496,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
             cut2UpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
             "#define SHARPNESS_MIN 0.00\n"
-            "#define SHARPNESS_MAX 0.25\n"
+            "#define SHARPNESS_MAX 0.40\n"
             "#define USE_FAST_LUMA 0\n"
             "#define MIN_EDGE 0.025\n"
             + cut2UpscaleFragment,
