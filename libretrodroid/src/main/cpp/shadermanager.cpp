@@ -255,7 +255,7 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "  lowp vec2 absEdgeDirection = abs(edgeDirection);\n"
     "  lowp vec2 tanDirection = vec2(edgeDirection.y - edgeDirection.x, edgeDirection.y + edgeDirection.x);\n"
     "  lowp vec2 absTanDirection = abs(tanDirection);\n"
-    "  lowp float edgeStrength = clamp(absEdgeDirection.x + absEdgeDirection.y, 0.0, 1.0);\n"
+    "  lowp float edgeStrength = max(absEdgeDirection.x, absEdgeDirection.y);\n"
     "\n"
     "#if USE_DYNAMIC_SHARPNESS\n"
     "  lowp float contrast = edgeStrength;\n"
@@ -496,7 +496,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
             cut2UpscaleVertex,
             "#define USE_DYNAMIC_SHARPNESS 1\n"
             "#define SHARPNESS_MIN 0.00\n"
-            "#define SHARPNESS_MAX 0.40\n"
+            "#define SHARPNESS_MAX 0.30\n"
             "#define USE_FAST_LUMA 0\n"
             "#define MIN_EDGE 0.025\n"
             + cut2UpscaleFragment,
