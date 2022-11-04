@@ -40,16 +40,16 @@ Variable JavaUtils::variableFromJava(JNIEnv *env, jobject obj) {
     return Variable { key.stdString(), value.stdString() };
 }
 
-void JavaUtils::javaListForEach(
+void JavaUtils::forEachOnJavaIterable(
     JNIEnv *env,
     jobject jList,
     const std::function<void(jobject)> &lambda
 ) {
-    auto jListClass = env->GetObjectClass(jList);
+    auto jIterableClass = env->GetObjectClass(jList);
 
     jobject jIterator = env->CallObjectMethod(
         jList,
-        env->GetMethodID(jListClass, "iterator", "()Ljava/util/Iterator;")
+        env->GetMethodID(jIterableClass, "iterator", "()Ljava/util/Iterator;")
     );
     jclass jIteratorClass = env->GetObjectClass(jIterator);
 
@@ -59,6 +59,47 @@ void JavaUtils::javaListForEach(
     while (env->CallBooleanMethod(jIterator, hasNextMethodID)) {
         lambda(env->CallObjectMethod(jIterator, nextMethodID));
     }
+}
+
+std::unordered_map<std::string, std::string> JavaUtils::stringMapFromJava(JNIEnv *env, jobject jMap) {
+    jclass jMapClass = env->GetObjectClass(jMap);
+
+    jmethodID keySetMethodId = env->GetMethodID(jMapClass, "keySet", "()Ljava/util/Set;");
+    jmethodID getMethodId = env->GetMethodID (
+        jMapClass,
+        "get",
+        "(Ljava/lang/Object;)Ljava/lang/Object;"
+    );
+
+    jobject jKeySet = env->CallObjectMethod(jMap, keySetMethodId);
+
+    std::unordered_map<std::string, std::string> result;
+
+    forEachOnJavaIterable(
+        env, jKeySet, [&](jobject jKey) {
+            jobject objValue = env->CallObjectMethod(jMap, getMethodId, jKey);
+
+            std::string key = JniString(env, (jstring) jKey).stdString();
+            std::string value = JniString(env, (jstring) objValue).stdString();
+            result[key] = value;
+        }
+    );
+
+    return result;
+}
+
+ShaderManager::Config JavaUtils::shaderFromJava(JNIEnv *env, jobject obj) {
+    jclass jShaderClass = env->FindClass("com/swordfish/libretrodroid/GLRetroShader");
+
+    jfieldID jTypeField = env->GetFieldID(jShaderClass, "type", "I");
+    jfieldID jParamsField = env->GetFieldID(jShaderClass, "params", "Ljava/util/Map;");
+
+    jobject jParams = env->GetObjectField(obj, jParamsField);
+
+    int type = env->GetIntField(obj, jTypeField);
+    std::unordered_map<std::string, std::string> params = stringMapFromJava(env, jParams);
+
+    return ShaderManager::Config { ShaderManager::Type(type), params };
 }
 
 } //namespace libretrodroid

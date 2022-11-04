@@ -165,13 +165,20 @@ const std::string ShaderManager::cut2UpscaleVertex =
     "\n"
     "void main() {\n"
     "  HIGHP vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
-    "  screenCoords = coords * textureSize;\n"
+    "  screenCoords = coords * textureSize - vec2(0.5);\n"
     "  c1 = (screenCoords) / textureSize;\n"
     "  c2 = (screenCoords + vec2(1.0, 0.0)) / textureSize;\n"
     "  c3 = (screenCoords + vec2(1.0, 1.0)) / textureSize;\n"
     "  c4 = (screenCoords + vec2(0.0, 1.0)) / textureSize;\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
+
+const std::unordered_map<std::string, std::string> ShaderManager::cut2UpscaleParams = {
+    { "SHARPNESS_BIAS", "2.0" },
+    { "SHARPNESS_MAX", "0.30" },
+    { "USE_FAST_LUMA", "1" },
+    { "MIN_EDGE", "0.025" }
+};
 
 const std::string ShaderManager::cut2UpscaleFragment =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
@@ -286,6 +293,16 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "  gl_FragColor = vec4(final, 1.0);\n"
     "}\n";
 
+const std::unordered_map<std::string, std::string> ShaderManager::cutUpscaleParams = {
+    { "USE_DYNAMIC_SHARPNESS", "1" },
+    { "USE_SHARPENING_BIAS", "1" },
+    { "DYNAMIC_SHARPNESS_MIN", "0.10" },
+    { "DYNAMIC_SHARPNESS_MAX", "0.30" },
+    { "STATIC_SHARPNESS", "0.5" },
+    { "USE_FAST_LUMA", "1" },
+    { "TRIANGULATION_THRESHOLD", "4.0" },
+};
+
 const std::string ShaderManager::cutUpscaleVertex =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
     "#define HIGHP highp\n"
@@ -310,7 +327,7 @@ const std::string ShaderManager::cutUpscaleVertex =
     "\n"
     "void main() {\n"
     "  HIGHP vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
-    "  screenCoords = coords * textureSize;\n"
+    "  screenCoords = coords * textureSize - vec2(0.5);\n"
     "  c1 = (screenCoords) / textureSize;\n"
     "  c2 = (screenCoords + vec2(1.0, 0.0)) / textureSize;\n"
     "  c3 = (screenCoords + vec2(1.0, 1.0)) / textureSize;\n"
@@ -423,8 +440,10 @@ const std::string ShaderManager::cutUpscaleFragment =
     "}\n";
 
 
-ShaderManager::Data ShaderManager::getShader(Type type) {
-    switch (type) {
+ShaderManager::Data ShaderManager::getShader(const ShaderManager::Config& config) {
+    auto params = config.params;
+
+    switch (config.type) {
     case Type::SHADER_DEFAULT:
         return { defaultShaderVertex, defaultShaderFragment, true };
 
@@ -437,56 +456,33 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
     case Type::SHADER_SHARP:
         return { defaultShaderVertex, defaultSharpFragment, true };
 
-    case Type::SHADER_UPSCALE_CUT_SHARP:
+    case Type::SHADER_UPSCALE_CUT:
+        params.insert(cutUpscaleParams.begin(), cutUpscaleParams.end());
         return {
             cutUpscaleVertex,
-            "#define USE_DYNAMIC_SHARPNESS 1\n"
-            "#define USE_SHARPENING_BIAS 1\n"
-            "#define DYNAMIC_SHARPNESS_MIN 0.10\n"
-            "#define DYNAMIC_SHARPNESS_MAX 0.30\n"
-            "#define STATIC_SHARPNESS 0.5\n"
-            "#define USE_FAST_LUMA 0\n"
-            "#define TRIANGULATION_THRESHOLD 4.0\n"
-            + cutUpscaleFragment,
+            buildDefines(params) + cutUpscaleFragment,
             false
         };
 
-    case Type::SHADER_UPSCALE_CUT_SMOOTH:
-        return {
-            cutUpscaleVertex,
-            "#define USE_DYNAMIC_SHARPNESS 1\n"
-            "#define USE_SHARPENING_BIAS 1\n"
-            "#define DYNAMIC_SHARPNESS_MIN 0.00\n"
-            "#define DYNAMIC_SHARPNESS_MAX 0.25\n"
-            "#define STATIC_SHARPNESS 0.20\n"
-            "#define USE_FAST_LUMA 0\n"
-            "#define TRIANGULATION_THRESHOLD 2.0\n"
-            + cutUpscaleFragment,
-            false
-        };
+    case Type::SHADER_UPSCALE_CUT2:
+        params.insert(cut2UpscaleParams.begin(), cut2UpscaleParams.end());
 
-    case Type::SHADER_UPSCALE_CUT2_SHARP:
         return {
             cut2UpscaleVertex,
-            "#define SHARPNESS_BIAS 2.0\n"
-            "#define SHARPNESS_MAX 0.30\n"
-            "#define USE_FAST_LUMA 1\n"
-            "#define MIN_EDGE 0.025\n"
-            + cut2UpscaleFragment,
-            false
-        };
-
-    case Type::SHADER_UPSCALE_CUT2_SMOOTH:
-        return {
-            cut2UpscaleVertex,
-            "#define SHARPNESS_BIAS 1.0\n"
-            "#define SHARPNESS_MAX 0.25\n"
-            "#define USE_FAST_LUMA 1\n"
-            "#define MIN_EDGE 0.025\n"
-            + cut2UpscaleFragment,
+            buildDefines(params) + cut2UpscaleFragment,
             false
         };
 }
+}
+
+std::string ShaderManager::buildDefines(std::unordered_map<std::string, std::string> params) {
+    std::string result;
+
+    std::for_each(params.begin(), params.end(), [&result] (auto param) {
+        result += "#define " + param.first + " " + param.second + "\n";
+    });
+
+    return result + "\n";
 }
 
 } //namespace libretrodroid

@@ -19,7 +19,7 @@ package com.swordfish.libretrodroid;
 
 import java.util.List;
 
-class LibretroDroid {
+public class LibretroDroid {
 
     static {
         System.loadLibrary("libretrodroid");
@@ -34,10 +34,11 @@ class LibretroDroid {
     public static final int SHADER_CRT = 1;
     public static final int SHADER_LCD = 2;
     public static final int SHADER_SHARP = 3;
-    public static final int SHADER_UPSCALE_CUT_SHARP = 4;
-    public static final int SHADER_UPSCALE_CUT_SMOOTH = 5;
-    public static final int SHADER_UPSCALE_CUT2_SHARP = 6;
-    public static final int SHADER_UPSCALE_CUT2_SMOOTH = 7;
+    public static final int SHADER_UPSCALE_CUT = 4;
+    public static final int SHADER_UPSCALE_CUT2 = 5;
+
+    public static final String SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS = "SHARPNESS_BIAS";
+    public static final String SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX = "SHARPNESS_MAX";
 
     public static final int ERROR_LOAD_LIBRARY = 0;
     public static final int ERROR_LOAD_GAME = 1;
@@ -52,7 +53,7 @@ class LibretroDroid {
         String systemDir,
         String savesDir,
         Variable[] variables,
-        int shaderType,
+        GLRetroShader shaderConfig,
         float refreshRate,
         boolean preferLowLatencyAudio,
         boolean enableVirtualFileSystem,
@@ -78,7 +79,7 @@ class LibretroDroid {
     public static native void setRumbleEnabled(boolean enabled);
     public static native void setFrameSpeed(int speed);
     public static native void setAudioEnabled(boolean enabled);
-    public static native void setShaderType(int shaderType);
+    public static native void setShaderConfig(GLRetroShader shader);
 
     public static native byte[] serializeState();
     public static native boolean unserializeState(byte[] state);

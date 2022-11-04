@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <string>
 #include <cmath>
+#include <utility>
 
 #include "log.h"
 
@@ -95,11 +96,11 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 }
 
 void Video::updateProgram() {
-    if (loadedShaderType.has_value() && loadedShaderType == requestedShaderType) {
+    if (loadedShaderType.has_value() && loadedShaderType.value() == requestedShaderConfig) {
         return;
     }
 
-    auto shaders = ShaderManager::getShader(requestedShaderType);
+    auto shaders = ShaderManager::getShader(requestedShaderConfig);
 
     gProgram = createProgram(shaders.vertex.data(), shaders.fragment.data());
     if (!gProgram) {
@@ -109,7 +110,7 @@ void Video::updateProgram() {
 
     renderer->setLinear(shaders.linear);
 
-    loadedShaderType = requestedShaderType;
+    loadedShaderType = requestedShaderConfig;
 
     gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
 
@@ -219,12 +220,12 @@ void Video::updateRotation(float rotation) {
 
 Video::Video(
     Renderer* renderer,
-    ShaderManager::Type shaderType,
+    ShaderManager::Config shaderConfig,
     bool bottomLeftOrigin,
     float rotation,
     bool skipDuplicateFrames
 ) :
-    requestedShaderType(shaderType),
+    requestedShaderConfig(std::move(shaderConfig)),
     rotation(rotation),
     skipDuplicateFrames(skipDuplicateFrames),
     gFlipY(bottomLeftOrigin ? 0 : 1),
@@ -243,7 +244,7 @@ Video::Video(
     glUseProgram(0);
 }
 
-void Video::updateShaderType(ShaderManager::Type shaderType) {
-    requestedShaderType = shaderType;
+void Video::updateShaderType(ShaderManager::Config shaderConfig) {
+    requestedShaderConfig = std::move(shaderConfig);
 }
 } //namespace libretrodroid

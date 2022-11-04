@@ -30,7 +30,7 @@ class Video {
 public:
     Video(
         Renderer* renderer,
-        ShaderManager::Type shaderType,
+        ShaderManager::Config shaderConfig,
         bool bottomLeftOrigin,
         float rotation,
         bool skipDuplicateFrames
@@ -39,7 +39,7 @@ public:
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateRendererSize(unsigned width, unsigned height);
     void updateRotation(float rotation);
-    void updateShaderType(ShaderManager::Type shaderType);
+    void updateShaderType(ShaderManager::Config shaderConfig);
 
     void renderFrame();
 
@@ -112,8 +112,10 @@ private:
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
 
-    ShaderManager::Type requestedShaderType = ShaderManager::Type::SHADER_DEFAULT;
-    std::optional<ShaderManager::Type> loadedShaderType = std::nullopt;
+    ShaderManager::Config requestedShaderConfig = ShaderManager::Config {
+        ShaderManager::Type::SHADER_DEFAULT
+    };
+    std::optional<ShaderManager::Config> loadedShaderType = std::nullopt;
 
     float rotation = 0;
     bool isDirty = false;

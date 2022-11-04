@@ -205,7 +205,7 @@ void LibretroDroid::onSurfaceCreated() {
 
     auto newVideo = new Video(
         renderer,
-        fragmentShaderType,
+        fragmentShaderConfig,
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
         skipDuplicateFrames
@@ -245,7 +245,7 @@ void LibretroDroid::create(
     const std::string& systemDir,
     const std::string& savesDir,
     std::vector<Variable> variables,
-    int shaderType,
+    const ShaderManager::Config& shaderConfig,
     float refreshRate,
     bool lowLatencyAudio,
     bool enableVirtualFileSystem,
@@ -288,7 +288,7 @@ void LibretroDroid::create(
         throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
     }
 
-    fragmentShaderType = ShaderManager::Type(shaderType);
+    fragmentShaderConfig = shaderConfig;
 
     rumble = std::make_unique<Rumble>();
 }
@@ -491,10 +491,10 @@ void LibretroDroid::setAudioEnabled(bool enabled) {
     audioEnabled = enabled;
 }
 
-void LibretroDroid::setShaderType(int shaderType) {
-    fragmentShaderType = ShaderManager::Type(shaderType);
+void LibretroDroid::setShaderConfig(ShaderManager::Config shaderConfig) {
+    fragmentShaderConfig = std::move(shaderConfig);
     if (video) {
-        video->updateShaderType(fragmentShaderType);
+        video->updateShaderType(fragmentShaderConfig);
     }
 }
 

@@ -57,27 +57,13 @@ class SampleActivity : AppCompatActivity() {
              *
              * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
              */
-//            coreFilePath = "libpcsx_rearmed_libretro_android.so"
-            coreFilePath = "snes9x_libretro_android.so"
-//            coreFilePath = "libmgba_libretro_android.so"
-//            coreFilePath = "libppsspp_libretro_android.so"
-//            coreFilePath = "gambatte_libretro_android.so"
+            coreFilePath = "libmgba_libretro_android.so"
 
             /*
              * The path to the ROM to load.
              * Example: /data/data/<package-id>/files/example.gba
              */
-//            gameFilePath = "/sdcard/Roms Test/Pokemon Emerald Version.gba"
-//            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
-//            gameFilePath = "/sdcard/Roms Test/Super Mario Land.gb"
-//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - The Minish Cap.gba"
-//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - Link's Awakening DX.gbc"
-//            gameFilePath = "/sdcard/Roms Test/Doom.gba"
-//            gameFilePath = "/sdcard/Roms/psp/Shin Megami Tensei - Persona 3 Portable (USA) (PSP) (PSN).iso"
-//            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
-//            gameFilePath = "/sdcard/Roms Test/Final Fantasy IV Advance.gba"
-//            gameFilePath = "/sdcard/Roms/psx/Quake II.pbp"
-            gameFilePath = "/sdcard/Roms Test/Chrono Trigger.smc"
+            gameFilePath = "/data/data/<package-id>/files/example.gba"
 
             /*
              * Direct ROM bytes to load.
@@ -111,8 +97,9 @@ class SampleActivity : AppCompatActivity() {
              * SHADER_CRT:          Classic CRT scan lines.
              * SHADER_LCD:          Grid layout, similar to Nintendo DS bottom screens.
              * SHADER_SHARP:        Raw, unfiltered image.
+             * SHADER_UPSCALING:    Improve the quality of retro graphics.
              */
-            shader = LibretroDroid.SHADER_UPSCALE_CUT_SHARP
+            shader = ShaderConfig.Default
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
