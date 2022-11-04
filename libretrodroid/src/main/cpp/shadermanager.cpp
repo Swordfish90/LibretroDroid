@@ -213,6 +213,7 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "}\n"
     "lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t, lowp float maxSharpness) {\n"
     "  lowp float lumaDiff = abs(fastLuma(a) - fastLuma(b));\n"
+    "  lumaDiff = min(lumaDiff * SHARPNESS_BIAS, 1.0);\n"
     "  lowp float sharpness = maxSharpness * lumaDiff;\n"
     "  return mix(a, b, sharpSmooth(t, sharpness));\n"
     "}\n"
@@ -467,7 +468,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
     case Type::SHADER_UPSCALE_CUT2_SHARP:
         return {
             cut2UpscaleVertex,
-            "#define USE_DYNAMIC_SHARPNESS 1\n"
+            "#define SHARPNESS_BIAS 2.0\n"
             "#define SHARPNESS_MAX 0.30\n"
             "#define USE_FAST_LUMA 1\n"
             "#define MIN_EDGE 0.025\n"
@@ -478,7 +479,7 @@ ShaderManager::Data ShaderManager::getShader(Type type) {
     case Type::SHADER_UPSCALE_CUT2_SMOOTH:
         return {
             cut2UpscaleVertex,
-            "#define USE_DYNAMIC_SHARPNESS 1\n"
+            "#define SHARPNESS_BIAS 1.0\n"
             "#define SHARPNESS_MAX 0.25\n"
             "#define USE_FAST_LUMA 1\n"
             "#define MIN_EDGE 0.025\n"
