@@ -378,19 +378,26 @@ class GLRetroView(
             is ShaderConfig.Sharp -> GLRetroShader(LibretroDroid.SHADER_SHARP)
             is ShaderConfig.CUT -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT,
-                mapOf(
+                buildParams(
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MIN to config.sharpnessMin.toString(),
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
                 )
             )
             is ShaderConfig.CUT2 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT2,
-                mapOf(
+                buildParams(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS to config.sharpnessBias.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LEVELS to config.levels?.toFloat()?.toString(),
                 )
             )
         }
+    }
+
+    private fun buildParams(vararg pairs: Pair<String, String?>): Map<String, String> {
+        return pairs
+            .filter { (key, value) -> value != null }
+            .associate { (key, value) -> key to value!! }
     }
 
     /** This function gets called from the jni side.*/
