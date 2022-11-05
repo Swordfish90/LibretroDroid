@@ -376,6 +376,13 @@ class GLRetroView(
             is ShaderConfig.CRT -> GLRetroShader(LibretroDroid.SHADER_CRT)
             is ShaderConfig.LCD -> GLRetroShader(LibretroDroid.SHADER_LCD)
             is ShaderConfig.Sharp -> GLRetroShader(LibretroDroid.SHADER_SHARP)
+            is ShaderConfig.CUT -> GLRetroShader(
+                LibretroDroid.SHADER_UPSCALE_CUT,
+                mapOf(
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MIN to config.sharpnessMin.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
+                )
+            )
             is ShaderConfig.CUT2 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT2,
                 mapOf(

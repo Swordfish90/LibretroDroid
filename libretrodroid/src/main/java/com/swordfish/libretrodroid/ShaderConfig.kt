@@ -24,6 +24,11 @@ sealed interface ShaderConfig {
     object LCD : ShaderConfig
     object Sharp : ShaderConfig
 
+    data class CUT(
+        val sharpnessMin: Float = 0.1f,
+        val sharpnessMax: Float = 0.3f
+    ) : ShaderConfig
+
     data class CUT2(
         val sharpnessBias: Float = 2.0f,
         val sharpnessMax: Float = 0.5f
