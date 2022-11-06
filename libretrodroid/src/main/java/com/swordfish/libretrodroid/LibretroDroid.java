@@ -40,6 +40,7 @@ public class LibretroDroid {
     public static final String SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS = "SHARPNESS_BIAS";
     public static final String SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX = "SHARPNESS_MAX";
     public static final String SHADER_UPSCALE_CUT2_PARAM_LEVELS = "LEVELS";
+    public static final String SHADER_UPSCALE_CUT2_PARAM_MIN_EDGE = "MIN_EDGE";
 
     public static final String SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MIN = "DYNAMIC_SHARPNESS_MIN";
     public static final String SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MAX = "DYNAMIC_SHARPNESS_MAX";

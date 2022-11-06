@@ -389,6 +389,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS to config.sharpnessBias.toString(),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LEVELS to config.levels?.toFloat()?.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_MIN_EDGE to config.minEdge.toString(),
                 )
             )
         }
