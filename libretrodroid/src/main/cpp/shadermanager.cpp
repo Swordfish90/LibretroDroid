@@ -162,6 +162,7 @@ const std::string ShaderManager::cut2UpscaleVertex =
     "varying HIGHP vec2 c2;\n"
     "varying HIGHP vec2 c3;\n"
     "varying HIGHP vec2 c4;\n"
+    "varying lowp float displaySharpness;\n"
     "\n"
     "void main() {\n"
     "  HIGHP vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
@@ -170,14 +171,14 @@ const std::string ShaderManager::cut2UpscaleVertex =
     "  c2 = (screenCoords + vec2(1.0, 0.0)) / textureSize;\n"
     "  c3 = (screenCoords + vec2(1.0, 1.0)) / textureSize;\n"
     "  c4 = (screenCoords + vec2(0.0, 1.0)) / textureSize;\n"
+    "  displaySharpness = SHARPNESS_MAX * (0.5 - 0.5 / max(screenDensity, 1.0));\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
 const std::unordered_map<std::string, std::string> ShaderManager::cut2UpscaleParams = {
-    { "SHARPNESS_BIAS", "2.0" },
-    { "SHARPNESS_MAX", "0.30" },
-    { "USE_FAST_LUMA", "1" },
-    { "MIN_EDGE", "0.025" }
+    { "SHARPNESS_BIAS", "1.0" },
+    { "SHARPNESS_MAX", "1.0" },
+    { "USE_FAST_LUMA", "1" }
 };
 
 const std::string ShaderManager::cut2UpscaleFragment =
@@ -199,6 +200,7 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "varying HIGHP vec2 c2;\n"
     "varying HIGHP vec2 c3;\n"
     "varying HIGHP vec2 c4;\n"
+    "varying lowp float displaySharpness;\n"
     "\n"
     "lowp float fastLuma(lowp vec3 v) {\n"
     "  return v.g;\n"
@@ -221,7 +223,7 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "}\n"
     "lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t) {\n"
     "  lowp float lumaDiff = abs(fastLuma(a) - fastLuma(b));\n"
-    "  lowp float sharpness = SHARPNESS_MAX * min(lumaDiff * SHARPNESS_BIAS, 1.0);\n"
+    "  lowp float sharpness = displaySharpness * min(lumaDiff * SHARPNESS_BIAS, 1.0);\n"
     "  return mix(a, b, sharpSmooth(t, sharpness));\n"
     "}\n"
     "lowp vec3 interpolate(\n"
@@ -240,9 +242,10 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "  lowp vec3 p3 = leftTriangle ? c : d;\n"
     "  lowp float x0 = rightTriangle ? p.y - (1.0 - p.x) / tana : p.x + p.y * tana;\n"
     "  lowp float x1 = leftTriangle ? p.y + p.x / tana : p.x - (1.0 - p.y) * tana;\n"
-    "  lowp float y = leftTriangle\n"
-    "    ? p.y / x1\n"
-    "    : rightTriangle ? (p.y - x0) / (1.0 - x0) : p.y;\n"
+    "  lowp float y = \n"
+    "    leftTriangle ? p.y / x1 :\n"
+    "    rightTriangle ? (p.y - x0) / (1.0 - x0) :\n"
+    "    p.y;\n"
     "  return blend(blend(p0, p1, x0), blend(p2, p3, x1), y);\n"
     "}\n"
     "\n"
@@ -257,16 +260,15 @@ const std::string ShaderManager::cut2UpscaleFragment =
     "  lowp float l3 = luma(t3);\n"
     "  lowp float l4 = luma(t4);\n"
     "\n"
-    "  lowp vec2 diagonals = vec2(l1 - l3, l2 - l4);\n"
-    "  lowp vec2 tanDirection = vec2(diagonals.y - diagonals.x, diagonals.y + diagonals.x);\n"
-    "  lowp vec2 absTanDirection = abs(tanDirection);\n"
+    "  lowp vec2 gradient = vec2(l1 - l2 - l3 + l4, l1 + l2 - l3 - l4);\n"
+    "  lowp vec2 absGradient = abs(gradient);\n"
     "\n"
-    "  bool invertedAngle = absTanDirection.y > absTanDirection.x + EPSILON;\n"
-    "  bool negativeAngle = (tanDirection.x * tanDirection.y) > EPSILON * EPSILON;\n"
+    "  bool invertedAngle = absGradient.y > absGradient.x + EPSILON;\n"
+    "  bool negativeAngle = (gradient.x * gradient.y) < -EPSILON * EPSILON;\n"
     "\n"
-    "  lowp float tannum = min(absTanDirection.x, absTanDirection.y);\n"
-    "  lowp float tanden = max(absTanDirection.x, absTanDirection.y);\n"
-    "  lowp float atana = step(tanden + EPSILON, tannum * 2.0);\n"
+    "  lowp float minGradient = min(absGradient.x, absGradient.y);\n"
+    "  lowp float maxGradient = max(absGradient.x, absGradient.y);\n"
+    "  lowp float atana = step(maxGradient + EPSILON, minGradient * 2.0);\n"
     "\n"
     "  lowp vec2 pxCoords = fract(screenCoords);\n"
     "\n"
@@ -436,44 +438,51 @@ const std::string ShaderManager::cutUpscaleFragment =
 
 
 ShaderManager::Data ShaderManager::getShader(const ShaderManager::Config& config) {
-    auto params = config.params;
-
     switch (config.type) {
-    case Type::SHADER_DEFAULT:
-        return { defaultShaderVertex, defaultShaderFragment, true };
+    case Type::SHADER_DEFAULT: {
+        return {defaultShaderVertex, defaultShaderFragment, true};
+    }
 
-    case Type::SHADER_CRT:
-        return { defaultShaderVertex, crtShaderFragment, true };
+    case Type::SHADER_CRT: {
+        return {defaultShaderVertex, crtShaderFragment, true};
+    }
 
-    case Type::SHADER_LCD:
-        return { defaultShaderVertex, lcdShaderFragment, true };
+    case Type::SHADER_LCD: {
+        return {defaultShaderVertex, lcdShaderFragment, true};
+    }
 
-    case Type::SHADER_SHARP:
-        return { defaultShaderVertex, defaultSharpFragment, true };
+    case Type::SHADER_SHARP: {
+        return {defaultShaderVertex, defaultSharpFragment, true};
+    }
 
-    case Type::SHADER_UPSCALE_CUT:
-        params.insert(cutUpscaleParams.begin(), cutUpscaleParams.end());
+    case Type::SHADER_UPSCALE_CUT: {
+        std::string defines = buildDefines(cutUpscaleParams, config.params);
         return {
-            cutUpscaleVertex,
-            buildDefines(params) + cutUpscaleFragment,
+            defines + cutUpscaleVertex,
+            defines + cutUpscaleFragment,
             false
         };
+    }
 
-    case Type::SHADER_UPSCALE_CUT2:
-        params.insert(cut2UpscaleParams.begin(), cut2UpscaleParams.end());
-
+    case Type::SHADER_UPSCALE_CUT2: {
+        std::string defines = buildDefines(cut2UpscaleParams, config.params);
         return {
-            cut2UpscaleVertex,
-            buildDefines(params) + cut2UpscaleFragment,
+            defines + cut2UpscaleVertex,
+            defines + cut2UpscaleFragment,
             false
         };
+    }
 }
 }
 
-std::string ShaderManager::buildDefines(std::unordered_map<std::string, std::string> params) {
+std::string ShaderManager::buildDefines(
+    std::unordered_map<std::string, std::string> baseParams,
+    std::unordered_map<std::string, std::string> customParams
+) {
+    customParams.insert(baseParams.begin(), baseParams.end());
+
     std::string result;
-
-    std::for_each(params.begin(), params.end(), [&result] (auto param) {
+    std::for_each(customParams.begin(), customParams.end(), [&result] (auto param) {
         result += "#define " + param.first + " " + param.second + "\n";
     });
 

@@ -66,7 +66,10 @@ private:
     static const std::string cut2UpscaleFragment;
 
 private:
-    static std::string buildDefines(std::unordered_map<std::string, std::string> params);
+    static std::string buildDefines(
+        std::unordered_map<std::string, std::string> baseParams,
+        std::unordered_map<std::string, std::string> customParams
+    );
 
 public:
     static Data getShader(const Config& config);
