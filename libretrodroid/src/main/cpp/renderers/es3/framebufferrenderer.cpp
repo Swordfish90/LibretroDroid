@@ -29,8 +29,10 @@ FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool d
 
 void FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     Renderer::onNewFrame(data, width, height, pitch);
+    glBindTexture(GL_TEXTURE_2D, currentTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 uintptr_t FramebufferRenderer::getTexture() {

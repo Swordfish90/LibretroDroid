@@ -55,8 +55,8 @@ class GLRetroView(
         LibretroDroid.setFrameSpeed(value)
     }
 
-    var shaderType: Int by Delegates.observable(data.shader) { _, _, value ->
-        LibretroDroid.setShaderType(value)
+    var shader: ShaderConfig by Delegates.observable(data.shader) { _, _, value ->
+        LibretroDroid.setShaderConfig(buildShader(value))
     }
 
     private val openGLESVersion: Int
@@ -89,7 +89,7 @@ class GLRetroView(
             data.systemDirectory,
             data.savesDirectory,
             data.variables,
-            data.shader,
+            buildShader(data.shader),
             getDefaultRefreshRate(),
             data.preferLowLatencyAudio,
             data.gameVirtualFiles.isNotEmpty(),
@@ -370,6 +370,35 @@ class GLRetroView(
         return result!!
     }
 
+    private fun buildShader(config: ShaderConfig): GLRetroShader {
+        return when (config) {
+            is ShaderConfig.Default -> GLRetroShader(LibretroDroid.SHADER_DEFAULT)
+            is ShaderConfig.CRT -> GLRetroShader(LibretroDroid.SHADER_CRT)
+            is ShaderConfig.LCD -> GLRetroShader(LibretroDroid.SHADER_LCD)
+            is ShaderConfig.Sharp -> GLRetroShader(LibretroDroid.SHADER_SHARP)
+            is ShaderConfig.CUT -> GLRetroShader(
+                LibretroDroid.SHADER_UPSCALE_CUT,
+                buildParams(
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MIN to config.sharpnessMin.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
+                )
+            )
+            is ShaderConfig.CUT2 -> GLRetroShader(
+                LibretroDroid.SHADER_UPSCALE_CUT2,
+                buildParams(
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS to config.sharpnessBias.toString(),
+                )
+            )
+        }
+    }
+
+    private fun buildParams(vararg pairs: Pair<String, String?>): Map<String, String> {
+        return pairs
+            .filter { (key, value) -> value != null }
+            .associate { (key, value) -> key to value!! }
+    }
+
     /** This function gets called from the jni side.*/
     private fun sendRumbleEvent(port: Int, strengthWeak: Float, strengthStrong: Float) {
         lifecycle?.coroutineScope?.launch {
@@ -389,13 +418,6 @@ class GLRetroView(
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT
         const val MOTION_SOURCE_ANALOG_RIGHT = LibretroDroid.MOTION_SOURCE_ANALOG_RIGHT
         const val MOTION_SOURCE_POINTER = LibretroDroid.MOTION_SOURCE_POINTER
-
-        const val SHADER_DEFAULT = LibretroDroid.SHADER_DEFAULT
-        const val SHADER_CRT = LibretroDroid.SHADER_CRT
-        const val SHADER_LCD = LibretroDroid.SHADER_LCD
-        const val SHADER_SHARP = LibretroDroid.SHADER_SHARP
-        const val SHADER_UPSCALE_CUT_SHARP = LibretroDroid.SHADER_UPSCALE_CUT_SHARP
-        const val SHADER_UPSCALE_CUT_SMOOTH = LibretroDroid.SHADER_UPSCALE_CUT_SMOOTH
 
         const val ERROR_LOAD_LIBRARY = LibretroDroid.ERROR_LOAD_LIBRARY
         const val ERROR_LOAD_GAME = LibretroDroid.ERROR_LOAD_GAME

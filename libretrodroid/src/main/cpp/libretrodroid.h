@@ -78,7 +78,7 @@ public:
         const std::string& systemDir,
         const std::string& savesDir,
         std::vector<Variable> variables,
-        int shaderType,
+        const ShaderManager::Config& shaderConfig,
         float refreshRate,
         bool lowLatencyAudio,
         bool enableVirtualFileSystem,
@@ -122,7 +122,7 @@ public:
 
     void setAudioEnabled(bool enabled);
 
-    void setShaderType(int shaderType);
+    void setShaderConfig(ShaderManager::Config shaderConfig);
 
     void resetGlobalVariables();
 
@@ -151,7 +151,10 @@ private:
     bool preferLowLatencyAudio = false;
     bool rumbleEnabled = false;
 
-    ShaderManager::Type fragmentShaderType = ShaderManager::Type::SHADER_DEFAULT;
+    ShaderManager::Config fragmentShaderConfig = ShaderManager::Config {
+        ShaderManager::Type::SHADER_DEFAULT, { }
+    };
+
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;

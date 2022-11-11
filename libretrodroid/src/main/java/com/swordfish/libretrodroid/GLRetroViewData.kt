@@ -1,3 +1,20 @@
+/*
+ *     Copyright (C) 2022  Filippo Scognamiglio
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.swordfish.libretrodroid
 
 import android.content.Context
@@ -11,7 +28,7 @@ class GLRetroViewData(context: Context) {
     var savesDirectory: String = context.filesDir.absolutePath
     var variables: Array<Variable> = arrayOf()
     var saveRAMState: ByteArray? = null
-    var shader: Int = LibretroDroid.SHADER_DEFAULT
+    var shader: ShaderConfig = ShaderConfig.Default
     var rumbleEventsEnabled: Boolean = true
     var preferLowLatencyAudio: Boolean = true
     var skipDuplicateFrames: Boolean = false

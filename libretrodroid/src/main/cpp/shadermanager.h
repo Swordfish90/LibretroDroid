@@ -19,6 +19,7 @@
 #define LIBRETRODROID_SHADERMANAGER_H
 
 #include <string>
+#include <unordered_map>
 
 namespace libretrodroid {
 
@@ -35,8 +36,17 @@ public:
         SHADER_CRT = 1,
         SHADER_LCD = 2,
         SHADER_SHARP = 3,
-        SHADER_UPSCALE_CUT_SHARP = 4,
-        SHADER_UPSCALE_CUT_SMOOTH = 5
+        SHADER_UPSCALE_CUT = 4,
+        SHADER_UPSCALE_CUT2 = 5
+    };
+
+    struct Config {
+        Type type;
+        std::unordered_map<std::string, std::string> params;
+
+        inline bool operator==(const Config& other) {
+            return type == other.type && params == other.params;
+        }
     };
 
 private:
@@ -47,12 +57,22 @@ private:
     static const std::string crtShaderFragment;
     static const std::string lcdShaderFragment;
 
+    static const std::unordered_map<std::string, std::string> cutUpscaleParams;
     static const std::string cutUpscaleVertex;
     static const std::string cutUpscaleFragment;
 
-public:
-    static Data getShader(Type type);
+    static const std::unordered_map<std::string, std::string> cut2UpscaleParams;
+    static const std::string cut2UpscaleVertex;
+    static const std::string cut2UpscaleFragment;
 
+private:
+    static std::string buildDefines(
+        std::unordered_map<std::string, std::string> baseParams,
+        std::unordered_map<std::string, std::string> customParams
+    );
+
+public:
+    static Data getShader(const Config& config);
 };
 
 }

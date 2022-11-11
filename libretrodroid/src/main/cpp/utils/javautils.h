@@ -18,16 +18,24 @@
 #ifndef LIBRETRODROID_JAVAUTILS_H
 #define LIBRETRODROID_JAVAUTILS_H
 
+#include "unordered_map"
+#include "string"
+
 #include <jni.h>
 #include "../environment.h"
+#include "../shadermanager.h"
 
 namespace libretrodroid {
 
 class JavaUtils {
 public:
-    static jint throwRetroException(JNIEnv *env, int errorCode);
-    static Variable variableFromJava(JNIEnv *env, jobject obj);
-    static void javaListForEach(JNIEnv* env, jobject jList, const std::function<void(jobject)> &lambda);
+    // Conversion from LibretroDroid types
+    static Variable variableFromJava(JNIEnv* env, jobject obj);
+    static ShaderManager::Config shaderFromJava(JNIEnv* env, jobject obj);
+
+    static jint throwRetroException(JNIEnv* env, int errorCode);
+    static void forEachOnJavaIterable(JNIEnv* env, jobject jList, const std::function<void(jobject)> &lambda);
+    static std::unordered_map<std::string, std::string> stringMapFromJava(JNIEnv* env, jobject jMap);
 };
 
 }

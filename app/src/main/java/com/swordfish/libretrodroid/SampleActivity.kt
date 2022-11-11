@@ -63,7 +63,7 @@ class SampleActivity : AppCompatActivity() {
              * The path to the ROM to load.
              * Example: /data/data/<package-id>/files/example.gba
              */
-            gameFilePath = "${filesDir}/example.gba"
+            gameFilePath = "/data/data/<package-id>/files/example.gba"
 
             /*
              * Direct ROM bytes to load.
@@ -97,8 +97,9 @@ class SampleActivity : AppCompatActivity() {
              * SHADER_CRT:          Classic CRT scan lines.
              * SHADER_LCD:          Grid layout, similar to Nintendo DS bottom screens.
              * SHADER_SHARP:        Raw, unfiltered image.
+             * SHADER_UPSCALING:    Improve the quality of retro graphics.
              */
-            shader = LibretroDroid.SHADER_DEFAULT
+            shader = ShaderConfig.Default
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
