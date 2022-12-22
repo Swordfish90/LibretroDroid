@@ -20,6 +20,13 @@
 namespace libretrodroid {
 
 const std::string ShaderManager::defaultShaderVertex =
+    "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+    "#define HIGHP highp\n"
+    "#else\n"
+    "#define HIGHP mediump\n"
+    "precision mediump float;\n"
+    "#endif\n"
+    "\n"
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
     "uniform mediump float vFlipY;\n"
@@ -29,8 +36,8 @@ const std::string ShaderManager::defaultShaderVertex =
     "uniform vec2 textureSize;\n"
     "\n"
     "varying mediump float screenMaskStrength;\n"
-    "varying vec2 coords;\n"
-    "varying vec2 screenCoords;\n"
+    "varying HIGHP vec2 coords;\n"
+    "varying HIGHP vec2 screenCoords;\n"
     "void main() {\n"
     "  coords.x = vCoordinate.x;\n"
     "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
@@ -40,9 +47,15 @@ const std::string ShaderManager::defaultShaderVertex =
     "}\n";
 
 const std::string ShaderManager::defaultShaderFragment =
+    "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+    "#define HIGHP highp\n"
+    "#else\n"
+    "#define HIGHP mediump\n"
     "precision mediump float;\n"
+    "#endif\n"
+    "\n"
     "uniform lowp sampler2D texture;\n"
-    "varying vec2 coords;\n"
+    "varying HIGHP vec2 coords;\n"
     "void main() {\n"
     "  vec4 tex = texture2D(texture, coords);"
     "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
@@ -128,8 +141,8 @@ const std::string ShaderManager::defaultSharpFragment =
     "uniform HIGHP vec2 textureSize;\n"
     "uniform mediump float screenDensity;\n"
     "\n"
-    "varying vec2 coords;\n"
-    "varying vec2 screenCoords;\n"
+    "varying HIGHP vec2 coords;\n"
+    "varying HIGHP vec2 screenCoords;\n"
     "\n"
     "void main() {\n"
     "  mediump vec2 threshold = vec2(1.0 / screenDensity);\n"
