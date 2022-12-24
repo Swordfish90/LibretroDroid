@@ -21,21 +21,35 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include <optional>
+
+#include "../shadermanager.h"
 
 namespace libretrodroid {
 
 class Renderer {
 public:
+    struct PassData {
+        std::optional<unsigned int> framebuffer = std::nullopt;
+        std::optional<unsigned int> texture = std::nullopt;
+        std::optional<unsigned int> width = std::nullopt;
+        std::optional<unsigned int> height = std::nullopt;
+    };
+
+public:
     virtual uintptr_t getFramebuffer() = 0;
     virtual uintptr_t getTexture() = 0;
     virtual void updateRenderedResolution(unsigned width, unsigned height) = 0;
     virtual void setPixelFormat(int pixelFormat) = 0;
-    virtual void setLinear(bool linear) = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
-    std::pair<int, int> lastFrameSize;
     virtual bool rendersInVideoCallback() = 0;
+    virtual void setShaders(ShaderManager::Chain shaders) = 0;
+    virtual PassData getPassData(unsigned int layer) = 0;
 
     virtual ~Renderer() = default;
+
+public:
+    std::pair<int, int> lastFrameSize;
 };
 
 }

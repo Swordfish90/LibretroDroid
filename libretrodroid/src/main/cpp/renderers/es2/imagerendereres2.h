@@ -38,7 +38,10 @@ public:
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
     bool rendersInVideoCallback() override;
-    void setLinear(bool linear) override;
+
+    void setShaders(ShaderManager::Chain shaders) override;
+
+    PassData getPassData(unsigned int layer) override;
 
 private:
     void convertDataFromRGB8888(const void* pixelData, size_t size);

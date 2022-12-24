@@ -20,15 +20,22 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace libretrodroid {
 
 class ShaderManager {
 public:
-    struct Data {
+    struct Pass {
         std::string vertex;
         std::string fragment;
         bool linear;
+        float scale;
+    };
+
+    struct Chain {
+        std::vector<Pass> passes;
+        bool linearTexture;
     };
 
     enum class Type {
@@ -37,7 +44,8 @@ public:
         SHADER_LCD = 2,
         SHADER_SHARP = 3,
         SHADER_UPSCALE_CUT = 4,
-        SHADER_UPSCALE_CUT2 = 5
+        SHADER_UPSCALE_CUT2 = 5,
+        SHADER_UPSCALE_CUT3 = 6
     };
 
     struct Config {
@@ -65,6 +73,11 @@ private:
     static const std::string cut2UpscaleVertex;
     static const std::string cut2UpscaleFragment;
 
+    static const std::string cut3UpscalePass0Vertex;
+    static const std::string cut3UpscalePass0Fragment;
+    static const std::string cut3UpscalePass1Vertex;
+    static const std::string cut3UpscalePass1Fragment;
+
 private:
     static std::string buildDefines(
         std::unordered_map<std::string, std::string> baseParams,
@@ -72,7 +85,7 @@ private:
     );
 
 public:
-    static Data getShader(const Config& config);
+    static Chain getShader(const Config& config);
 };
 
 }

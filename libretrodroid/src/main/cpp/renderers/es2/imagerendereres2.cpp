@@ -118,8 +118,13 @@ bool ImageRendererES2::rendersInVideoCallback() {
     return false;
 }
 
-void ImageRendererES2::setLinear(bool linear) {
-    this->linear = linear;
+void ImageRendererES2::setShaders(ShaderManager::Chain shaders) {
+    this->linear = shaders.linearTexture;
+}
+
+// ES2 Renderer doesn't currently support multiple passes.
+Renderer::PassData ImageRendererES2::getPassData(unsigned int layer) {
+    return { };
 }
 
 } //namespace libretrodroid

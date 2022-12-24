@@ -187,31 +187,23 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = nullptr;
 
-    Renderer *renderer;
-    if (Environment::getInstance().isUseHwAcceleration()) {
-        renderer = new FramebufferRenderer(
-            system_av_info.geometry.base_width,
-            system_av_info.geometry.base_height,
-            Environment::getInstance().isUseDepth(),
-            Environment::getInstance().isUseStencil()
-        );
-    } else {
-        if (openglESVersion >= 3) {
-            renderer = new ImageRendererES3();
-        } else {
-            renderer = new ImageRendererES2();
-        }
-    }
+    Video::RenderingOptions renderingOptions {
+        Environment::getInstance().isUseHwAcceleration(),
+        system_av_info.geometry.base_width,
+        system_av_info.geometry.base_height,
+        Environment::getInstance().isUseDepth(),
+        Environment::getInstance().isUseStencil(),
+        openglESVersion,
+        Environment::getInstance().getPixelFormat()
+    };
 
     auto newVideo = new Video(
-        renderer,
+        renderingOptions,
         fragmentShaderConfig,
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
         skipDuplicateFrames
     );
-
-    renderer->setPixelFormat(Environment::getInstance().getPixelFormat());
 
     video = std::unique_ptr<Video>(newVideo);
 

@@ -436,39 +436,113 @@ const std::string ShaderManager::cutUpscaleFragment =
     "  gl_FragColor = vec4(final, 1.0);\n"
     "}\n";
 
+const std::string ShaderManager::cut3UpscalePass0Vertex =
+    "attribute vec4 vPosition;\n"
+    "attribute vec2 vCoordinate;\n"
+    "uniform mediump float vFlipY;\n"
+    "uniform mediump float screenDensity;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform mat4 vViewModel;\n"
+    "uniform vec2 textureSize;\n"
+    "\n"
+    "void main() {\n"
+    "  gl_Position = vViewModel * vPosition;\n"
+    "}\n";
 
-ShaderManager::Data ShaderManager::getShader(const ShaderManager::Config& config) {
+const std::string ShaderManager::cut3UpscalePass0Fragment =
+    "precision mediump float;\n"
+    "uniform lowp sampler2D texture;\n"
+    "void main() {\n"
+    "  gl_FragColor = vec4(vec3(1.0, 0.0, 0.0), 1.0);\n"
+    "}\n";
+
+const std::string ShaderManager::cut3UpscalePass1Vertex =
+    "attribute vec4 vPosition;\n"
+    "attribute vec2 vCoordinate;\n"
+    "uniform mediump float vFlipY;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform mat4 vViewModel;\n"
+    "uniform vec2 textureSize;\n"
+    "\n"
+    "varying mediump float screenMaskStrength;\n"
+    "varying vec2 coords;\n"
+    "void main() {\n"
+    "  coords.x = vCoordinate.x;\n"
+    "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
+    "  gl_Position = vViewModel * vPosition;\n"
+    "}\n";
+
+const std::string ShaderManager::cut3UpscalePass1Fragment =
+    "precision mediump float;\n"
+    "uniform lowp sampler2D texture;\n"
+    "uniform lowp sampler2D previousPass;\n"
+    "varying vec2 coords;\n"
+    "void main() {\n"
+    "  vec3 tex = texture2D(texture, coords).rgb;"
+    "  vec3 pass = texture2D(previousPass, coords).rgb;"
+    "  gl_FragColor = vec4(mix(tex, pass, 0.5), 1.0);\n"
+    "}\n";
+
+ShaderManager::Chain ShaderManager::getShader(const ShaderManager::Config& config) {
     switch (config.type) {
     case Type::SHADER_DEFAULT: {
-        return {defaultShaderVertex, defaultShaderFragment, true};
+        return { { { defaultShaderVertex, defaultShaderFragment, true, 1.0 } }, true };
     }
 
     case Type::SHADER_CRT: {
-        return {defaultShaderVertex, crtShaderFragment, true};
+        return { { { defaultShaderVertex, crtShaderFragment, true, 1.0 } } , true };
     }
 
     case Type::SHADER_LCD: {
-        return {defaultShaderVertex, lcdShaderFragment, true};
+        return { { {defaultShaderVertex, lcdShaderFragment, true, 1.0 } }, true };
     }
 
     case Type::SHADER_SHARP: {
-        return {defaultShaderVertex, defaultSharpFragment, true};
+        return { { { defaultShaderVertex, defaultSharpFragment, true, 1.0 } }, true };
     }
 
     case Type::SHADER_UPSCALE_CUT: {
         std::string defines = buildDefines(cutUpscaleParams, config.params);
-        return {
+        return { { {
             defines + cutUpscaleVertex,
             defines + cutUpscaleFragment,
-            false
-        };
+            false,
+            1.0
+        } } , false };
     }
 
     case Type::SHADER_UPSCALE_CUT2: {
         std::string defines = buildDefines(cut2UpscaleParams, config.params);
         return {
-            defines + cut2UpscaleVertex,
-            defines + cut2UpscaleFragment,
+            {
+                {
+                defines + cut2UpscaleVertex,
+                defines + cut2UpscaleFragment,
+                false,
+                1.0
+                }
+            },
+            false
+        };
+    }
+
+    // TODO FILIPPO... Replace with the actual shader
+    case Type::SHADER_UPSCALE_CUT3: {
+        return {
+            {
+                {
+                    cut3UpscalePass0Vertex,
+                    cut3UpscalePass0Fragment,
+                    false,
+                    1.0
+                },
+                {
+                    cut3UpscalePass1Vertex,
+                    cut3UpscalePass1Fragment,
+                    false,
+                    1.0
+                }
+            },
             false
         };
     }

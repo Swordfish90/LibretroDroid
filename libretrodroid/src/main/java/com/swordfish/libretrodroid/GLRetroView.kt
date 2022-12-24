@@ -390,6 +390,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS to config.sharpnessBias.toString(),
                 )
             )
+            is ShaderConfig.CUT3 -> GLRetroShader(LibretroDroid.SHADER_UPSCALE_CUT3)
         }
     }
 

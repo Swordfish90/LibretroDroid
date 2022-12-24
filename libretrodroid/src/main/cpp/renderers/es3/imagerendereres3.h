@@ -20,12 +20,14 @@
 
 #include "../renderer.h"
 #include "../../libretro-common/include/libretro.h"
+#include "es3utils.h"
 
 #include "GLES3/gl3.h"
 
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include <memory>
 
 namespace libretrodroid {
 
@@ -38,27 +40,31 @@ public:
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
 
-    void setLinear(bool linear) override;
-
     bool rendersInVideoCallback() override;
 
+    void setShaders(ShaderManager::Chain shaders) override;
+
+    PassData getPassData(unsigned int layer) override;
+
 private:
+    void initializeTextures(unsigned int width, unsigned int height);
     void applyGLSwizzle(int r, int g, int b, int a);
     void convertDataFrom0RGB1555(const void *data, unsigned int width, unsigned int height, size_t pitch) const;
 
 private:
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
-
     unsigned int bytesPerPixel = 1;
     bool swapRedAndBlueChannels = false;
-
     unsigned int glType = 0;
     unsigned int glInternalFormat = 0;
     unsigned int glFormat = 0;
 
-    bool linear = false;
+    bool isDirty = true;
 
     unsigned int currentTexture = 0;
+
+    ShaderManager::Chain shaders;
+    std::unique_ptr<ES3Utils::Framebuffers> framebuffers = std::make_unique<ES3Utils::Framebuffers>();
 };
 
 }

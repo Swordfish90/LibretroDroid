@@ -30,6 +30,7 @@ import androidx.lifecycle.lifecycleScope
 import com.android.libretrodroid.R
 import com.swordfish.radialgamepad.library.RadialGamePad
 import com.swordfish.radialgamepad.library.event.Event
+import kotlin.concurrent.fixedRateTimer
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
@@ -58,12 +59,27 @@ class SampleActivity : AppCompatActivity() {
              * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
              */
             coreFilePath = "libmgba_libretro_android.so"
+//            coreFilePath = "libppsspp_libretro_android.so"
 
             /*
              * The path to the ROM to load.
              * Example: /data/data/<package-id>/files/example.gba
              */
-            gameFilePath = "/data/data/<package-id>/files/example.gba"
+//            gameFilePath = "/sdcard/Roms Test/Pokemon Emerald Version.gba"
+            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
+//            gameFilePath = "/sdcard/Roms Test/Super Mario Land.gb"
+//            gameFilePath = "/sdcard/Roms Test/Pokemon Blue Version.gb"
+//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - The Minish Cap.gba"
+//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - Link's Awakening DX.gbc"
+//            gameFilePath = "/sdcard/Roms Test/Doom.gba"
+//            gameFilePath = "/sdcard/Roms/psp/Shin Megami Tensei - Persona 3 Portable (USA) (PSP) (PSN).iso"
+//            gameFilePath = "/sdcard/Roms/psp/MediEvil Resurrection.cso"
+//            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
+//            gameFilePath = "/sdcard/Roms Test/Final Fantasy IV Advance.gba"
+//            gameFilePath = "/sdcard/Roms/psx/Quake II.pbp"
+//            gameFilePath = "/sdcard/Roms Test/Chrono Trigger.smc"
+//            gameFilePath = "/sdcard/Roms/psx/Final Fantasy Tactics.pbp"
+//            gameFilePath = "/sdcard/Roms/psx/Castlevania - Symphony of the Night.pbp"
 
             /*
              * Direct ROM bytes to load.
@@ -99,7 +115,9 @@ class SampleActivity : AppCompatActivity() {
              * SHADER_SHARP:        Raw, unfiltered image.
              * SHADER_UPSCALING:    Improve the quality of retro graphics.
              */
-            shader = ShaderConfig.Default
+//            shader = ShaderConfig.CUT3
+//            shader = ShaderConfig.Default
+            shader = ShaderConfig.CUT3
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
@@ -112,6 +130,12 @@ class SampleActivity : AppCompatActivity() {
         retroView = GLRetroView(this, data)
 
         lifecycle.addObserver(retroView)
+
+//        val shaders = listOf(ShaderConfig.CUT3, ShaderConfig.Default)
+//
+//        fixedRateTimer(period = 2000L) {
+//            retroView.shader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
+//        }
 
         /* Get the FrameLayout to house the GLRetroView */
         val frameLayout = findViewById<FrameLayout>(R.id.gamecontainer)

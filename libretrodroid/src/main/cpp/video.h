@@ -28,8 +28,31 @@ namespace libretrodroid {
 
 class Video {
 public:
+
+    struct RenderingOptions {
+        bool hardwareAccelerated = false;
+        unsigned int width;
+        unsigned int height;
+        bool useDepth;
+        bool useStencil;
+        int openglESVersion;
+        int pixelFormat;
+    };
+
+    struct ShaderChainEntry {
+        GLint gProgram = 0;
+        GLint gvPositionHandle = 0;
+        GLint gvCoordinateHandle = 0;
+        GLint gTextureHandle = 0;
+        GLint gPreviousPassTextureHandle = 0;
+        GLint gScreenDensityHandle = 0;
+        GLint gTextureSizeHandle = 0;
+        GLint gFlipYHandle = 0;
+        GLint gViewModelMatrixHandle = 0;
+    };
+
     Video(
-        Renderer* renderer,
+        RenderingOptions renderingOptions,
         ShaderManager::Config shaderConfig,
         bool bottomLeftOrigin,
         float rotation,
@@ -60,6 +83,8 @@ private:
     float getScreenDensity();
     float getTextureWidth();
     float getTextureHeight();
+
+    void initializeRenderer(RenderingOptions renderingOptions);
 
 private:
     GLfloat gTriangleVertices[12] = {
@@ -121,14 +146,7 @@ private:
     bool isDirty = false;
     bool skipDuplicateFrames = false;
 
-    GLuint gProgram = 0;
-    GLint gvPositionHandle = 0;
-    GLint gvCoordinateHandle = 0;
-    GLint gTextureHandle = 0;
-    GLint gScreenDensityHandle = 0;
-    GLint gTextureSizeHandle = 0;
-    GLint gFlipYHandle = 0;
-    GLint gViewModelMatrixHandle = 0;
+    std::vector<ShaderChainEntry> shadersChain;
 
     float gFlipY = 1.0;
 

@@ -36,6 +36,7 @@ public class LibretroDroid {
     public static final int SHADER_SHARP = 3;
     public static final int SHADER_UPSCALE_CUT = 4;
     public static final int SHADER_UPSCALE_CUT2 = 5;
+    public static final int SHADER_UPSCALE_CUT3 = 6;
 
     public static final String SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS = "SHARPNESS_BIAS";
     public static final String SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX = "SHARPNESS_MAX";

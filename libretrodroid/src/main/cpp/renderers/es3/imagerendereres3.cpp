@@ -17,6 +17,7 @@
 
 #include "imagerendereres3.h"
 #include "../../libretro-common/include/libretro.h"
+#include "es3utils.h"
 
 namespace libretrodroid {
 
@@ -26,10 +27,40 @@ ImageRendererES3::ImageRendererES3() {
 }
 
 void ImageRendererES3::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
+    if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
+        convertDataFrom0RGB1555(data, width, height, pitch);
+    }
+
+    if (lastFrameSize.first != width || lastFrameSize.second != height || isDirty) {
+        initializeTextures(width, height);
+    }
+
     glBindTexture(GL_TEXTURE_2D, currentTexture);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, bytesPerPixel);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, pitch / bytesPerPixel);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
+
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    Renderer::onNewFrame(data, width, height, pitch);
+}
+
+void ImageRendererES3::initializeTextures(unsigned int width, unsigned int height) {
+    for (auto& i : *framebuffers) {
+        ES3Utils::deleteFramebuffer(std::move(i));
+    }
+    framebuffers = libretrodroid::ES3Utils::buildShaderPasses(width, height, shaders);
+
+    glBindTexture(GL_TEXTURE_2D, currentTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, shaders.linearTexture ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, shaders.linearTexture ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     if (swapRedAndBlueChannels) {
         applyGLSwizzle(GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA);
@@ -37,26 +68,9 @@ void ImageRendererES3::onNewFrame(const void *data, unsigned width, unsigned hei
         applyGLSwizzle(GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA);
     }
 
-    if (pixelFormat == RETRO_PIXEL_FORMAT_0RGB1555) {
-        convertDataFrom0RGB1555(data, width, height, pitch);
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    if (lastFrameSize.first != width || lastFrameSize.second != height) {
-        glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data);
-    } else {
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
-    }
-
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    Renderer::onNewFrame(data, width, height, pitch);
+    isDirty = false;
 }
 
 void ImageRendererES3::applyGLSwizzle(int r, int g, int b, int a) {
@@ -115,8 +129,25 @@ bool ImageRendererES3::rendersInVideoCallback() {
     return false;
 }
 
-void ImageRendererES3::setLinear(bool linear) {
-    this->linear = linear;
+void ImageRendererES3::setShaders(ShaderManager::Chain newShaders) {
+    this->shaders = newShaders;
+    this->isDirty = true;
+}
+
+Renderer::PassData ImageRendererES3::getPassData(unsigned int layer) {
+    PassData result;
+
+    if (layer >= 0 && layer < framebuffers->size()) {
+        result.framebuffer = framebuffers->at(layer)->framebuffer;
+        result.width = framebuffers->at(layer)->width;
+        result.height = framebuffers->at(layer)->height;
+    }
+
+    if (layer > 0 && layer < framebuffers->size() + 1) {
+        result.texture = framebuffers->at(layer - 1)->texture;
+    }
+
+    return result;
 }
 
 } //namespace libretrodroid
