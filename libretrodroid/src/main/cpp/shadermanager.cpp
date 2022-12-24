@@ -22,7 +22,6 @@ namespace libretrodroid {
 const std::string ShaderManager::defaultShaderVertex =
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
-    "uniform mediump float vFlipY;\n"
     "uniform mediump float screenDensity;\n"
     "uniform lowp sampler2D texture;\n"
     "uniform mat4 vViewModel;\n"
@@ -32,8 +31,7 @@ const std::string ShaderManager::defaultShaderVertex =
     "varying vec2 coords;\n"
     "varying vec2 screenCoords;\n"
     "void main() {\n"
-    "  coords.x = vCoordinate.x;\n"
-    "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
+    "  coords = vCoordinate;\n"
     "  screenCoords = coords * textureSize;\n"
     "  screenMaskStrength = smoothstep(2.0, 6.0, screenDensity);\n"
     "  gl_Position = vViewModel * vPosition;\n"
@@ -151,7 +149,6 @@ const std::string ShaderManager::cut2UpscaleVertex =
     "\n"
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
-    "uniform mediump float vFlipY;\n"
     "uniform mediump float screenDensity;\n"
     "uniform lowp sampler2D texture;\n"
     "uniform mat4 vViewModel;\n"
@@ -165,7 +162,7 @@ const std::string ShaderManager::cut2UpscaleVertex =
     "varying lowp float displaySharpness;\n"
     "\n"
     "void main() {\n"
-    "  HIGHP vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
+    "  HIGHP vec2 coords = vCoordinate * 1.0001;\n"
     "  screenCoords = coords * textureSize - vec2(0.5);\n"
     "  c1 = (screenCoords) / textureSize;\n"
     "  c2 = (screenCoords + vec2(1.0, 0.0)) / textureSize;\n"
@@ -310,7 +307,6 @@ const std::string ShaderManager::cutUpscaleVertex =
     "\n"
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
-    "uniform mediump float vFlipY;\n"
     "uniform mediump float screenDensity;\n"
     "uniform lowp sampler2D texture;\n"
     "uniform mat4 vViewModel;\n"
@@ -323,7 +319,7 @@ const std::string ShaderManager::cutUpscaleVertex =
     "varying HIGHP vec2 c4;\n"
     "\n"
     "void main() {\n"
-    "  HIGHP vec2 coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
+    "  HIGHP vec2 coords = vCoordinate * 1.0001;\n"
     "  screenCoords = coords * textureSize - vec2(0.5);\n"
     "  c1 = (screenCoords) / textureSize;\n"
     "  c2 = (screenCoords + vec2(1.0, 0.0)) / textureSize;\n"
@@ -439,36 +435,40 @@ const std::string ShaderManager::cutUpscaleFragment =
 const std::string ShaderManager::cut3UpscalePass0Vertex =
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
-    "uniform mediump float vFlipY;\n"
     "uniform mediump float screenDensity;\n"
     "uniform lowp sampler2D texture;\n"
     "uniform mat4 vViewModel;\n"
-    "uniform vec2 textureSize;\n"
+    "varying mediump vec2 coords;\n"
     "\n"
     "void main() {\n"
+    "  coords = vCoordinate;\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
 const std::string ShaderManager::cut3UpscalePass0Fragment =
     "precision mediump float;\n"
     "uniform lowp sampler2D texture;\n"
+    "varying mediump vec2 coords;\n"
+
     "void main() {\n"
-    "  gl_FragColor = vec4(vec3(1.0, 0.0, 0.0), 1.0);\n"
+    "  vec3 tex = texture2D(texture, coords).rgb;"
+    "  gl_FragColor = vec4(vec3(tex.r, tex.g, 0.0), 1.0);\n"
     "}\n";
 
 const std::string ShaderManager::cut3UpscalePass1Vertex =
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
-    "uniform mediump float vFlipY;\n"
+    "attribute vec2 vPassCoordinate;\n"
     "uniform lowp sampler2D texture;\n"
     "uniform mat4 vViewModel;\n"
     "uniform vec2 textureSize;\n"
     "\n"
     "varying mediump float screenMaskStrength;\n"
     "varying vec2 coords;\n"
+    "varying vec2 passCoords;\n"
     "void main() {\n"
-    "  coords.x = vCoordinate.x;\n"
-    "  coords.y = mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY);\n"
+    "  coords = vCoordinate;\n"
+    "  passCoords = vPassCoordinate;\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
@@ -477,9 +477,10 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "uniform lowp sampler2D texture;\n"
     "uniform lowp sampler2D previousPass;\n"
     "varying vec2 coords;\n"
+    "varying vec2 passCoords;\n"
     "void main() {\n"
     "  vec3 tex = texture2D(texture, coords).rgb;"
-    "  vec3 pass = texture2D(previousPass, coords).rgb;"
+    "  vec3 pass = texture2D(previousPass, passCoords).rgb;"
     "  gl_FragColor = vec4(mix(tex, pass, 0.5), 1.0);\n"
     "}\n";
 
@@ -533,17 +534,17 @@ ShaderManager::Chain ShaderManager::getShader(const ShaderManager::Config& confi
                 {
                     cut3UpscalePass0Vertex,
                     cut3UpscalePass0Fragment,
-                    false,
+                    true,
                     1.0
                 },
                 {
                     cut3UpscalePass1Vertex,
                     cut3UpscalePass1Fragment,
-                    false,
+                    true,
                     1.0
                 }
             },
-            false
+            true
         };
     }
 }

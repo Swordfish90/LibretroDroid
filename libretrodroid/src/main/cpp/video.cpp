@@ -122,6 +122,8 @@ void Video::updateProgram() {
 
         shader.gvCoordinateHandle = glGetAttribLocation(shader.gProgram, "vCoordinate");
 
+        shader.gvPassCoordinateHandle = glGetAttribLocation(shader.gProgram, "vPassCoordinate");
+
         shader.gTextureHandle = glGetUniformLocation(shader.gProgram, "texture");
 
         shader.gPreviousPassTextureHandle = glGetUniformLocation(shader.gProgram, "previousPass");
@@ -129,8 +131,6 @@ void Video::updateProgram() {
         shader.gTextureSizeHandle = glGetUniformLocation(shader.gProgram, "textureSize");
 
         shader.gScreenDensityHandle = glGetUniformLocation(shader.gProgram, "screenDensity");
-
-        shader.gFlipYHandle = glGetUniformLocation(shader.gProgram, "vFlipY");
 
         shader.gViewModelMatrixHandle = glGetUniformLocation(shader.gProgram, "vViewModel");
 
@@ -147,7 +147,6 @@ void Video::renderFrame() {
     isDirty = false;
 
     glDisable(GL_DEPTH_TEST);
-    updateViewModelMatrix();
 
     for (int i = 0; i < shadersChain.size(); ++i) {
         auto shader = shadersChain[i];
@@ -166,8 +165,11 @@ void Video::renderFrame() {
         glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
+        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
+
+        glVertexAttribPointer(shader.gvPassCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gPassCoords);
+        glEnableVertexAttribArray(shader.gvPassCoordinateHandle);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
@@ -182,8 +184,6 @@ void Video::renderFrame() {
         glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
 
         glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
-
-        glUniform1f(shader.gFlipYHandle, gFlipY);
 
         glUniformMatrix4fv(shader.gViewModelMatrixHandle, 1, false, gViewModelMatrix);
 
@@ -217,7 +217,7 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
     }
 }
 
-void Video::updateViewModelMatrix() {
+void Video::updateViewModelMatrix(float rotation) {
     // Apply simple rotation matrix
     gViewModelMatrix[0] = cos(rotation);
     gViewModelMatrix[1] = -sin(rotation);
@@ -237,7 +237,7 @@ void Video::updateRendererSize(unsigned int width, unsigned int height) {
 }
 
 void Video::updateRotation(float rotation) {
-    this->rotation = rotation;
+    updateViewModelMatrix(rotation);
 }
 
 Video::Video(
@@ -248,9 +248,7 @@ Video::Video(
     bool skipDuplicateFrames
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
-    rotation(rotation),
-    skipDuplicateFrames(skipDuplicateFrames),
-    gFlipY(bottomLeftOrigin ? 0 : 1) {
+    skipDuplicateFrames(skipDuplicateFrames) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
@@ -259,6 +257,9 @@ Video::Video(
     initializeGLESLogCallbackIfNeeded();
 
     LOGI("Initializing graphics");
+
+    updateViewModelMatrix(rotation);
+    updateFlipY(!bottomLeftOrigin);
 
     glViewport(0, 0, screenWidth, screenHeight);
 
@@ -290,4 +291,14 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
     renderer->setPixelFormat(renderingOptions.pixelFormat);
     updateProgram();
 }
+
+void Video::updateFlipY(bool flipY) {
+    gTextureCoords[1] = flipY ? 1.0 : 0.0;
+    gTextureCoords[3] = flipY ? 0.0 : 1.0;
+    gTextureCoords[5] = flipY ? 1.0 : 0.0;
+    gTextureCoords[7] = flipY ? 1.0 : 0.0;
+    gTextureCoords[9] = flipY ? 0.0 : 1.0;
+    gTextureCoords[11] = flipY ? 0.0 : 1.0;
+}
+
 } //namespace libretrodroid

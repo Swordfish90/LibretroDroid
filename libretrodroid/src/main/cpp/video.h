@@ -43,11 +43,11 @@ public:
         GLint gProgram = 0;
         GLint gvPositionHandle = 0;
         GLint gvCoordinateHandle = 0;
+        GLint gvPassCoordinateHandle = 0;
         GLint gTextureHandle = 0;
         GLint gPreviousPassTextureHandle = 0;
         GLint gScreenDensityHandle = 0;
         GLint gTextureSizeHandle = 0;
-        GLint gFlipYHandle = 0;
         GLint gViewModelMatrixHandle = 0;
     };
 
@@ -79,7 +79,8 @@ public:
 private:
     void updateProgram();
 
-    void updateViewModelMatrix();
+    void updateViewModelMatrix(float rotation);
+    void updateFlipY(bool flipY);
     float getScreenDensity();
     float getTextureWidth();
     float getTextureHeight();
@@ -88,26 +89,46 @@ private:
 
 private:
     GLfloat gTriangleVertices[12] = {
-            -1.0F,
-            -1.0F,
+        -1.0F,
+        -1.0F,
 
-            -1.0F,
-             1.0F,
+        -1.0F,
+        +1.0F,
 
-             1.0F,
-            -1.0F,
+        +1.0F,
+        -1.0F,
 
-             1.0F,
-            -1.0F,
+        +1.0F,
+        -1.0F,
 
-            -1.0F,
-             1.0F,
+        -1.0F,
+        +1.0F,
 
-             1.0F,
-             1.0F,
+        +1.0F,
+        +1.0F,
     };
 
-    GLfloat gTriangleCoords[12] = {
+    GLfloat gTextureCoords[12] = {
+        0.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        0.0F,
+
+        1.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        1.0F,
+    };
+
+    GLfloat gPassCoords[12] = {
         0.0F,
         0.0F,
 
@@ -142,13 +163,10 @@ private:
     };
     std::optional<ShaderManager::Config> loadedShaderType = std::nullopt;
 
-    float rotation = 0;
     bool isDirty = false;
     bool skipDuplicateFrames = false;
 
     std::vector<ShaderChainEntry> shadersChain;
-
-    float gFlipY = 1.0;
 
     Renderer* renderer;
 };
