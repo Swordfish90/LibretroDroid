@@ -59,7 +59,10 @@ class SampleActivity : AppCompatActivity() {
              * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
              */
             coreFilePath = "libmgba_libretro_android.so"
+//            coreFilePath = "gambatte_libretro_android.so"
+//            coreFilePath = "snes9x_libretro_android.so"
 //            coreFilePath = "libppsspp_libretro_android.so"
+//            coreFilePath = "libpcsx_rearmed_libretro_android.so"
 
             /*
              * The path to the ROM to load.
@@ -117,7 +120,8 @@ class SampleActivity : AppCompatActivity() {
              */
 //            shader = ShaderConfig.CUT3
 //            shader = ShaderConfig.Default
-            shader = ShaderConfig.CUT3
+//            shader = ShaderConfig.Sharp
+            shader = ShaderConfig.CUT3(1.0f, 1.0f, 0)
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
@@ -131,10 +135,12 @@ class SampleActivity : AppCompatActivity() {
 
         lifecycle.addObserver(retroView)
 
-//        val shaders = listOf(ShaderConfig.CUT3, ShaderConfig.Default)
-//
-//        fixedRateTimer(period = 2000L) {
-//            retroView.shader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
+        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(1.0f, 0.60f, 0))
+
+//        fixedRateTimer(period = 4000L) {
+//            val newShader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
+//            retroView.shader = newShader
+//            Log.d("FILIPPO", "Set shader to :$newShader")
 //        }
 
         /* Get the FrameLayout to house the GLRetroView */

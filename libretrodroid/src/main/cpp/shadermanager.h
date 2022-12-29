@@ -73,6 +73,7 @@ private:
     static const std::string cut2UpscaleVertex;
     static const std::string cut2UpscaleFragment;
 
+    static const std::unordered_map<std::string, std::string> cut3UpscaleParams;
     static const std::string cut3UpscalePass0Vertex;
     static const std::string cut3UpscalePass0Fragment;
     static const std::string cut3UpscalePass1Vertex;
