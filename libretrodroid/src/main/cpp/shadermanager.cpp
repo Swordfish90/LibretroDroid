@@ -510,7 +510,7 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "#define MIN_EDGE_1 0.02\n"
     "#define EDGE_1_THRESHOLD 2.0\n"
     "#define MIN_EDGE_2 0.02\n"
-    "#define EDGE_2_THRESHOLD 2.0\n"
+    "#define EDGE_2_THRESHOLD 3.0\n"
     "\n"
     "varying HIGHP vec2 screenCoords;\n"
     "varying HIGHP vec2 coords;\n"
