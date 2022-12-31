@@ -80,6 +80,7 @@ class SampleActivity : AppCompatActivity() {
 //            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
 //            gameFilePath = "/sdcard/Roms Test/Final Fantasy IV Advance.gba"
 //            gameFilePath = "/sdcard/Roms/psx/Quake II.pbp"
+//            gameFilePath = "/sdcard/Roms/psx/MediEvil.pbp"
 //            gameFilePath = "/sdcard/Roms Test/Chrono Trigger.smc"
 //            gameFilePath = "/sdcard/Roms/psx/Final Fantasy Tactics.pbp"
 //            gameFilePath = "/sdcard/Roms/psx/Castlevania - Symphony of the Night.pbp"
@@ -121,7 +122,7 @@ class SampleActivity : AppCompatActivity() {
 //            shader = ShaderConfig.CUT3
 //            shader = ShaderConfig.Default
 //            shader = ShaderConfig.Sharp
-            shader = ShaderConfig.CUT3(1.0f, 1.0f, 0)
+            shader = ShaderConfig.CUT3(2.0f, 0.8f)
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
@@ -135,7 +136,7 @@ class SampleActivity : AppCompatActivity() {
 
         lifecycle.addObserver(retroView)
 
-        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(1.0f, 0.60f, 0))
+        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(2.0f, 0.8f))
 
 //        fixedRateTimer(period = 4000L) {
 //            val newShader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
