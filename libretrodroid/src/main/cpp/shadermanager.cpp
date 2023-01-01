@@ -910,4 +910,16 @@ std::string ShaderManager::buildDefines(
     return result + "\n";
 }
 
+bool ShaderManager::Chain::operator==(const ShaderManager::Chain &other) const {
+    return this->passes == other.passes && this->linearTexture == other.linearTexture;
+}
+
+bool ShaderManager::Chain::operator!=(const ShaderManager::Chain &other) const {
+    return !(*this == other);
+}
+
+bool ShaderManager::Pass::operator==(const ShaderManager::Pass &other) const {
+    return this->linear == other.linear && this->scale == other.scale &&
+           this->vertex == other.vertex && this->fragment == other.fragment;
+}
 } //namespace libretrodroid

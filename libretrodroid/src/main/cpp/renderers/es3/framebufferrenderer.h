@@ -28,7 +28,13 @@ namespace libretrodroid {
 
 class FramebufferRenderer: public Renderer {
 public:
-    FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil);
+    FramebufferRenderer(
+        unsigned width,
+        unsigned height,
+        bool depth,
+        bool stencil,
+        ShaderManager::Chain shaders
+    );
     uintptr_t getTexture() override;
     uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
@@ -43,17 +49,18 @@ public:
 private:
     bool depth = false;
     bool stencil = false;
-    bool linear = false;
 
     unsigned int width;
     unsigned int height;
 
-    bool isDirty = true;
+    bool isDirty = false;
 
     std::unique_ptr<ES3Utils::Framebuffer> framebuffer = std::make_unique<ES3Utils::Framebuffer>();
 
     ShaderManager::Chain shaders;
     std::unique_ptr<ES3Utils::Framebuffers> framebuffers = std::make_unique<ES3Utils::Framebuffers>();
+
+    void initializeBuffers();
 };
 
 }

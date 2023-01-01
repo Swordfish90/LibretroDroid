@@ -272,12 +272,15 @@ void Video::updateShaderType(ShaderManager::Config shaderConfig) {
 }
 
 void Video::initializeRenderer(RenderingOptions renderingOptions) {
+    auto shaders = ShaderManager::getShader(requestedShaderConfig);
+
     if (renderingOptions.hardwareAccelerated) {
         renderer = new FramebufferRenderer(
             renderingOptions.width,
             renderingOptions.height,
             renderingOptions.useDepth,
-            renderingOptions.useStencil
+            renderingOptions.useStencil,
+            std::move(shaders)
         );
     } else {
         if (renderingOptions.openglESVersion >= 3) {

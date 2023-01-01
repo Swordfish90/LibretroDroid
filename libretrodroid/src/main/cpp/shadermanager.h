@@ -31,11 +31,16 @@ public:
         std::string fragment;
         bool linear;
         float scale;
+
+        bool operator==(const ShaderManager::Pass &other) const;
     };
 
     struct Chain {
         std::vector<Pass> passes;
         bool linearTexture;
+
+        bool operator==(const ShaderManager::Chain &other) const;
+        bool operator!=(const ShaderManager::Chain &other) const;
     };
 
     enum class Type {

@@ -21,29 +21,42 @@
 
 namespace libretrodroid {
 
-FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
+FramebufferRenderer::FramebufferRenderer(
+    unsigned width,
+    unsigned height,
+    bool depth,
+    bool stencil,
+    ShaderManager::Chain shaders
+) {
     this->depth = depth;
     this->stencil = stencil;
     this->width = width;
     this->height = height;
+    this->shaders = std::move(shaders);
+
+    initializeBuffers();
 }
 
 void FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     Renderer::onNewFrame(data, width, height, pitch);
 
     if (isDirty) {
-        framebuffers = ES3Utils::buildShaderPasses(this->width, this->height, shaders);
-
-        ES3Utils::deleteFramebuffer(std::move(framebuffer));
-        framebuffer = ES3Utils::createFramebuffer(
-            this->width,
-            this->height,
-            shaders.linearTexture,
-            depth,
-            stencil
-        );
+        initializeBuffers();
         isDirty = false;
     }
+}
+
+void FramebufferRenderer::initializeBuffers() {
+    framebuffers = ES3Utils::buildShaderPasses(width, height, shaders);
+
+    ES3Utils::deleteFramebuffer(std::move(framebuffer));
+    framebuffer = ES3Utils::createFramebuffer(
+        width,
+        height,
+        shaders.linearTexture,
+        depth,
+        stencil
+    );
 }
 
 uintptr_t FramebufferRenderer::getTexture() {
@@ -59,9 +72,11 @@ void FramebufferRenderer::setPixelFormat(int pixelFormat) {
 }
 
 void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
-    this->width = width;
-    this->height = height;
-    isDirty = true;
+    if (this->width != width || this->height != height) {
+        this->width = width;
+        this->height = height;
+        isDirty = true;
+    }
 }
 
 bool FramebufferRenderer::rendersInVideoCallback() {
@@ -69,8 +84,10 @@ bool FramebufferRenderer::rendersInVideoCallback() {
 }
 
 void FramebufferRenderer::setShaders(ShaderManager::Chain shaders) {
-    this->shaders = shaders;
-    isDirty = true;
+    if (shaders != this->shaders) {
+        this->shaders = shaders;
+        isDirty = true;
+    }
 }
 
 Renderer::PassData FramebufferRenderer::getPassData(unsigned int layer) {
