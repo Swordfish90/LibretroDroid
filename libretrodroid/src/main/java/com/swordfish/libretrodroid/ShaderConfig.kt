@@ -36,6 +36,7 @@ sealed interface ShaderConfig {
 
     data class CUT3(
         val sharpnessBias: Float = 1.0f,
+        val sharpnessMin: Float = 0.0f,
         val sharpnessMax: Float = 1.0f,
     ) : ShaderConfig
 }

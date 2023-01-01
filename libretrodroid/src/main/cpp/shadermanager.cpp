@@ -438,6 +438,7 @@ const std::string ShaderManager::cutUpscaleFragment =
 const std::unordered_map<std::string, std::string> ShaderManager::cut3UpscaleParams = {
     { "SHARPNESS_BIAS", "2.0" },
     { "SHARPNESS_MAX", "1.0" },
+    { "SHARPNESS_MIN", "0.0" },
     { "USE_FAST_LUMA", "0" }
 };
 
@@ -471,7 +472,6 @@ const std::string ShaderManager::cut3UpscalePass0Vertex =
     "varying HIGHP vec2 c11;\n"
     "varying HIGHP vec2 c13;\n"
     "varying HIGHP vec2 c14;\n"
-    "varying lowp float displaySharpness;\n"
     "\n"
     "void main() {\n"
     "  coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
@@ -488,7 +488,6 @@ const std::string ShaderManager::cut3UpscalePass0Vertex =
     "  c11 = (screenCoords + vec2(+2.0, +1.0)) / textureSize;\n"
     "  c13 = (screenCoords + vec2(+0.0, +2.0)) / textureSize;\n"
     "  c14 = (screenCoords + vec2(+1.0, +2.0)) / textureSize;\n"
-    "  displaySharpness = SHARPNESS_MAX * (0.5 - 0.5 / max(screenDensity, 1.0));\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
@@ -510,7 +509,7 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "#define MIN_EDGE_1 0.02\n"
     "#define EDGE_1_THRESHOLD 2.0\n"
     "#define MIN_EDGE_2 0.02\n"
-    "#define EDGE_2_THRESHOLD 3.0\n"
+    "#define EDGE_2_THRESHOLD 4.0\n"
     "\n"
     "varying HIGHP vec2 screenCoords;\n"
     "varying HIGHP vec2 coords;\n"
@@ -526,8 +525,6 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "varying HIGHP vec2 c11;\n"
     "varying HIGHP vec2 c13;\n"
     "varying HIGHP vec2 c14;\n"
-    "\n"
-    "varying lowp float displaySharpness;\n"
     "\n"
     "lowp float fastLuma(lowp vec3 v) {\n"
     "  return v.g;\n"
@@ -564,7 +561,6 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "  lowp vec2 mmLeft = minMax(left);\n"
     "  lowp vec2 mmMain = minMax(main);\n"
     "  lowp vec2 mmRight = minMax(right);\n"
-//    "  lowp float diff1 = max(min(maxDelta(mmMain, mmLeft), maxDelta(mmMain, mmRight)), max(maxDelta(mmLeft), maxDelta(mmRight)));\n"
     "  lowp float diff1 = min(maxDelta(mmMain, mmLeft), maxDelta(mmMain, mmRight));\n"
     "  lowp float diff2 = minDelta(mmLeft, mmRight);\n"
     "  return step(EDGE_2_THRESHOLD * diff1 + MIN_EDGE_2, diff2);\n"
@@ -575,7 +571,6 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "lowp float pack(lowp vec3 values) {\n"
     "  return dot(values, vec3(4.0, 16.0, 64.0));\n"
     "}\n"
-    "\n"
     "\n"
     "void main() {\n"
     "  lowp vec3 t1 = texture2D(texture, c1).rgb;\n"
@@ -659,7 +654,7 @@ const std::string ShaderManager::cut3UpscalePass1Vertex =
     "varying HIGHP vec2 c6;\n"
     "varying HIGHP vec2 c9;\n"
     "varying HIGHP vec2 c10;\n"
-    "varying lowp float displaySharpness;\n"
+    "varying lowp float deltaSharpness;\n"
     "\n"
     "void main() {\n"
     "  coords = vec2(vCoordinate.x, mix(vCoordinate.y, 1.0 - vCoordinate.y, vFlipY)) * 1.0001;\n"
@@ -670,7 +665,7 @@ const std::string ShaderManager::cut3UpscalePass1Vertex =
     "  c10 = (screenCoords + vec2(+1.0, +1.0)) / textureSize;\n"
     "  passCoords = vec2(c5.x, mix(c5.y, 1.0 - c5.y, vFlipY));\n"
 
-    "  displaySharpness = SHARPNESS_MAX * (0.5 - 0.5 / max(screenDensity, 1.0));\n"
+    "  deltaSharpness = max(0.0, SHARPNESS_MAX * (0.5 - 0.5 / max(screenDensity, 1.0)) - 0.5 * SHARPNESS_MIN);\n"
     "  gl_Position = vViewModel * vPosition;\n"
     "}\n";
 
@@ -697,7 +692,7 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "varying HIGHP vec2 c6;\n"
     "varying HIGHP vec2 c9;\n"
     "varying HIGHP vec2 c10;\n"
-    "varying lowp float displaySharpness;\n"
+    "varying lowp float deltaSharpness;\n"
     "\n"
     "lowp float fastLuma(lowp vec3 v) {\n"
     "  return v.g;\n"
@@ -721,7 +716,7 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "}\n"
     "lowp float sharpness(lowp float l1, lowp float l2) {\n"
     "  lowp float lumaDiff = abs(l1 - l2);\n"
-    "  lowp float sharpness = displaySharpness * min(lumaDiff * SHARPNESS_BIAS, 1.0);\n"
+    "  lowp float sharpness = 0.5 * SHARPNESS_MIN + deltaSharpness * min(lumaDiff * SHARPNESS_BIAS, 1.0);\n"
     "  return sharpness;\n"
     "}\n"
     "lowp float sharpness(lowp vec3 c1, lowp vec3 c2) {\n"
@@ -805,15 +800,20 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "  lowp float maxAlpha = 0.0;\n"
     "  lowp vec3 edges = vec3(0.0);\n"
     "\n"
-    "  lowp float w05_14 = d05_14 * aaWeight(pxCoords, vec3(+2.0, -1.0, +0.0), sharpness(t9, t10));\n"
-    "  lowp float w02_09 = d02_09 * aaWeight(pxCoords, vec3(+2.0, +1.0, -1.0), sharpness(t5, t6));\n"
-    "  lowp float w01_10 = d01_10 * aaWeight(pxCoords, vec3(+2.0, -1.0, -1.0), sharpness(t5, t6));\n"
-    "  lowp float w06_13 = d06_13 * aaWeight(pxCoords, vec3(+2.0, +1.0, -2.0), sharpness(t9, t10));\n"
+    "  lowp float s09_10 = sharpness(t9, t10);\n"
+    "  lowp float s05_06 = sharpness(t5, t6);\n"
+    "  lowp float s06_10 = sharpness(t6, t10);\n"
+    "  lowp float s05_09 = sharpness(t5, t9);\n"
     "\n"
-    "  lowp float w05_11 = d05_11 * aaWeight(pxCoords, vec3(-1.0, +2.0, +0.0), sharpness(t6, t10));\n"
-    "  lowp float w07_09 = d07_09 * aaWeight(pxCoords, vec3(+1.0, +2.0, -2.0), sharpness(t6, t10));\n"
-    "  lowp float w04_10 = d04_10 * aaWeight(pxCoords, vec3(-1.0, +2.0, -1.0), sharpness(t5, t9));\n"
-    "  lowp float w06_08 = d06_08 * aaWeight(pxCoords, vec3(+1.0, +2.0, -1.0), sharpness(t5, t9));\n"
+    "  lowp float w05_14 = d05_14 * aaWeight(pxCoords, vec3(+2.0, -1.0, +0.0), s09_10);\n"
+    "  lowp float w02_09 = d02_09 * aaWeight(pxCoords, vec3(+2.0, +1.0, -1.0), s05_06);\n"
+    "  lowp float w01_10 = d01_10 * aaWeight(pxCoords, vec3(+2.0, -1.0, -1.0), s05_06);\n"
+    "  lowp float w06_13 = d06_13 * aaWeight(pxCoords, vec3(+2.0, +1.0, -2.0), s09_10);\n"
+    "\n"
+    "  lowp float w05_11 = d05_11 * aaWeight(pxCoords, vec3(-1.0, +2.0, +0.0), s06_10);\n"
+    "  lowp float w07_09 = d07_09 * aaWeight(pxCoords, vec3(+1.0, +2.0, -2.0), s06_10);\n"
+    "  lowp float w04_10 = d04_10 * aaWeight(pxCoords, vec3(-1.0, +2.0, -1.0), s05_09);\n"
+    "  lowp float w06_08 = d06_08 * aaWeight(pxCoords, vec3(+1.0, +2.0, -1.0), s05_09);\n"
     "\n"
     "  lowp float wt05 = w05_14 + w05_11;\n"
     "  lowp float wt09 = w02_09 + w07_09;\n"
