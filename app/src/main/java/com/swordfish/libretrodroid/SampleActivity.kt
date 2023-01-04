@@ -62,6 +62,7 @@ class SampleActivity : AppCompatActivity() {
 //            coreFilePath = "gambatte_libretro_android.so"
 //            coreFilePath = "snes9x_libretro_android.so"
 //            coreFilePath = "libppsspp_libretro_android.so"
+//            coreFilePath = "libmupen64plus_next_gles3_libretro_android.so"
 //            coreFilePath = "libpcsx_rearmed_libretro_android.so"
 
             /*
@@ -77,6 +78,7 @@ class SampleActivity : AppCompatActivity() {
 //            gameFilePath = "/sdcard/Roms Test/Doom.gba"
 //            gameFilePath = "/sdcard/Roms/psp/Shin Megami Tensei - Persona 3 Portable (USA) (PSP) (PSN).iso"
 //            gameFilePath = "/sdcard/Roms/psp/MediEvil Resurrection.cso"
+//            gameFilePath = "/sdcard/Roms/psp/God of War - Chains of Olympus (USA).iso"
 //            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
 //            gameFilePath = "/sdcard/Roms Test/Final Fantasy IV Advance.gba"
 //            gameFilePath = "/sdcard/Roms/psx/Quake II.pbp"
@@ -84,6 +86,7 @@ class SampleActivity : AppCompatActivity() {
 //            gameFilePath = "/sdcard/Roms Test/Chrono Trigger.smc"
 //            gameFilePath = "/sdcard/Roms/psx/Final Fantasy Tactics.pbp"
 //            gameFilePath = "/sdcard/Roms/psx/Castlevania - Symphony of the Night.pbp"
+//            gameFilePath = "/sdcard/Roms/n64/Super Mario 64/Super Mario 64.n64"
 
             /*
              * Direct ROM bytes to load.
@@ -122,7 +125,7 @@ class SampleActivity : AppCompatActivity() {
 //            shader = ShaderConfig.CUT3
 //            shader = ShaderConfig.Default
 //            shader = ShaderConfig.Sharp
-            shader = ShaderConfig.CUT3(2.0f, 0.8f)
+            shader = ShaderConfig.CUT3(1.0f, 0.0f, 0.0f)
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
@@ -136,7 +139,7 @@ class SampleActivity : AppCompatActivity() {
 
         lifecycle.addObserver(retroView)
 
-        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(2.0f, 0.8f))
+//        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(1.5f, 0.80f))
 
 //        fixedRateTimer(period = 4000L) {
 //            val newShader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
