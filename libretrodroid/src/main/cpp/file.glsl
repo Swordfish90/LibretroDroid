@@ -153,56 +153,54 @@ void triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10
   outColors[0] = pColors[0]; outColors[1] = pColors[1]; outColors[2] = pColors[0]; outColors[3] = pColors[2];
   weights = barycentric(pCoords, pxCoords);
 }
-
-void quadInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, out lowp vec3 pColors[4], out lowp vec3 weights) {
+void swap(inout lowp vec3 a, inout lowp vec3 b) {
+  lowp vec3 tmp = a;
+  a = b;
+  b = tmp;
+}
+void quadInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, out lowp vec3 outColors[4], out lowp vec3 outWeights) {
   lowp vec2 finalCoords;
 
   bool h0 = flags[1].x > 0.0;
   bool h1 = flags[1].y > 0.0;
+
   bool v0 = flags[2].x > 0.0;
   bool v1 = flags[2].y > 0.0;
 
-  // TODO FILIPPO... Flip axis and reduce branching
-  if (flags[0].z > 0.0) {
-    if (h0) {
-      if (pxCoords.y > 0.5) {
-        pColors[0] = t10; pColors[1] = t9, pColors[2] = t9, pColors[3] = t10;
-        finalCoords = vec2(pxCoords.x, 2.0 * (pxCoords.y - 0.5));
-      } else {
-        pColors[0] = t5; pColors[1] = t6, pColors[2] = t10, pColors[3] = t9;
-        finalCoords = vec2(pxCoords.x, 2.0 * pxCoords.y);
-      }
-    } else if (h1) {
-      if (pxCoords.y > 0.5) {
-        pColors[0] = t6; pColors[1] = t5, pColors[2] = t9, pColors[3] = t10;
-        finalCoords = vec2(pxCoords.x, 2.0 * (pxCoords.y - 0.5));
-      } else {
-        pColors[0] = t5; pColors[1] = t6, pColors[2] = t6, pColors[3] = t5;
-        finalCoords = vec2(pxCoords.x, 2.0 * pxCoords.y);
-      }
-    } else if (v0) {
-      if (pxCoords.x > 0.5) {
-        pColors[0] = t10; pColors[1] = t6, pColors[2] = t6, pColors[3] = t10;
-        finalCoords = vec2(2.0 * (pxCoords.x - 0.5), pxCoords.y);
-      } else {
-        pColors[0] = t5; pColors[1] = t10, pColors[2] = t9, pColors[3] = t6;
-        finalCoords = vec2(2.0 * pxCoords.x, pxCoords.y);
-      }
-    } else if (v1) {
-      if (pxCoords.x > 0.5) {
-        pColors[0] = t9; pColors[1] = t6, pColors[2] = t5, pColors[3] = t10;
-        finalCoords = vec2(2.0 * (pxCoords.x - 0.5), pxCoords.y);
-      } else {
-        pColors[0] = t5; pColors[1] = t9, pColors[2] = t9, pColors[3] = t5;
-        finalCoords = vec2(2.0 * pxCoords.x, pxCoords.y);
-      }
+  lowp vec3 a = t5;
+  lowp vec3 b = t6;
+  lowp vec3 c = t9;
+  lowp vec3 d = t10;
+
+  if (v0 || v1) {
+    h0 = v0;
+    h1 = v1;
+    a = t9; b = t5; c = t10; d = t6;
+    pxCoords = vec2(1.0 - pxCoords.y, pxCoords.x);
+  }
+
+  if (h0) {
+    if (pxCoords.y > 0.5) {
+      outColors[0] = d; outColors[1] = c; outColors[2] = c; outColors[3] = d;
+      finalCoords = vec2(pxCoords.x, 2.0 * (pxCoords.y - 0.5));
+    } else {
+      outColors[0] = a; outColors[1] = b; outColors[2] = d; outColors[3] = c;
+      finalCoords = vec2(pxCoords.x, 2.0 * pxCoords.y);
+    }
+  } else if (h1) {
+    if (pxCoords.y > 0.5) {
+      outColors[0] = b; outColors[1] = a; outColors[2] = c; outColors[3] = d;
+      finalCoords = vec2(pxCoords.x, 2.0 * (pxCoords.y - 0.5));
+    } else {
+      outColors[0] = a; outColors[1] = b; outColors[2] = b; outColors[3] = a;
+      finalCoords = vec2(pxCoords.x, 2.0 * pxCoords.y);
     }
   } else {
-    pColors[0] = t5; pColors[1] = t6, pColors[2] = t9, pColors[3] = t10;
+    outColors[0] = a; outColors[1] = b, outColors[2] = c, outColors[3] = d;
     finalCoords = pxCoords;
   }
 
-  weights = vec3(finalCoords.x, finalCoords.x, finalCoords.y);
+  outWeights = vec3(finalCoords.x, finalCoords.x, finalCoords.y);
 }
 
 void main() {
