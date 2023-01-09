@@ -125,7 +125,7 @@ class SampleActivity : AppCompatActivity() {
 //            shader = ShaderConfig.CUT3
 //            shader = ShaderConfig.Default
 //            shader = ShaderConfig.Sharp
-            shader = ShaderConfig.CUT3(1.0f, 0.2f, 1.4f)
+            shader = ShaderConfig.CUT3(1.0f, 0.0f, 1.0f)
 //            shader = ShaderConfig.CUT3(1.0f, 0.3f, 1.5f)
 
             /* Rumble events enabled */
@@ -140,8 +140,8 @@ class SampleActivity : AppCompatActivity() {
 
         lifecycle.addObserver(retroView)
 
-//        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(1.5f, 0.80f))
-
+//        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(2.0f, 0.2f, 1.0f))
+//
 //        fixedRateTimer(period = 4000L) {
 //            val newShader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
 //            retroView.shader = newShader

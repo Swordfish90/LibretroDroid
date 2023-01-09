@@ -15,7 +15,7 @@ uniform mediump float screenDensity;
 #define MIN_EDGE_1 0.02
 #define EDGE_1_THRESHOLD 2.0
 #define MIN_EDGE_2 0.02
-#define EDGE_2_THRESHOLD 4.0
+#define EDGE_2_THRESHOLD 3.0
 
 varying HIGHP vec2 screenCoords;
 varying HIGHP vec2 coords;
@@ -109,14 +109,14 @@ void main() {
   lowp float d05_10 = hasDiagonal(l5, l10, l6, l9);
   lowp float d06_09 = hasDiagonal(l6, l9, l5, l10);
 
-//      // Saddle fix
-//      if (isSaddle(l5, l10, l6, l9)) {
-//        lowp float average = (l1 + l2 + l4 + l7 + l8 + l11 + l13 + l14) / 8.0;
-//        lowp float diff1 = abs(mix(l5, l10, 0.5) - average);
-//        lowp float diff2 = abs(mix(l6, l9, 0.5) - average);
-//        d05_10 = step(diff2 + MIN_SADDLE, diff1);
-//        d06_09 = step(diff1 + MIN_SADDLE, diff2);
-//      }
+  // Saddle fix
+  if (isSaddle(l5, l10, l6, l9)) {
+    lowp float average = (l1 + l2 + l4 + l7 + l8 + l11 + l13 + l14) / 8.0;
+    lowp float diff1 = abs(mix(l5, l10, 0.5) - average);
+    lowp float diff2 = abs(mix(l6, l9, 0.5) - average);
+    d05_10 = step(diff2 + MIN_SADDLE, diff1);
+    d06_09 = step(diff1 + MIN_SADDLE, diff2);
+  }
 
   // Vertical diagonals
   lowp float d01_10 = hasDiagonal(vec2(l5, l9), vec2(l1, l10), vec2(l2, l6));
@@ -130,6 +130,7 @@ void main() {
   lowp float d05_11 = hasDiagonal(vec2(l9, l10), vec2(l5, l11), vec2(l6, l7));
   lowp float d07_09 = hasDiagonal(vec2(l10, l11), vec2(l7, l9), vec2(l5, l6));
 
+  lowp float originalDiagonal = max(d05_10, d06_09);
   // Main diagonals again
   d05_10 = clamp(d05_10 + d01_10 + d05_14 + d05_11 + d04_10, 0.0, 1.0);
   d06_09 = clamp(d06_09 + d02_09 + d06_13 + d06_08 + d07_09, 0.0, 1.0);
@@ -137,12 +138,12 @@ void main() {
   lowp vec4 final = vec4(0.0);
   if (d05_10 > 0.0 && d06_09 < EPSILON) {
     final.x = pack(vec3(1.0, 0.0, 0.0));
-    final.y = pack(vec3(d01_10, d05_14, 0.0));
-    final.z = pack(vec3(d04_10, d05_11, 0.0));
+    final.y = pack(vec3(d01_10, d05_14, originalDiagonal));
+    final.z = pack(vec3(d04_10, d05_11, d05_11));
   } else if (d06_09 > 0.0 && d05_10 < EPSILON) {
     final.x = pack(vec3(0.0, 1.0, 0.0));
-    final.y = pack(vec3(d02_09, d06_13, 0.0));
-    final.z = pack(vec3(d06_08, d07_09, 0.0));
+    final.y = pack(vec3(d02_09, d06_13, originalDiagonal));
+    final.z = pack(vec3(d06_08, d07_09, d06_08));
   } else if (d04_10 > 0.0 && d07_09 > 0.0) {
     final.x = pack(vec3(0.0, 0.0, 1.0));
     final.y = pack(vec3(1.0, 0.0, 0.0));
@@ -157,4 +158,4 @@ void main() {
     final.z = pack(vec3(0.0, 1.0, 0.0));
   }
   gl_FragColor = final / 255.0;
-};
+}

@@ -35,7 +35,6 @@ lowp float luma(lowp vec3 v) {
 }
 #endif
 
-// Interpolation
 lowp float linearStep(lowp float edge0, lowp float edge1, lowp float t) {
   return clamp((t - edge0) / (edge1 - edge0), 0.0, 1.0);
 }
@@ -56,21 +55,24 @@ lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t) {
 lowp vec3 unpack(lowp float values) {
   return vec3(floor(mod(values / 4.0, 4.0)), floor(mod(values / 16.0, 4.0)), floor(mod(values / 64.0, 4.0)));
 }
-lowp vec3 barycentric(lowp vec2 a, lowp vec2 b, lowp vec2 c, lowp vec2 p, lowp float sharpness) {
-  lowp float denom = 1.0 / ((b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y));
-  float l0 = denom * ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y));
-  float l1 = denom * ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y));
-  l0 = sharpSmooth(l0, sharpness);
-  return vec3(l0, l1, 1.0 - l0 - l1);
+lowp float intersection(lowp vec2 a, lowp vec2 b, lowp vec2 c, lowp vec2 d) {
+  lowp float ydc = d.y - c.y;
+  lowp float xdc = d.x - c.x;
+  lowp float num = (a.y - c.y) * xdc - (a.x - c.x) * ydc;
+  lowp float denom = (b.x - a.x) * ydc - (b.y - a.y) * xdc;
+  return num / denom;
+}
+lowp vec3 barycentric(lowp vec2 ps[3], lowp vec2 p) {
+  lowp float ri1 = intersection(ps[0], ps[1], p + ps[1] - ps[2], p + ps[2] - ps[1]);
+  lowp vec2 ai1 = mix(ps[0], ps[1], ri1);
+
+  lowp float ri2 = intersection(ps[0], ps[2], p + ps[1] - ps[2], p + ps[2] - ps[1]);
+  lowp vec2 ai2 = mix(ps[0], ps[2], ri2);
+
+  return vec3(ri1, ri2, distance(p, ai1) / (distance(p, ai1) + distance(p, ai2)));
 }
 
-lowp vec3 quadBilinear(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, lowp vec2 p, lowp float sharpness) {
-  lowp float x = sharpSmooth(p.x, sharpness);
-  lowp float y = sharpSmooth(p.y, sharpness);
-  return mix(mix(a, b, x), mix(c, d, x), y);
-}
-
-lowp vec3 triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, lowp float sharpness) {
+void triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, out lowp vec3 outColors[4], out lowp vec3 weights) {
   lowp vec2 pCoords[3];
   lowp vec3 pColors[3];
 
@@ -79,12 +81,14 @@ lowp vec3 triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec
   lowp vec3 c1 = t9;
   lowp vec3 d1 = t10;
 
-  lowp bool du = flags[1].x > 0.0;
-  lowp bool dd = flags[1].y > 0.0;
-  lowp bool dl = flags[2].x > 0.0;
-  lowp bool dr = flags[2].y > 0.0;
+  bool du = flags[1].x > 0.0;
+  bool dd = flags[1].y > 0.0;
+  bool dl = flags[2].x > 0.0;
+  bool dr = flags[2].y > 0.0;
 
-  if (flags[0].y > 0.0) {
+  bool negative = flags[0].y > 0.0;
+
+  if (negative) {
     pxCoords = vec2(1.0 - pxCoords.x, pxCoords.y);
     a1 = t6; b1 = t5; c1 = t10; d1 = t9;
     bool tmp = dl; dl = dr; dr = tmp; // TODO FILIPPO Maybe move the vertex shader
@@ -95,7 +99,9 @@ lowp vec3 triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec
   lowp vec3 c = c1;
   lowp vec3 d = d1;
 
-  if (pxCoords.x > pxCoords.y) {
+  bool inverted = pxCoords.x > pxCoords.y;
+
+  if (inverted) {
     pxCoords = vec2(pxCoords.y, pxCoords.x);
     b = c1; c = b1;
     dd = dr; dl = du;
@@ -126,23 +132,37 @@ lowp vec3 triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec
       pColors[0] = a; pColors[1] = d; pColors[2] = d;
     }
   } else {
-    pCoords[0] = vec2(0.0, 1.0); pCoords[1] = vec2(0.0, 0.0); pCoords[2] = vec2(1.0, 1.0);
-    pColors[0] = c; pColors[1] = a; pColors[2] = d;
+    if (flags[1].z > 0.0) { // This interpolation only works with triangles which where originally half a square
+      pCoords[0] = vec2(0.0, 1.0); pCoords[1] = vec2(0.0, 0.0); pCoords[2] = vec2(1.0, 1.0);
+      pColors[0] = c; pColors[1] = a; pColors[2] = d;
+    } else if (flags[1].x > 0.0) {
+      pCoords[0] = vec2(1.0, 1.0); pCoords[1] = vec2(0.0, 1.0); pCoords[2] = vec2(0.0, 0.0);
+      pColors[0] = d; pColors[1] = c; pColors[2] = a;
+    } else if (flags[1].y > 0.0) {
+      pCoords[0] = vec2(0.0, 0.0); pCoords[1] = vec2(1.0, 1.0); pCoords[2] = vec2(0.0, 1.0); 
+      pColors[0] = a; pColors[1] = d; pColors[2] = c;
+    } else if (flags[2].z > 0.0) {
+      pCoords[0] = vec2(0.0, 0.0); pCoords[1] = vec2(1.0, 1.0); pCoords[2] = vec2(0.0, 1.0); 
+      pColors[0] = a; pColors[1] = d; pColors[2] = c;
+    } else {
+      pCoords[0] = vec2(1.0, 1.0); pCoords[1] = vec2(0.0, 1.0); pCoords[2] = vec2(0.0, 0.0);
+      pColors[0] = d; pColors[1] = c; pColors[2] = a;
+    }
   }
 
-  lowp vec3 weights = barycentric(pCoords[0], pCoords[1], pCoords[2], pxCoords, sharpness);
-  return weights.x * pColors[0] + weights.y * pColors[1] + weights.z * pColors[2];
+  outColors[0] = pColors[0]; outColors[1] = pColors[1]; outColors[2] = pColors[0]; outColors[3] = pColors[2];
+  weights = barycentric(pCoords, pxCoords);
 }
 
-lowp vec3 quadInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, lowp float sharpness) {
-  lowp vec3 pColors[4];
+void quadInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, out lowp vec3 pColors[4], out lowp vec3 weights) {
   lowp vec2 finalCoords;
 
-  lowp bool h0 = flags[1].x > 0.0;
-  lowp bool h1 = flags[1].y > 0.0;
-  lowp bool v0 = flags[2].x > 0.0;
-  lowp bool v1 = flags[2].y > 0.0;
+  bool h0 = flags[1].x > 0.0;
+  bool h1 = flags[1].y > 0.0;
+  bool v0 = flags[2].x > 0.0;
+  bool v1 = flags[2].y > 0.0;
 
+  // TODO FILIPPO... Flip axis and reduce branching
   if (flags[0].z > 0.0) {
     if (h0) {
       if (pxCoords.y > 0.5) {
@@ -182,7 +202,7 @@ lowp vec3 quadInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t1
     finalCoords = pxCoords;
   }
 
-  return quadBilinear(pColors[0], pColors[1], pColors[2], pColors[3], finalCoords, sharpness);
+  weights = vec3(finalCoords.x, finalCoords.x, finalCoords.y);
 }
 
 void main() {
@@ -199,14 +219,16 @@ void main() {
 
   lowp vec2 pxCoords = fract(screenCoords);
 
-  lowp vec3 final = vec3(0.0);
+  lowp vec3 colors[4];
+  lowp vec3 weights;
 
   bool triangulate = flags[0].x > 0.0 || flags[0].y > 0.0;
   if (triangulate) {
-    final = triangleInterpolate(t5, t6, t9, t10, flags, pxCoords, 0.5);
+    triangleInterpolate(t5, t6, t9, t10, flags, pxCoords, colors, weights);
   } else {
-    final = quadInterpolate(t5, t6, t9, t10, flags, pxCoords, 0.5);
+    quadInterpolate(t5, t6, t9, t10, flags, pxCoords, colors, weights);
   }
+  lowp vec3 final = blend(blend(colors[0], colors[1], weights.x), blend(colors[2], colors[3], weights.y), weights.z);
 
   gl_FragColor = vec4(final, 1.0);
 }
