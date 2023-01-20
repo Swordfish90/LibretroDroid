@@ -55,178 +55,132 @@ lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t) {
 lowp vec3 unpack(lowp float values) {
   return vec3(floor(mod(values / 4.0, 4.0)), floor(mod(values / 16.0, 4.0)), floor(mod(values / 64.0, 4.0)));
 }
-lowp float intersection(lowp vec2 a, lowp vec2 b, lowp vec2 c, lowp vec2 d) {
-  lowp float ydc = d.y - c.y;
-  lowp float xdc = d.x - c.x;
-  lowp float num = (a.y - c.y) * xdc - (a.x - c.x) * ydc;
-  lowp float denom = (b.x - a.x) * ydc - (b.y - a.y) * xdc;
-  return num / denom;
+lowp vec3 triangle(lowp vec2 pxCoords) {
+  lowp vec3 ws = vec3(0.0);
+  ws.x = pxCoords.y - pxCoords.x;
+  ws.y = pxCoords.x + (1.0 - pxCoords.y);
+  ws.z = (pxCoords.y - ws.x) / (1.0 - ws.x);
+  return ws;
 }
-lowp vec3 barycentric(lowp vec2 ps[3], lowp vec2 p) {
-  lowp float ri1 = intersection(ps[0], ps[1], p + ps[1] - ps[2], p + ps[2] - ps[1]);
-  lowp vec2 ai1 = mix(ps[0], ps[1], ri1);
-
-  lowp float ri2 = intersection(ps[0], ps[2], p + ps[1] - ps[2], p + ps[2] - ps[1]);
-  lowp vec2 ai2 = mix(ps[0], ps[2], ri2);
-
-  return vec3(ri1, ri2, distance(p, ai1) / (distance(p, ai1) + distance(p, ai2)));
-}
-
-void triangleInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, out lowp vec3 outColors[4], out lowp vec3 weights) {
-  lowp vec2 pCoords[3];
-  lowp vec3 pColors[3];
-
-  lowp vec3 a1 = t5;
-  lowp vec3 b1 = t6;
-  lowp vec3 c1 = t9;
-  lowp vec3 d1 = t10;
-
-  bool du = flags[1].x > 0.0;
-  bool dd = flags[1].y > 0.0;
-  bool dl = flags[2].x > 0.0;
-  bool dr = flags[2].y > 0.0;
-
-  bool negative = flags[0].y > 0.0;
-
-  if (negative) {
-    pxCoords = vec2(1.0 - pxCoords.x, pxCoords.y);
-    a1 = t6; b1 = t5; c1 = t10; d1 = t9;
-    bool tmp = dl; dl = dr; dr = tmp; // TODO FILIPPO Maybe move the vertex shader
-  }
-
-  lowp vec3 a = a1;
-  lowp vec3 b = b1;
-  lowp vec3 c = c1;
-  lowp vec3 d = d1;
-
-  bool inverted = pxCoords.x > pxCoords.y;
-
-  if (inverted) {
-    pxCoords = vec2(pxCoords.y, pxCoords.x);
-    b = c1; c = b1;
-    dd = dr; dl = du;
-  }
-
-  if (dd && dl) {
-    if (pxCoords.y > 0.5 + pxCoords.x) {
-      pCoords[0] = vec2(0.0, 0.5); pCoords[1] = vec2(0.0, 1.0); pCoords[2] = vec2(0.5, 1.0);
-      pColors[0] = d; pColors[1] = c; pColors[2] = a;
-    } else {
-      pCoords[0] = vec2(0.0, 0.0); pCoords[1] = vec2(0.0, 1.0); pCoords[2] = vec2(1.0, 1.0);
-      pColors[0] = a; pColors[1] = a; pColors[2] = d; // TODO FILIPPO... La a e' una porcata
-    }
-  } else if (dd) {
-    if (pxCoords.y > 2.0 * pxCoords.x) {
-      pCoords[0] = vec2(0.0, 1.0); pCoords[1] = vec2(0.0, 0.0); pCoords[2] = vec2(0.5, 1.0);
-      pColors[0] = c; pColors[1] = a; pColors[2] = a;
-    } else {
-      pCoords[0] = vec2(1.0, 1.0); pCoords[1] = vec2(0.0, 0.0); pCoords[2] = vec2(0.5, 1.0);
-      pColors[0] = d; pColors[1] = a; pColors[2] = a;
-    }
-  } else if (dl) {
-    if (pxCoords.y > 0.5 * pxCoords.x + 0.5) {
-      pCoords[0] = vec2(0.0, 1.0); pCoords[1] = vec2(0.0, 0.5); pCoords[2] = vec2(1.0, 1.0);
-      pColors[0] = c; pColors[1] = d; pColors[2] = d;
-    } else {
-      pCoords[0] = vec2(0.0, 0.0); pCoords[1] = vec2(0.0, 0.5); pCoords[2] = vec2(1.0, 1.0);
-      pColors[0] = a; pColors[1] = d; pColors[2] = d;
-    }
-  } else {
-    if (flags[1].z > 0.0) { // This interpolation only works with triangles which where originally half a square
-      pCoords[0] = vec2(0.0, 1.0); pCoords[1] = vec2(0.0, 0.0); pCoords[2] = vec2(1.0, 1.0);
-      pColors[0] = c; pColors[1] = a; pColors[2] = d;
-    } else if (flags[1].x > 0.0) {
-      pCoords[0] = vec2(1.0, 1.0); pCoords[1] = vec2(0.0, 1.0); pCoords[2] = vec2(0.0, 0.0);
-      pColors[0] = d; pColors[1] = c; pColors[2] = a;
-    } else if (flags[1].y > 0.0) {
-      pCoords[0] = vec2(0.0, 0.0); pCoords[1] = vec2(1.0, 1.0); pCoords[2] = vec2(0.0, 1.0); 
-      pColors[0] = a; pColors[1] = d; pColors[2] = c;
-    } else if (flags[2].z > 0.0) {
-      pCoords[0] = vec2(0.0, 0.0); pCoords[1] = vec2(1.0, 1.0); pCoords[2] = vec2(0.0, 1.0); 
-      pColors[0] = a; pColors[1] = d; pColors[2] = c;
-    } else {
-      pCoords[0] = vec2(1.0, 1.0); pCoords[1] = vec2(0.0, 1.0); pCoords[2] = vec2(0.0, 0.0);
-      pColors[0] = d; pColors[1] = c; pColors[2] = a;
-    }
-  }
-
-  outColors[0] = pColors[0]; outColors[1] = pColors[1]; outColors[2] = pColors[0]; outColors[3] = pColors[2];
-  weights = barycentric(pCoords, pxCoords);
+lowp vec3 quad(lowp vec2 pxCoords) {
+  return vec3(pxCoords.x, pxCoords.x, pxCoords.y);
 }
 void swap(inout lowp vec3 a, inout lowp vec3 b) {
   lowp vec3 tmp = a;
   a = b;
   b = tmp;
 }
-void quadInterpolate(lowp vec3 t5, lowp vec3 t6, lowp vec3 t9, lowp vec3 t10, lowp vec3 flags[3], lowp vec2 pxCoords, out lowp vec3 outColors[4], out lowp vec3 outWeights) {
-  lowp vec2 finalCoords;
-
-  bool h0 = flags[1].x > 0.0;
-  bool h1 = flags[1].y > 0.0;
-
-  bool v0 = flags[2].x > 0.0;
-  bool v1 = flags[2].y > 0.0;
-
-  lowp vec3 a = t5;
-  lowp vec3 b = t6;
-  lowp vec3 c = t9;
-  lowp vec3 d = t10;
-
-  if (v0 || v1) {
-    h0 = v0;
-    h1 = v1;
-    a = t9; b = t5; c = t10; d = t6;
-    pxCoords = vec2(1.0 - pxCoords.y, pxCoords.x);
-  }
-
-  if (h0) {
-    if (pxCoords.y > 0.5) {
-      outColors[0] = d; outColors[1] = c; outColors[2] = c; outColors[3] = d;
-      finalCoords = vec2(pxCoords.x, 2.0 * (pxCoords.y - 0.5));
-    } else {
-      outColors[0] = a; outColors[1] = b; outColors[2] = d; outColors[3] = c;
-      finalCoords = vec2(pxCoords.x, 2.0 * pxCoords.y);
-    }
-  } else if (h1) {
-    if (pxCoords.y > 0.5) {
-      outColors[0] = b; outColors[1] = a; outColors[2] = c; outColors[3] = d;
-      finalCoords = vec2(pxCoords.x, 2.0 * (pxCoords.y - 0.5));
-    } else {
-      outColors[0] = a; outColors[1] = b; outColors[2] = b; outColors[3] = a;
-      finalCoords = vec2(pxCoords.x, 2.0 * pxCoords.y);
-    }
-  } else {
-    outColors[0] = a; outColors[1] = b, outColors[2] = c, outColors[3] = d;
-    finalCoords = pxCoords;
-  }
-
-  outWeights = vec3(finalCoords.x, finalCoords.x, finalCoords.y);
+lowp vec3 pattern0(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, out vec3[4] cs, lowp vec2 pxCoords) {
+  cs[0] = a; cs[1] = b; cs[2] = c; cs[3] = d;
+  return quad(pxCoords);
 }
-
+lowp vec3 pattern1(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, out vec3[4] cs, lowp vec2 pxCoords) {
+  lowp vec3 result = vec3(0.0);
+  if (pxCoords.y > pxCoords.x) {
+    cs[0] = a; cs[1] = c; cs[2] = c; cs[3] = d;
+    result = triangle(pxCoords);
+  } else {
+    cs[0] = a; cs[1] = b; cs[2] = b; cs[3] = d;
+    result = triangle(pxCoords.yx);
+  }
+  return result;
+}
+lowp vec3 pattern2(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, out vec3[4] cs, lowp vec2 pxCoords) {
+  lowp vec3 result = vec3(0.0);
+  if (pxCoords.y > 2.0 * pxCoords.x) {
+    cs[0] = a; cs[1] = c; cs[2] = c; cs[3] = a;
+    result = triangle(vec2(pxCoords.x * 2.0, pxCoords.y));
+  } else {
+    cs[0] = a; cs[1] = b; cs[2] = a; cs[3] = d;
+    result = quad(vec2((pxCoords.x - 0.5 * pxCoords.y) / (1.0 - 0.5 * pxCoords.y), pxCoords.y));
+  }
+  return result;
+}
+lowp vec3 pattern3(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, out vec3[4] cs, lowp vec2 pxCoords) {
+  lowp vec3 result = vec3(0.0);
+  if (pxCoords.y > 2.0 * pxCoords.x) {
+    cs[0] = a; cs[1] = c; cs[2] = c; cs[3] = a;
+    result = triangle(vec2(pxCoords.x * 2.0, pxCoords.y));
+  } else if (pxCoords.y < 2.0 * pxCoords.x - 1.0) {
+    cs[0] = d; cs[1] = b; cs[2] = b; cs[3] = d;
+    result = triangle(vec2((1.0 - pxCoords.x) * 2.0, 1.0 - pxCoords.y));
+  } else {
+    cs[0] = a; cs[1] = d; cs[2] = a; cs[3] = d;
+    result = quad(vec2(2.0, 1.0) * (pxCoords - vec2(0.5 * pxCoords.y, 0.0)));
+  }
+  return result;
+}
+lowp vec3 pattern4(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, out vec3[4] cs, lowp vec2 pxCoords) {
+  lowp vec3 result = vec3(0.0);
+  if (pxCoords.x < 0.5) {
+    cs[0] = a; cs[1] = c; cs[2] = c; cs[3] = a;
+    result = quad(vec2(2.0 * pxCoords.x, pxCoords.y));
+  } else {
+    cs[0] = c; cs[1] = b; cs[2] = a; cs[3] = d;
+    result = quad(vec2(2.0 * (pxCoords.x - 0.5), pxCoords.y));
+  }
+  return result;
+}
+lowp vec3 pattern5(lowp vec3 a, lowp vec3 b, lowp vec3 c, lowp vec3 d, out vec3[4] cs, lowp vec2 pxCoords) {
+  lowp vec3 result = vec3(0.0);
+  if (pxCoords.y > pxCoords.x + 0.5) {
+    cs[0] = d; cs[1] = c; cs[2] = c; cs[3] = a;
+    result = triangle(vec2(2.0 * pxCoords.x, 2.0 * (pxCoords.y - 0.5)));
+  } else if (pxCoords.y > pxCoords.x) {
+    cs[0] = a; cs[1] = d; cs[2] = a; cs[3] = d;
+    result = triangle(pxCoords);
+  } else {
+    cs[0] = a; cs[1] = b; cs[2] = b; cs[3] = d;
+    result = triangle(pxCoords.yx);
+  }
+  return result;
+}
 void main() {
-  lowp vec3 t5 = texture2D(texture, c5).rgb;
-  lowp vec3 t6 = texture2D(texture, c6).rgb;
-  lowp vec3 t9 = texture2D(texture, c9).rgb;
-  lowp vec3 t10 = texture2D(texture, c10).rgb;
+  lowp vec3 a = texture2D(texture, c5).rgb;
+  lowp vec3 b = texture2D(texture, c6).rgb;
+  lowp vec3 c = texture2D(texture, c9).rgb;
+  lowp vec3 d = texture2D(texture, c10).rgb;
 
-  lowp vec4 flagsTexture = floor(texture2D(previousPass, passCoords) * 255.0 + 0.5);
-  lowp vec3 flags[3];
-  flags[0] = unpack(flagsTexture.x);
-  flags[1] = unpack(flagsTexture.y);
-  flags[2] = unpack(flagsTexture.z);
+  lowp vec2 flagsTexture = texture2D(previousPass, passCoords).rg;
+
+  int pattern = int(flagsTexture.x * 10.0);
+  lowp vec3 transform = unpack(floor(flagsTexture.y * 255.0 + 0.5));
 
   lowp vec2 pxCoords = fract(screenCoords);
 
-  lowp vec3 colors[4];
-  lowp vec3 weights;
-
-  bool triangulate = flags[0].x > 0.0 || flags[0].y > 0.0;
-  if (triangulate) {
-    triangleInterpolate(t5, t6, t9, t10, flags, pxCoords, colors, weights);
-  } else {
-    quadInterpolate(t5, t6, t9, t10, flags, pxCoords, colors, weights);
+  if (transform.x > 0.0) {
+    swap(a, b); swap(c, d);
+    pxCoords.x = 1.0 - pxCoords.x;
   }
-  lowp vec3 final = blend(blend(colors[0], colors[1], weights.x), blend(colors[2], colors[3], weights.y), weights.z);
+
+  if (transform.y > 0.0) {
+    swap(a, c); swap(b, d);
+    pxCoords.y = 1.0 - pxCoords.y;
+  }
+
+  if (transform.z > 0.0) {
+    swap(b, c);
+    pxCoords = pxCoords.yx;
+  }
+
+  lowp vec3 ws = vec3(0.0);
+  lowp vec3 cs[4];
+
+  if (pattern == 5) {
+    ws = pattern5(a, b, c, d, cs, pxCoords);
+  } else if (pattern == 4) {
+    ws = pattern4(a, b, c, d, cs, pxCoords);
+  } else if (pattern == 3) {
+    ws = pattern3(a, b, c, d, cs, pxCoords);
+  } else if (pattern == 2) {
+    ws = pattern2(a, b, c, d, cs, pxCoords);
+  } else if (pattern == 1) {
+    ws = pattern1(a, b, c, d, cs, pxCoords);
+  } else {
+    ws = pattern0(a, b, c, d, cs, pxCoords);
+  }
+
+  lowp vec3 final = blend(blend(cs[0], cs[1], ws.x), blend(cs[2], cs[3], ws.y), ws.z);
 
   gl_FragColor = vec4(final, 1.0);
 }

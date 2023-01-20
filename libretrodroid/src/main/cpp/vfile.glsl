@@ -130,24 +130,75 @@ void main() {
   lowp float d05_11 = hasDiagonal(vec2(l9, l10), vec2(l5, l11), vec2(l6, l7));
   lowp float d07_09 = hasDiagonal(vec2(l10, l11), vec2(l7, l9), vec2(l5, l6));
 
-  lowp float diagonal = max(d05_10, d06_09);
-  // Main diagonals again
-  d05_10 = clamp(d05_10 + d01_10 + d05_14 + d05_11 + d04_10, 0.0, 1.0);
-  d06_09 = clamp(d06_09 + d02_09 + d06_13 + d06_08 + d07_09, 0.0, 1.0);
-
   lowp vec4 final = vec4(0.0);
-  if (d05_10 > 0.0 && d06_09 < EPSILON) {
-    final.x = pack(vec3(1.0, 0.0, 0.0));
-    final.y = pack(vec3(d01_10, d05_14, diagonal));
-    final.z = pack(vec3(d04_10, d05_11, d05_11));
-  } else if (d06_09 > 0.0 && d05_10 < EPSILON) {
-    final.x = pack(vec3(0.0, 1.0, 0.0));
-    final.y = pack(vec3(d02_09, d06_13, diagonal));
-    final.z = pack(vec3(d06_08, d07_09, d06_08));
-  } else {
-    final.x = pack(vec3(0.0, 0.0, 0.0));
-    final.y = pack(vec3(min(d04_10, d07_09), min(d06_08, d05_11), 0.0));
-    final.z = pack(vec3(min(d01_10, d06_13), min(d02_09, d05_14), 0.0));
+
+  if (d02_09 > 0.0 && d06_08 > 0.0) {
+    final.x = 0.55;
+    final.y = pack(vec3(0.0, 1.0, 0.0));
+  } else if (d01_10 > 0.0 && d05_11 > 0.0) {
+    final.x = 0.55;
+    final.y = pack(vec3(0.0, 0.0, 1.0));
+  } else if (d06_13 > 0.0 && d07_09 > 0.0) {
+    final.x = 0.55;
+    final.y = pack(vec3(1.0, 0.0, 0.0));
+  } else if (d05_14 > 0.0 && d04_10 > 0.0) {
+    final.x = 0.55;
+    final.y = pack(vec3(0.0, 0.0, 0.0));
+  } else if (d05_11 > 0.0 && d06_08 > 0.0) {
+    final.x = 0.45;
+    final.y = pack(vec3(0.0, 0.0, 1.0));
+  } else if (d04_10 > 0.0 && d07_09 > 0.0) {
+    final.x = 0.45;
+    final.y = pack(vec3(0.0, 1.0, 1.0));
+  } else if (d05_14 > 0.0 && d02_09 > 0.0) {
+    final.x = 0.45;
+    final.y = pack(vec3(0.0, 0.0, 0.0));
+  } else if (d01_10 > 0.0 && d06_13 > 0.0) {
+    final.x = 0.45;
+    final.y = pack(vec3(1.0, 0.0, 0.0));
+  } else if (d05_11 > 0.0 && d04_10 > 0.0) {
+    final.x = 0.35;
+    final.y = pack(vec3(0.0, 0.0, 1.0));
+  } else if (d06_08 > 0.0 && d07_09 > 0.0) {
+    final.x = 0.35;
+    final.y = pack(vec3(1.0, 0.0, 1.0));
+  } else if (d01_10 > 0.0 && d05_14 > 0.0) {
+    final.x = 0.35;
+    final.y = pack(vec3(0.0, 0.0, 0.0));
+  } else if (d02_09 > 0.0 && d06_13 > 0.0) {
+    final.x = 0.35;
+    final.y = pack(vec3(1.0, 0.0, 0.0));
+  } else if (d04_10 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(1.0, 1.0, 1.0));
+  } else if (d06_13 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(1.0, 0.0, 0.0));
+  } else if (d05_11 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(0.0, 0.0, 1.0));
+  } else if (d05_14 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(0.0, 0.0, 0.0));
+  } else if (d07_09 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(0.0, 1.0, 1.0));
+  } else if (d01_10 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(1.0, 1.0, 0.0));
+  } else if (d06_08 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(1.0, 0.0, 1.0));
+  } else if (d02_09 > 0.0) {
+    final.x = 0.25;
+    final.y = pack(vec3(0.0, 1.0, 0.0));
+  } else if (d05_10 > 0.0) {
+    final.x = 0.15;
+    final.y = pack(vec3(0.0, 0.0, 0.0));
+  } else if (d06_09 > 0.0) {
+    final.x = 0.15;
+    final.y = pack(vec3(1.0, 0.0, 0.0));
   }
-  gl_FragColor = final / 255.0;
+
+  gl_FragColor = vec4(final.x, final.y / 255.0, 0.0, 1.0);
 }
