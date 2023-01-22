@@ -15,7 +15,7 @@ uniform mediump float screenDensity;
 #define MIN_EDGE_1 0.02
 #define EDGE_1_THRESHOLD 2.0
 #define MIN_EDGE_2 0.02
-#define EDGE_2_THRESHOLD 3.0
+#define EDGE_2_THRESHOLD 2.0
 
 varying HIGHP vec2 screenCoords;
 varying HIGHP vec2 coords;
@@ -131,31 +131,31 @@ void main() {
 
   lowp vec4 final = vec4(0.0);
 
-  bool pattern5 = (d02_09 && d06_08) || (d01_10 && d05_11) || (d06_13 && d07_09) || (d05_14 && d04_10);
-  bool pattern4 = (d05_11 && d06_08) || (d04_10 && d07_09) || (d05_14 && d02_09) || (d01_10 && d06_13);
-  bool pattern3 = (d05_11 && d04_10) || (d06_08 && d07_09) || (d01_10 && d05_14) || (d02_09 && d06_13);
-  bool pattern2 = d01_10 || d02_09 || d05_14 || d06_13 || d04_10 || d06_08 || d05_11 || d07_09;
-  bool pattern1 = d05_10 || d06_09;
+  bvec4 pattern5 = bvec4(d02_09 && d06_08, d01_10 && d05_11, d06_13 && d07_09, d05_14 && d04_10);
+  bvec4 pattern4 = bvec4(d05_11 && d06_08, d04_10 && d07_09, d05_14 && d02_09, d01_10 && d06_13);
+  bvec4 pattern3 = bvec4(d05_11 && d04_10, d06_08 && d07_09, d01_10 && d05_14, d02_09 && d06_13);
+  bvec4 pattern2_v = bvec4(d01_10, d02_09, d05_14, d06_13);
+  bvec4 pattern2_h = bvec4(d04_10, d06_08, d05_11, d07_09);
+  bvec2 pattern1 = bvec2(d05_10, d06_09);
 
-  if (pattern5) {
+  if (any(pattern5)) {
     final.x = 0.55;
-    final.y = pack(d06_13, d02_09, d01_10);
-  } else if (pattern4) {
+    final.y = pack(pattern5.z, pattern5.x, pattern5.y);
+  } else if (any(pattern4)) {
     final.x = 0.45;
-    final.y = pack(d06_13, d07_09, d04_10 || d05_11);
-  } else if (pattern3) {
+    final.y = pack(pattern4.w, pattern4.y, pattern4.x || pattern4.y);
+  } else if (any(pattern3)) {
     final.x = 0.35;
-    final.y = pack(d06_08, d02_09, d07_09 || d05_11);
-  } else if (pattern2) {
+    final.y = pack(pattern3.y, pattern3.w, pattern3.x || pattern3.y);
+  } else if (any(pattern2_v)) {
     final.x = 0.25;
-    final.y = pack(
-      d06_08 || d01_10 || d06_13 || d04_10,
-      d02_09 || d01_10 || d07_09 || d04_10,
-      d06_08 || d07_09 || d05_11 || d04_10
-    );
-  } else if (pattern1) {
+    final.y = pack(pattern2_v.x || pattern2_v.w, pattern2_v.y || pattern2_v.x, false);
+  } else if (any(pattern2_h)) {
+    final.x = 0.25;
+    final.y = pack(pattern2_h.y || pattern2_h.x, pattern2_h.w || pattern2_h.x, true);
+  } else if (any(pattern1)) {
     final.x = 0.15;
-    final.y = pack(d06_09, false, false);
+    final.y = pack(pattern1.y, false, false);
   }
 
   gl_FragColor = vec4(final.x, final.y / 255.0, 0.0, 1.0);
