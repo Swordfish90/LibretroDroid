@@ -35,8 +35,16 @@ sealed interface ShaderConfig {
     ) : ShaderConfig
 
     data class CUT3(
-        val sharpnessBias: Float = 1.0f,
-        val sharpnessMin: Float = 0.0f,
-        val sharpnessMax: Float = 1.0f,
+        val useDynamicBlend: Boolean = true,
+        val blendUseFastLuma: Boolean = true,
+        val blendMinContrastEdge: Float = 0.0f,
+        val blendMaxContrastEdge: Float = 1.0f,
+        val blendMinSharpness: Float = 0.0f,
+        val blendMaxSharpness: Float = 1.0f,
+        val staticSharpness: Float = 0.5f,
+        val edgeUseFastLuma: Boolean = false,
+        val edgeMinValue: Float = 0.03f,
+        val edgeMinContrast: Float = 2.0f,
+        val lumaAdjustGamma: Boolean = false,
     ) : ShaderConfig
 }

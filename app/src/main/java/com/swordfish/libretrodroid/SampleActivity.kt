@@ -125,7 +125,11 @@ class SampleActivity : AppCompatActivity() {
 //            shader = ShaderConfig.CUT3
 //            shader = ShaderConfig.Default
 //            shader = ShaderConfig.Sharp
-            shader = ShaderConfig.CUT3(1.0f, 0.0f, 1.0f)
+            shader = ShaderConfig.CUT3(
+                blendMaxSharpness = 0.75f,
+                blendMinContrastEdge = 0.15f,
+                blendMaxContrastEdge = 0.50f,
+            )
 //            shader = ShaderConfig.CUT3(1.0f, 0.3f, 1.5f)
 
             /* Rumble events enabled */
