@@ -446,7 +446,8 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut3UpscalePar
     { "EDGE_USE_FAST_LUMA", "0" },
     { "EDGE_MIN_VALUE", "0.03" },
     { "EDGE_MIN_CONTRAST", "2.0" },
-    { "LUMA_ADJUST_GAMMA", "0" }
+    { "LUMA_ADJUST_GAMMA", "0" },
+    { "SPLIT_DEMO_VIEW", "0" },
 };
 
 const std::string ShaderManager::cut3UpscalePass0Vertex =
@@ -659,8 +660,8 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "  }\n"
     "\n"
     "  final.z = pack(\n"
-    "    d05_11.x && d05_11.y || d07_09.x && d07_09.y || d05_14.x && d05_14.y || d06_13.x && d06_13.y,\n"
-    "    d01_10.x && d01_10.y || d02_09.x && d02_09.y || d04_10.x && d04_10.y || d06_08.x && d06_08.y,\n"
+    "    any(bvec4(all(d05_11), all(d07_09), all(d05_14), all(d06_13))),\n"
+    "    any(bvec4(all(d01_10), all(d02_09), all(d04_10), all(d06_08))),\n"
     "    false\n"
     "  );\n"
     "\n"
@@ -916,6 +917,11 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "    weights.z\n"
     "  );\n"
     "\n"
+    "#if SPLIT_DEMO_VIEW\n"
+    "  lowp float splitSize = 0.001;\n"
+    "  final = mix(vec4(t05, 1.0), final, step(0.5, coords.x));\n"
+    "  final *= step(coords.x, 0.5 - splitSize) + step(0.5 + splitSize, coords.x);\n"
+    "#endif\n"
     "  gl_FragColor = vec4(final.rgb, 1.0);\n"
     "}";
 
