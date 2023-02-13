@@ -394,7 +394,6 @@ class GLRetroView(
                 LibretroDroid.SHADER_UPSCALE_CUT3,
                 buildParams(
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_USE_DYNAMIC_BLEND to toParam(config.useDynamicBlend),
-                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_USE_FAST_LUMA to toParam(config.blendUseFastLuma),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MIN_CONTRAST_EDGE to toParam(config.blendMinContrastEdge),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MAX_CONTRAST_EDGE to toParam(config.blendMaxContrastEdge),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MIN_SHARPNESS to toParam(config.blendMinSharpness),

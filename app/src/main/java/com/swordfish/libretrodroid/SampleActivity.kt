@@ -127,8 +127,8 @@ class SampleActivity : AppCompatActivity() {
 //            shader = ShaderConfig.Sharp
             shader = ShaderConfig.CUT3(
                 blendMaxSharpness = 0.75f,
-                blendMinContrastEdge = 0.15f,
-                blendMaxContrastEdge = 0.50f,
+                blendMinContrastEdge = 0.25f,
+                blendMaxContrastEdge = 0.75f,
             )
 //            shader = ShaderConfig.CUT3(1.0f, 0.3f, 1.5f)
 
@@ -143,8 +143,6 @@ class SampleActivity : AppCompatActivity() {
         retroView = GLRetroView(this, data)
 
         lifecycle.addObserver(retroView)
-
-//        val shaders = listOf(ShaderConfig.Sharp, ShaderConfig.CUT3(2.0f, 0.2f, 1.0f))
 //
 //        fixedRateTimer(period = 4000L) {
 //            val newShader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]

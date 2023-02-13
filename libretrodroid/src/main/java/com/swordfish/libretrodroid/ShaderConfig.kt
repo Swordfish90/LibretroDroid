@@ -36,7 +36,6 @@ sealed interface ShaderConfig {
 
     data class CUT3(
         val useDynamicBlend: Boolean = true,
-        val blendUseFastLuma: Boolean = true,
         val blendMinContrastEdge: Float = 0.0f,
         val blendMaxContrastEdge: Float = 1.0f,
         val blendMinSharpness: Float = 0.0f,
@@ -44,7 +43,7 @@ sealed interface ShaderConfig {
         val staticSharpness: Float = 0.5f,
         val edgeUseFastLuma: Boolean = false,
         val edgeMinValue: Float = 0.03f,
-        val edgeMinContrast: Float = 2.0f,
+        val edgeMinContrast: Float = 1.20f,
         val lumaAdjustGamma: Boolean = false,
         val splitDemoView: Boolean = false,
     ) : ShaderConfig
