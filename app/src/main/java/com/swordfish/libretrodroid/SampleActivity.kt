@@ -125,7 +125,7 @@ class SampleActivity : AppCompatActivity() {
 //            shader = ShaderConfig.CUT3
 //            shader = ShaderConfig.Default
 //            shader = ShaderConfig.Sharp
-            shader = ShaderConfig.CUT3(
+            shader = ShaderConfig.CUT2(
                 blendMaxSharpness = 0.75f,
                 blendMinContrastEdge = 0.25f,
                 blendMaxContrastEdge = 0.75f,

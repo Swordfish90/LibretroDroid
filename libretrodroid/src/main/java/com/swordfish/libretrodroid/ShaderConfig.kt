@@ -30,11 +30,6 @@ sealed interface ShaderConfig {
     ) : ShaderConfig
 
     data class CUT2(
-        val sharpnessBias: Float = 1.0f,
-        val sharpnessMax: Float = 1.0f,
-    ) : ShaderConfig
-
-    data class CUT3(
         val useDynamicBlend: Boolean = true,
         val blendMinContrastEdge: Float = 0.0f,
         val blendMaxContrastEdge: Float = 1.0f,
