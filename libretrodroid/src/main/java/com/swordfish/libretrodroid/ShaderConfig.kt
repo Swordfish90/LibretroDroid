@@ -25,8 +25,17 @@ sealed interface ShaderConfig {
     object Sharp : ShaderConfig
 
     data class CUT(
-        val sharpnessMin: Float = 0.1f,
-        val sharpnessMax: Float = 0.3f
+        val useDynamicBlend: Boolean = true,
+        val blendMinContrastEdge: Float = 0.0f,
+        val blendMaxContrastEdge: Float = 1.0f,
+        val blendMinSharpness: Float = 0.0f,
+        val blendMaxSharpness: Float = 1.0f,
+        val staticSharpness: Float = 0.5f,
+        val edgeUseFastLuma: Boolean = true,
+        val edgeMinValue: Float = 0.05f,
+        val edgeMinContrast: Float = 2.00f,
+        val lumaAdjustGamma: Boolean = false,
+        val splitDemoView: Boolean = false,
     ) : ShaderConfig
 
     data class CUT2(
