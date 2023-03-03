@@ -744,6 +744,7 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
     "\n"
     "Pattern pattern4(Pixels pixels, lowp vec3 ab, lowp vec3 cd, lowp vec2 pxCoords) {\n"
     "  Pattern result;\n"
+    "  pxCoords.x = clamp(pxCoords.x + 0.5 * min(pxCoords.y, 1.0 - pxCoords.y), 0.0, 1.0);\n"
     "  if (pxCoords.x < 0.5) {\n"
     "    result.pixels = Pixels(pixels.p0, ab, pixels.p2, cd);\n"
     "    result.triangle = false;\n"
