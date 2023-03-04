@@ -395,7 +395,7 @@ const std::string ShaderManager::cut2UpscalePass0Vertex =
     "  c11 = (screenCoords + vec2(+2.0, +1.0)) / textureSize;\n"
     "  c13 = (screenCoords + vec2(+0.0, +2.0)) / textureSize;\n"
     "  c14 = (screenCoords + vec2(+1.0, +2.0)) / textureSize;\n"
-    "  gl_Position = vViewModel * vPosition;\n"
+    "  gl_Position = vPosition;\n"
     "}";
 
 const std::string ShaderManager::cut2UpscalePass0Fragment =
