@@ -30,7 +30,6 @@ import androidx.lifecycle.lifecycleScope
 import com.android.libretrodroid.R
 import com.swordfish.radialgamepad.library.RadialGamePad
 import com.swordfish.radialgamepad.library.event.Event
-import kotlin.concurrent.fixedRateTimer
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
@@ -59,34 +58,12 @@ class SampleActivity : AppCompatActivity() {
              * ABI can be arm64-v8a, armeabi-v7a, x86, or x86_64
              */
             coreFilePath = "libmgba_libretro_android.so"
-//            coreFilePath = "gambatte_libretro_android.so"
-//            coreFilePath = "snes9x_libretro_android.so"
-//            coreFilePath = "libppsspp_libretro_android.so"
-//            coreFilePath = "libmupen64plus_next_gles3_libretro_android.so"
-//            coreFilePath = "libpcsx_rearmed_libretro_android.so"
 
             /*
              * The path to the ROM to load.
              * Example: /data/data/<package-id>/files/example.gba
              */
-//            gameFilePath = "/sdcard/Roms Test/Pokemon Emerald Version.gba"
-            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
-//            gameFilePath = "/sdcard/Roms Test/Super Mario Land.gb"
-//            gameFilePath = "/sdcard/Roms Test/Pokemon Blue Version.gb"
-//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - The Minish Cap.gba"
-//            gameFilePath = "/sdcard/Roms Test/Legend of Zelda, The - Link's Awakening DX.gbc"
-//            gameFilePath = "/sdcard/Roms Test/Doom.gba"
-//            gameFilePath = "/sdcard/Roms/psp/Shin Megami Tensei - Persona 3 Portable (USA) (PSP) (PSN).iso"
-//            gameFilePath = "/sdcard/Roms/psp/MediEvil Resurrection.cso"
-//            gameFilePath = "/sdcard/Roms/psp/God of War - Chains of Olympus (USA).iso"
-//            gameFilePath = "/sdcard/Roms Test/Final Fantasy VI Advance.gba"
-//            gameFilePath = "/sdcard/Roms Test/Final Fantasy IV Advance.gba"
-//            gameFilePath = "/sdcard/Roms/psx/Quake II.pbp"
-//            gameFilePath = "/sdcard/Roms/psx/MediEvil.pbp"
-//            gameFilePath = "/sdcard/Roms Test/Chrono Trigger.smc"
-//            gameFilePath = "/sdcard/Roms/psx/Final Fantasy Tactics.pbp"
-//            gameFilePath = "/sdcard/Roms/psx/Castlevania - Symphony of the Night.pbp"
-//            gameFilePath = "/sdcard/Roms/n64/Super Mario 64/Super Mario 64.n64"
+            gameFilePath = "/data/data/<package-id>/files/example.gba"
 
             /*
              * Direct ROM bytes to load.
@@ -122,15 +99,7 @@ class SampleActivity : AppCompatActivity() {
              * SHADER_SHARP:        Raw, unfiltered image.
              * SHADER_UPSCALING:    Improve the quality of retro graphics.
              */
-//            shader = ShaderConfig.CUT3
-//            shader = ShaderConfig.Default
-//            shader = ShaderConfig.Sharp
-            shader = ShaderConfig.CUT2(
-                blendMaxSharpness = 0.75f,
-                blendMinContrastEdge = 0.25f,
-                blendMaxContrastEdge = 0.75f,
-            )
-//            shader = ShaderConfig.CUT3(1.0f, 0.3f, 1.5f)
+            shader = ShaderConfig.Default
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true
@@ -143,12 +112,6 @@ class SampleActivity : AppCompatActivity() {
         retroView = GLRetroView(this, data)
 
         lifecycle.addObserver(retroView)
-//
-//        fixedRateTimer(period = 4000L) {
-//            val newShader = shaders[(shaders.indexOf(retroView.shader) + 1) % shaders.size]
-//            retroView.shader = newShader
-//            Log.d("FILIPPO", "Set shader to :$newShader")
-//        }
 
         /* Get the FrameLayout to house the GLRetroView */
         val frameLayout = findViewById<FrameLayout>(R.id.gamecontainer)
