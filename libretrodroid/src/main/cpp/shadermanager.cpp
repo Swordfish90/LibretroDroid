@@ -151,7 +151,6 @@ const std::unordered_map<std::string, std::string> ShaderManager::cutUpscalePara
     { "EDGE_MIN_VALUE", "0.03" },
     { "EDGE_MIN_CONTRAST", "2.0" },
     { "LUMA_ADJUST_GAMMA", "0" },
-    { "SPLIT_DEMO_VIEW", "0" },
 };
 
 const std::string ShaderManager::cutUpscaleVertex =
@@ -325,15 +324,6 @@ const std::string ShaderManager::cutUpscaleFragment =
     "    weights.z\n"
     "  );\n"
     "\n"
-    "#if SPLIT_DEMO_VIEW\n"
-    "  lowp float splitSize = 0.001;\n"
-    "  lowp float splitCoord = mix(c05.x, c06.x, 0.5);\n"
-    "  lowp vec2 oCoords = fract(screenCoords);\n"
-    "  lowp vec3 unfilteredColor = mix(mix(t05, t06, step(0.5, oCoords.x)), mix(t09, t10, step(0.5, oCoords.x)), step(0.5, oCoords.y));\n"
-    "  final = mix(unfilteredColor, final, step(0.5, splitCoord));\n"
-    "  final *= step(splitCoord, 0.5 - splitSize) + step(0.5 + splitSize, splitCoord);\n"
-    "#endif\n"
-    "\n"
     "  gl_FragColor = vec4(final, 1.0);\n"
     "}";
 
@@ -348,7 +338,6 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut2UpscalePar
     { "EDGE_MIN_VALUE", "0.03" },
     { "EDGE_MIN_CONTRAST", "2.0" },
     { "LUMA_ADJUST_GAMMA", "0" },
-    { "SPLIT_DEMO_VIEW", "0" },
 };
 
 const std::string ShaderManager::cut2UpscalePass0Vertex =
@@ -834,15 +823,6 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
     "    blend(pattern.pixels.p2, pattern.pixels.p3, weights.y),\n"
     "    weights.z\n"
     "  );\n"
-    "\n"
-    "#if SPLIT_DEMO_VIEW\n"
-    "  lowp float splitSize = 0.001;\n"
-    "  lowp float splitCoord = mix(c05.x, c06.x, 0.5);\n"
-    "  lowp vec2 oCoords = fract(screenCoords);\n"
-    "  lowp vec3 unfilteredColor = mix(mix(t05, t06, step(0.5, oCoords.x)), mix(t09, t10, step(0.5, oCoords.x)), step(0.5, oCoords.y));\n"
-    "  final = mix(unfilteredColor, final, step(0.5, splitCoord));\n"
-    "  final *= step(splitCoord, 0.5 - splitSize) + step(0.5 + splitSize, splitCoord);\n"
-    "#endif\n"
     "\n"
     "  gl_FragColor = vec4(final, 1.0);\n"
     "}";

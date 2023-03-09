@@ -35,7 +35,6 @@ sealed interface ShaderConfig {
         val edgeMinValue: Float = 0.05f,
         val edgeMinContrast: Float = 2.00f,
         val lumaAdjustGamma: Boolean = false,
-        val splitDemoView: Boolean = false,
     ) : ShaderConfig
 
     data class CUT2(
@@ -49,6 +48,5 @@ sealed interface ShaderConfig {
         val edgeMinValue: Float = 0.03f,
         val edgeMinContrast: Float = 1.20f,
         val lumaAdjustGamma: Boolean = false,
-        val splitDemoView: Boolean = false,
     ) : ShaderConfig
 }

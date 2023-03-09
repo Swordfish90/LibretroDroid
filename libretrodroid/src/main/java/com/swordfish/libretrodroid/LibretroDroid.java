@@ -47,7 +47,6 @@ public class LibretroDroid {
     public static final String SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_VALUE = "EDGE_MIN_VALUE";
     public static final String SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_CONTRAST = "EDGE_MIN_CONTRAST";
     public static final String SHADER_UPSCALE_CUT_PARAM_LUMA_ADJUST_GAMMA = "LUMA_ADJUST_GAMMA";
-    public static final String SHADER_UPSCALE_CUT_PARAM_SPLIT_DEMO_VIEW = "SPLIT_DEMO_VIEW";
 
     public static final String SHADER_UPSCALE_CUT2_PARAM_USE_DYNAMIC_BLEND = "USE_DYNAMIC_BLEND";
     public static final String SHADER_UPSCALE_CUT2_PARAM_BLEND_MIN_CONTRAST_EDGE = "BLEND_MIN_CONTRAST_EDGE";
@@ -59,10 +58,6 @@ public class LibretroDroid {
     public static final String SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_VALUE = "EDGE_MIN_VALUE";
     public static final String SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_CONTRAST = "EDGE_MIN_CONTRAST";
     public static final String SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA = "LUMA_ADJUST_GAMMA";
-    public static final String SHADER_UPSCALE_CUT2_PARAM_SPLIT_DEMO_VIEW = "SPLIT_DEMO_VIEW";
-
-    public static final String SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MIN = "DYNAMIC_SHARPNESS_MIN";
-    public static final String SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MAX = "DYNAMIC_SHARPNESS_MAX";
 
     public static final int ERROR_LOAD_LIBRARY = 0;
     public static final int ERROR_LOAD_GAME = 1;
