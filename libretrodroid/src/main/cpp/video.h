@@ -28,8 +28,31 @@ namespace libretrodroid {
 
 class Video {
 public:
+
+    struct RenderingOptions {
+        bool hardwareAccelerated = false;
+        unsigned int width;
+        unsigned int height;
+        bool useDepth;
+        bool useStencil;
+        int openglESVersion;
+        int pixelFormat;
+    };
+
+    struct ShaderChainEntry {
+        GLint gProgram = 0;
+        GLint gvPositionHandle = 0;
+        GLint gvCoordinateHandle = 0;
+        GLint gvFlipYHandle = 0;
+        GLint gTextureHandle = 0;
+        GLint gPreviousPassTextureHandle = 0;
+        GLint gScreenDensityHandle = 0;
+        GLint gTextureSizeHandle = 0;
+        GLint gViewModelMatrixHandle = 0;
+    };
+
     Video(
-        Renderer* renderer,
+        RenderingOptions renderingOptions,
         ShaderManager::Config shaderConfig,
         bool bottomLeftOrigin,
         float rotation,
@@ -56,33 +79,35 @@ public:
 private:
     void updateProgram();
 
-    void updateViewModelMatrix();
+    void updateViewModelMatrix(float rotation);
     float getScreenDensity();
     float getTextureWidth();
     float getTextureHeight();
 
+    void initializeRenderer(RenderingOptions renderingOptions);
+
 private:
     GLfloat gTriangleVertices[12] = {
-            -1.0F,
-            -1.0F,
+        -1.0F,
+        -1.0F,
 
-            -1.0F,
-             1.0F,
+        -1.0F,
+        +1.0F,
 
-             1.0F,
-            -1.0F,
+        +1.0F,
+        -1.0F,
 
-             1.0F,
-            -1.0F,
+        +1.0F,
+        -1.0F,
 
-            -1.0F,
-             1.0F,
+        -1.0F,
+        +1.0F,
 
-             1.0F,
-             1.0F,
+        +1.0F,
+        +1.0F,
     };
 
-    GLfloat gTriangleCoords[12] = {
+    GLfloat gTextureCoords[12] = {
         0.0F,
         0.0F,
 
@@ -117,20 +142,12 @@ private:
     };
     std::optional<ShaderManager::Config> loadedShaderType = std::nullopt;
 
-    float rotation = 0;
     bool isDirty = false;
     bool skipDuplicateFrames = false;
 
-    GLuint gProgram = 0;
-    GLint gvPositionHandle = 0;
-    GLint gvCoordinateHandle = 0;
-    GLint gTextureHandle = 0;
-    GLint gScreenDensityHandle = 0;
-    GLint gTextureSizeHandle = 0;
-    GLint gFlipYHandle = 0;
-    GLint gViewModelMatrixHandle = 0;
+    float gFlipY = 0.0F;
 
-    float gFlipY = 1.0;
+    std::vector<ShaderChainEntry> shadersChain;
 
     Renderer* renderer;
 };

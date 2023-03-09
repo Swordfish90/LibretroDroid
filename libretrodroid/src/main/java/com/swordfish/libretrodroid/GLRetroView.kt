@@ -379,17 +379,45 @@ class GLRetroView(
             is ShaderConfig.CUT -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT,
                 buildParams(
-                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MIN to config.sharpnessMin.toString(),
-                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_USE_DYNAMIC_BLEND to toParam(config.useDynamicBlend),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_BLEND_MIN_CONTRAST_EDGE to toParam(config.blendMinContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_BLEND_MAX_CONTRAST_EDGE to toParam(config.blendMaxContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_BLEND_MIN_SHARPNESS to toParam(config.blendMinSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_BLEND_MAX_SHARPNESS to toParam(config.blendMaxSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
+                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                 )
             )
             is ShaderConfig.CUT2 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT2,
                 buildParams(
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_MAX to config.sharpnessMax.toString(),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SHARPNESS_BIAS to config.sharpnessBias.toString(),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_USE_DYNAMIC_BLEND to toParam(config.useDynamicBlend),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MIN_CONTRAST_EDGE to toParam(config.blendMinContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MAX_CONTRAST_EDGE to toParam(config.blendMaxContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MIN_SHARPNESS to toParam(config.blendMinSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MAX_SHARPNESS to toParam(config.blendMaxSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                 )
             )
+        }
+    }
+
+    private fun toParam(param: Float): String {
+        return param.toString()
+    }
+
+    private fun toParam(param: Boolean): String {
+        return if (param) {
+            "1"
+        } else {
+            "0"
         }
     }
 

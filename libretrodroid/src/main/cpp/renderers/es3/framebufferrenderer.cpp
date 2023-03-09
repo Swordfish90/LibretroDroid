@@ -16,31 +16,55 @@
  */
 
 #include "framebufferrenderer.h"
+#include "es3utils.h"
 #include "../../log.h"
 
 namespace libretrodroid {
 
-FramebufferRenderer::FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil) {
+FramebufferRenderer::FramebufferRenderer(
+    unsigned width,
+    unsigned height,
+    bool depth,
+    bool stencil,
+    ShaderManager::Chain shaders
+) {
     this->depth = depth;
     this->stencil = stencil;
+    this->width = width;
+    this->height = height;
+    this->shaders = std::move(shaders);
 
-    FramebufferRenderer::updateRenderedResolution(width, height);
+    initializeBuffers();
 }
 
 void FramebufferRenderer::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     Renderer::onNewFrame(data, width, height, pitch);
-    glBindTexture(GL_TEXTURE_2D, currentTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (isDirty) {
+        initializeBuffers();
+        isDirty = false;
+    }
+}
+
+void FramebufferRenderer::initializeBuffers() {
+    framebuffers = ES3Utils::buildShaderPasses(width, height, shaders);
+
+    ES3Utils::deleteFramebuffer(std::move(framebuffer));
+    framebuffer = ES3Utils::createFramebuffer(
+        width,
+        height,
+        shaders.linearTexture,
+        depth,
+        stencil
+    );
 }
 
 uintptr_t FramebufferRenderer::getTexture() {
-    return currentTexture;
+    return framebuffer->texture;
 }
 
 uintptr_t FramebufferRenderer::getFramebuffer() {
-    return currentFramebuffer;
+    return framebuffer->framebuffer;
 }
 
 void FramebufferRenderer::setPixelFormat(int pixelFormat) {
@@ -48,75 +72,38 @@ void FramebufferRenderer::setPixelFormat(int pixelFormat) {
 }
 
 void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned int height) {
-    deleteResources();
-    createResources();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, currentFramebuffer);
-
-    glBindTexture(GL_TEXTURE_2D, currentTexture);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, currentTexture, 0);
-
-    if (depth) {
-        glBindRenderbuffer(GL_RENDERBUFFER, currentDepthBuffer);
-        glRenderbufferStorage(
-            GL_RENDERBUFFER,
-            stencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT16,
-            width,
-            height
-        );
-        glFramebufferRenderbuffer(
-            GL_FRAMEBUFFER,
-            stencil? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT,
-            GL_RENDERBUFFER,
-            currentDepthBuffer
-        );
+    if (this->width != width || this->height != height) {
+        this->width = width;
+        this->height = height;
+        isDirty = true;
     }
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        LOGE("Error while creating framebuffer. Leaving!");
-        throw std::runtime_error("Cannot create framebuffer");
-    }
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 bool FramebufferRenderer::rendersInVideoCallback() {
     return true;
 }
 
-void FramebufferRenderer::setLinear(bool linear) {
-    this->linear = linear;
-}
-
-void FramebufferRenderer::createResources() {
-    glGenFramebuffers(1, &currentFramebuffer);
-    glGenTextures(1, &currentTexture);
-
-    if (depth) {
-        glGenRenderbuffers(1, &currentDepthBuffer);
+void FramebufferRenderer::setShaders(ShaderManager::Chain shaders) {
+    if (shaders != this->shaders) {
+        this->shaders = shaders;
+        isDirty = true;
     }
 }
 
-void FramebufferRenderer::deleteResources() {
-    if (currentFramebuffer != 0) {
-        glDeleteFramebuffers(1, &currentFramebuffer);
-        currentFramebuffer = 0;
+Renderer::PassData FramebufferRenderer::getPassData(unsigned int layer) {
+    PassData result;
+
+    if (layer >= 0 && layer < framebuffers->size()) {
+        result.framebuffer = framebuffers->at(layer)->framebuffer;
+        result.width = framebuffers->at(layer)->width;
+        result.height = framebuffers->at(layer)->height;
     }
 
-    if (currentTexture != 0) {
-        glDeleteTextures(1, &currentTexture);
-        currentTexture = 0;
+    if (layer > 0 && layer < framebuffers->size() + 1) {
+        result.texture = framebuffers->at(layer - 1)->texture;
     }
 
-    if (currentDepthBuffer != 0) {
-        glDeleteRenderbuffers(1, &currentDepthBuffer);
-        currentDepthBuffer = 0;
-    }
+    return result;
 }
 
 } //namespace libretrodroid

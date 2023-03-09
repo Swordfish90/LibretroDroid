@@ -22,32 +22,45 @@
 #include "GLES3/gl3ext.h"
 
 #include "../renderer.h"
+#include "es3utils.h"
 
 namespace libretrodroid {
 
 class FramebufferRenderer: public Renderer {
 public:
-    FramebufferRenderer(unsigned width, unsigned height, bool depth, bool stencil);
+    FramebufferRenderer(
+        unsigned width,
+        unsigned height,
+        bool depth,
+        bool stencil,
+        ShaderManager::Chain shaders
+    );
     uintptr_t getTexture() override;
     uintptr_t getFramebuffer() override;
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) override;
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
-    void setLinear(bool linear) override;
 
     bool rendersInVideoCallback() override;
 
-private:
-    void createResources();
-    void deleteResources();
+    void setShaders(ShaderManager::Chain shaders) override;
+    PassData getPassData(unsigned int layer) override;
 
 private:
-    unsigned int currentFramebuffer = 0;
-    unsigned int currentTexture = 0;
-    unsigned int currentDepthBuffer = 0;
     bool depth = false;
     bool stencil = false;
-    bool linear = false;
+
+    unsigned int width;
+    unsigned int height;
+
+    bool isDirty = false;
+
+    std::unique_ptr<ES3Utils::Framebuffer> framebuffer = std::make_unique<ES3Utils::Framebuffer>();
+
+    ShaderManager::Chain shaders;
+    std::unique_ptr<ES3Utils::Framebuffers> framebuffers = std::make_unique<ES3Utils::Framebuffers>();
+
+    void initializeBuffers();
 };
 
 }

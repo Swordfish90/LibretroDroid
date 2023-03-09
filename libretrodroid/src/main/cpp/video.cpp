@@ -25,6 +25,9 @@
 #include "log.h"
 
 #include "video.h"
+#include "renderers/es3/framebufferrenderer.h"
+#include "renderers/es3/imagerendereres3.h"
+#include "renderers/es2/imagerendereres2.h"
 
 namespace libretrodroid {
 
@@ -100,31 +103,41 @@ void Video::updateProgram() {
         return;
     }
 
-    auto shaders = ShaderManager::getShader(requestedShaderConfig);
-
-    gProgram = createProgram(shaders.vertex.data(), shaders.fragment.data());
-    if (!gProgram) {
-        LOGE("Could not create gl program.");
-        throw std::runtime_error("Cannot create gl program");
-    }
-
-    renderer->setLinear(shaders.linear);
-
     loadedShaderType = requestedShaderConfig;
 
-    gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
+    auto shaders = ShaderManager::getShader(requestedShaderConfig);
 
-    gvCoordinateHandle = glGetAttribLocation(gProgram, "vCoordinate");
+    shadersChain = {};
 
-    gTextureHandle = glGetUniformLocation(gProgram, "texture");
+    std::for_each(shaders.passes.begin(), shaders.passes.end(), [&](const auto& item){
+        auto shader = ShaderChainEntry { };
 
-    gTextureSizeHandle = glGetUniformLocation(gProgram, "textureSize");
+        shader.gProgram = createProgram(item.vertex.data(), item.fragment.data());
+        if (!shader.gProgram) {
+            LOGE("Could not create gl program.");
+            throw std::runtime_error("Cannot create gl program");
+        }
 
-    gScreenDensityHandle = glGetUniformLocation(gProgram, "screenDensity");
+        shader.gvPositionHandle = glGetAttribLocation(shader.gProgram, "vPosition");
 
-    gFlipYHandle = glGetUniformLocation(gProgram, "vFlipY");
+        shader.gvCoordinateHandle = glGetAttribLocation(shader.gProgram, "vCoordinate");
 
-    gViewModelMatrixHandle = glGetUniformLocation(gProgram, "vViewModel");
+        shader.gTextureHandle = glGetUniformLocation(shader.gProgram, "texture");
+
+        shader.gPreviousPassTextureHandle = glGetUniformLocation(shader.gProgram, "previousPass");
+
+        shader.gTextureSizeHandle = glGetUniformLocation(shader.gProgram, "textureSize");
+
+        shader.gScreenDensityHandle = glGetUniformLocation(shader.gProgram, "screenDensity");
+
+        shader.gvFlipYHandle = glGetUniformLocation(shader.gProgram, "vFlipY");
+
+        shader.gViewModelMatrixHandle = glGetUniformLocation(shader.gProgram, "vViewModel");
+
+        shadersChain.push_back(shader);
+    });
+
+    renderer->setShaders(shaders);
 }
 
 void Video::renderFrame() {
@@ -133,47 +146,55 @@ void Video::renderFrame() {
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glViewport(0, 0, screenWidth, screenHeight);
-
-    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(gProgram);
-
     glDisable(GL_DEPTH_TEST);
 
-    updateViewModelMatrix();
+    for (int i = 0; i < shadersChain.size(); ++i) {
+        auto shader = shadersChain[i];
+        auto passData = renderer->getPassData(i);
 
-    glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
-    glEnableVertexAttribArray(gvPositionHandle);
+        glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
-    glVertexAttribPointer(gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleCoords);
-    glEnableVertexAttribArray(gvCoordinateHandle);
+        glViewport(0, 0, passData.width.value_or(screenWidth), passData.height.value_or(screenHeight));
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
+        glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
 
-    glUniform1i(gTextureHandle, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUniform2f(gTextureSizeHandle, getTextureWidth(), getTextureHeight());
+        glUseProgram(shader.gProgram);
 
-    glUniform1f(gScreenDensityHandle, getScreenDensity());
+        glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
+        glEnableVertexAttribArray(shader.gvPositionHandle);
 
-    glUniform1f(gFlipYHandle, gFlipY);
+        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
+        glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
-    glUniformMatrix4fv(gViewModelMatrixHandle, 1, false, gViewModelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
+        glUniform1i(shader.gTextureHandle, 0);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+        if (shader.gPreviousPassTextureHandle != -1 && passData.texture.has_value()) {
+            glActiveTexture(GL_TEXTURE0 + 1);
+            glBindTexture(GL_TEXTURE_2D, passData.texture.value());
+            glUniform1i(shader.gPreviousPassTextureHandle, 1);
+        }
 
-    glDisableVertexAttribArray(gvPositionHandle);
-    glDisableVertexAttribArray(gvCoordinateHandle);
+        glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+        glUniform1f(shader.gvFlipYHandle, gFlipY);
 
-    glUseProgram(0);
+        glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
+
+        glUniformMatrix4fv(shader.gViewModelMatrixHandle, 1, false, gViewModelMatrix);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glDisableVertexAttribArray(shader.gvPositionHandle);
+        glDisableVertexAttribArray(shader.gvCoordinateHandle);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glUseProgram(0);
+    };
 }
 
 float Video::getScreenDensity() {
@@ -195,7 +216,7 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
     }
 }
 
-void Video::updateViewModelMatrix() {
+void Video::updateViewModelMatrix(float rotation) {
     // Apply simple rotation matrix
     gViewModelMatrix[0] = cos(rotation);
     gViewModelMatrix[1] = -sin(rotation);
@@ -215,21 +236,19 @@ void Video::updateRendererSize(unsigned int width, unsigned int height) {
 }
 
 void Video::updateRotation(float rotation) {
-    this->rotation = rotation;
+    updateViewModelMatrix(rotation);
 }
 
 Video::Video(
-    Renderer* renderer,
+    RenderingOptions renderingOptions,
     ShaderManager::Config shaderConfig,
     bool bottomLeftOrigin,
     float rotation,
     bool skipDuplicateFrames
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
-    rotation(rotation),
     skipDuplicateFrames(skipDuplicateFrames),
-    gFlipY(bottomLeftOrigin ? 0 : 1),
-    renderer(renderer) {
+    gFlipY(bottomLeftOrigin ? 0.0F : 1.0F) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
@@ -239,12 +258,40 @@ Video::Video(
 
     LOGI("Initializing graphics");
 
+    updateViewModelMatrix(rotation);
+
     glViewport(0, 0, screenWidth, screenHeight);
 
     glUseProgram(0);
+
+    initializeRenderer(renderingOptions);
 }
 
 void Video::updateShaderType(ShaderManager::Config shaderConfig) {
     requestedShaderConfig = std::move(shaderConfig);
 }
+
+void Video::initializeRenderer(RenderingOptions renderingOptions) {
+    auto shaders = ShaderManager::getShader(requestedShaderConfig);
+
+    if (renderingOptions.hardwareAccelerated) {
+        renderer = new FramebufferRenderer(
+            renderingOptions.width,
+            renderingOptions.height,
+            renderingOptions.useDepth,
+            renderingOptions.useStencil,
+            std::move(shaders)
+        );
+    } else {
+        if (renderingOptions.openglESVersion >= 3) {
+            renderer = new ImageRendererES3();
+        } else {
+            renderer = new ImageRendererES2();
+        }
+    }
+
+    renderer->setPixelFormat(renderingOptions.pixelFormat);
+    updateProgram();
+}
+
 } //namespace libretrodroid
