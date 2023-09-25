@@ -58,6 +58,7 @@ public class LibretroDroid {
     public static final String SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_VALUE = "EDGE_MIN_VALUE";
     public static final String SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_CONTRAST = "EDGE_MIN_CONTRAST";
     public static final String SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA = "LUMA_ADJUST_GAMMA";
+    public static final String SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTIALIASING = "REDUCE_ANTIALIASING";
 
     public static final int ERROR_LOAD_LIBRARY = 0;
     public static final int ERROR_LOAD_GAME = 1;

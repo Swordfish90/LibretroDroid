@@ -49,7 +49,7 @@ public:
         SHADER_LCD = 2,
         SHADER_SHARP = 3,
         SHADER_UPSCALE_CUT = 4,
-        SHADER_UPSCALE_CUT2 = 5
+        SHADER_UPSCALE_CUT2 = 5,
     };
 
     struct Config {
