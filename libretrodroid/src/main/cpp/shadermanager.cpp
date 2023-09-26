@@ -352,6 +352,7 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut2UpscalePar
     { "EDGE_MIN_CONTRAST", "2.0" },
     { "LUMA_ADJUST_GAMMA", "0" },
     { "REDUCE_ANTIALIASING", "0" },
+    { "REDUCE_ANTIALIASING_AMOUNT", "0.5" },
 };
 
 const std::string ShaderManager::cut2UpscalePass0Vertex =
@@ -488,8 +489,10 @@ const std::string ShaderManager::cut2UpscalePass0Fragment =
     "  return dot(vec4(float(a), float(b), float(c), float(d)), vec4(2.0, 4.0, 8.0, 16.0)) / 255.0;\n"
     "}\n"
     "bool isGradient(lowp float a, lowp float b, lowp float c) {\n"
-    "  lowp float threshold = 0.1;\n"
-    "  return min(a, c) + threshold < b && b < max(c, a) - threshold;\n"
+    "  lowp float maxValue = max(a, c);\n"
+    "  lowp float minValue = min(a, c);\n"
+    "  lowp float threshold = max(0.1, 0.25 * (maxValue - minValue));\n"
+    "  return minValue + threshold < b && b < maxValue - threshold;\n"
     "}\n"
     "\n"
     "void main() {\n"
@@ -710,7 +713,7 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
     "  flags.cuts = bvec2(flagBits[0].w, flagBits[1].w);\n"
     "\n"
     "#if REDUCE_ANTIALIASING\n"
-    "  flags.gradients = vec4(1.0) - 0.30 * floatUnpack(floor(flagsPixel.z * 255.0 + 0.5));\n"
+    "  flags.gradients = vec4(1.0) - REDUCE_ANTIALIASING_AMOUNT * floatUnpack(floor(flagsPixel.z * 255.0 + 0.5));\n"
     "#endif\n"
     "\n"
     "  return flags;\n"
@@ -748,9 +751,11 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
     "\n"
     "lowp Pixel blend(lowp Pixel a, lowp Pixel b, lowp float t) {\n"
     "#if REDUCE_ANTIALIASING\n"
-    "  lowp float m = max(a.a, b.a) / min(a.a, b.a);\n"
-    "  lowp float nt = clamp(m * t - (m - 1.0) * step(b.a, a.a), 0.0, 1.0);\n"
-    "  return Pixel(mix(a.rgb, b.rgb, sharpSmooth(nt, sharpness(luma(a), luma(b)))), mix(a.a, b.a, t));\n"
+//    "  lowp float m = max(a.a, b.a) / min(a.a, b.a);\n"
+//    "  lowp float nt = clamp(m * t - (m - 1.0) * step(b.a, a.a), 0.0, 1.0);\n"
+    "  lowp float nt = pow(t, a.a / b.a);\n"
+    "  lowp float sharpnessReduction = (1.0 - abs(a.a - b.a));\n"
+    "  return Pixel(mix(a.rgb, b.rgb, sharpSmooth(nt, sharpnessReduction * sharpness(luma(a), luma(b)))), mix(a.a, b.a, t));\n"
     "#else\n"
     "  return mix(a, b, sharpSmooth(t, sharpness(luma(a), luma(b))));\n"
     "#endif\n"

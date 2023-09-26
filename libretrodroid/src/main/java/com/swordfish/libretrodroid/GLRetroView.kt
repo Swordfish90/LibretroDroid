@@ -405,6 +405,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTIALIASING to toParam(config.reduceAntialiasing),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTIALIASING_AMOUNT to toParam(config.reduceAntialiasingAmount),
                 )
             )
         }

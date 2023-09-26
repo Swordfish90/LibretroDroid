@@ -49,5 +49,6 @@ sealed interface ShaderConfig {
         val edgeMinContrast: Float = 1.20f,
         val lumaAdjustGamma: Boolean = false,
         val reduceAntialiasing: Boolean = false,
+        val reduceAntialiasingAmount: Float = 0.5f,
     ) : ShaderConfig
 }
