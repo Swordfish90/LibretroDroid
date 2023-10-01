@@ -39,16 +39,17 @@ sealed interface ShaderConfig {
 
     data class CUT2(
         val useDynamicBlend: Boolean = true,
-        val blendMinContrastEdge: Float = 0.0f,
-        val blendMaxContrastEdge: Float = 1.0f,
+        val blendMinContrastEdge: Float = 0.2f,
+        val blendMaxContrastEdge: Float = 0.6f,
         val blendMinSharpness: Float = 0.0f,
-        val blendMaxSharpness: Float = 1.0f,
-        val staticSharpness: Float = 0.5f,
+        val blendMaxSharpness: Float = 0.75f,
+        val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
         val edgeMinValue: Float = 0.03f,
         val edgeMinContrast: Float = 1.20f,
         val lumaAdjustGamma: Boolean = false,
         val reduceAntialiasing: Boolean = false,
-        val reduceAntialiasingAmount: Float = 0.5f,
+        val reduceAntialiasingAmount: Float = 0.75f,
+        val test: Boolean = false,
     ) : ShaderConfig
 }
