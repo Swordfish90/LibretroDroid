@@ -406,7 +406,8 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_SHARPENING to toParam(config.edgeSharpening),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_SHARPENING_AMOUNT to toParam(config.edgeSharpeningAmount),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_SHARPENING_MIN_VALUE to toParam(config.edgeSharpeningMinValue),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_SHARPENING_MIN_CONTRAST_EDGE to toParam(config.edgeSharpeningMinContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_SHARPENING_MAX_CONTRAST_EDGE to toParam(config.edgeSharpeningMaxContrastEdge),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_SHARPENING_THRESHOLD to toParam(config.edgeSharpeningThreshold),
                 )
             )
