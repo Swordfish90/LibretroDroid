@@ -32,15 +32,15 @@ import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.coroutineScope
 import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 
 class GLRetroView(
     context: Context,
@@ -124,9 +124,11 @@ class GLRetroView(
             MotionEvent.ACTION_DOWN -> {
                 sendTouchEvent(event)
             }
+
             MotionEvent.ACTION_MOVE -> {
                 sendTouchEvent(event)
             }
+
             MotionEvent.ACTION_UP -> {
                 sendMotionEvent(MOTION_SOURCE_POINTER, -1f, -1f)
             }
@@ -145,7 +147,8 @@ class GLRetroView(
     fun serializeState(): ByteArray = runOnGLThread {
         LibretroDroid.serializeState()
     }
-    fun setCheat(index : Int, enable : Boolean, code : String) = runOnGLThread {
+
+    fun setCheat(index: Int, enable: Boolean, code: String) = runOnGLThread {
         LibretroDroid.setCheat(index, enable, code)
     }
 
@@ -201,7 +204,11 @@ class GLRetroView(
 
     private fun getGLESVersion(context: Context): Int {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) { 3 } else { 2 }
+        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) {
+            3
+        } else {
+            2
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -259,33 +266,49 @@ class GLRetroView(
     private inner class RenderLifecycleObserver : LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
         private fun resume() = catchExceptions {
-            LibretroDroid.resume()
-            onResume()
-            refreshAspectRatio()
-            isEmulationReady = true
+            try {
+                LibretroDroid.resume()
+                onResume()
+                refreshAspectRatio()
+                isEmulationReady = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         private fun pause() = catchExceptions {
             isEmulationReady = false
             onPause()
-            LibretroDroid.pause()
+            try {
+                LibretroDroid.pause()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) = catchExceptions {
-            if (isEmulationReady) {
-                LibretroDroid.step(this@GLRetroView)
-                lifecycle?.coroutineScope?.launch {
-                    retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+            try {
+                if (isEmulationReady) {
+                    LibretroDroid.step(this@GLRetroView)
+                    lifecycle?.coroutineScope?.launch {
+                        retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+                    }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
-            Thread.currentThread().priority = Thread.MAX_PRIORITY
-            LibretroDroid.onSurfaceChanged(width, height)
+            try {
+                Thread.currentThread().priority = Thread.MAX_PRIORITY
+                LibretroDroid.onSurfaceChanged(width, height)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
 
@@ -299,8 +322,12 @@ class GLRetroView(
     }
 
     private fun refreshAspectRatio() {
-        val aspectRatio = LibretroDroid.getAspectRatio()
-        KtUtils.runOnUIThread { setAspectRatio(aspectRatio) }
+        try {
+            val aspectRatio = LibretroDroid.getAspectRatio()
+            KtUtils.runOnUIThread { setAspectRatio(aspectRatio) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // These functions are called from the GL thread.
@@ -312,10 +339,19 @@ class GLRetroView(
             data.gameVirtualFiles.isNotEmpty() -> loadGameFromVirtualFiles(data.gameVirtualFiles)
         }
         data.saveRAMState?.let {
-            LibretroDroid.unserializeSRAM(data.saveRAMState)
+            try {
+                LibretroDroid.unserializeSRAM(data.saveRAMState)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
             data.saveRAMState = null
         }
-        LibretroDroid.onSurfaceCreated()
+        try {
+            LibretroDroid.onSurfaceCreated()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         isGameLoaded = true
 
         KtUtils.runOnUIThread {
@@ -326,15 +362,27 @@ class GLRetroView(
     private fun loadGameFromVirtualFiles(virtualFiles: List<VirtualFile>) {
         val detachedVirtualFiles = virtualFiles
             .map { DetachedVirtualFile(it.virtualPath, it.fileDescriptor.detachFd()) }
-        LibretroDroid.loadGameFromVirtualFiles(detachedVirtualFiles)
+        try {
+            LibretroDroid.loadGameFromVirtualFiles(detachedVirtualFiles)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun loadGameFromBytes(gameFileBytes: ByteArray) {
-        LibretroDroid.loadGameFromBytes(gameFileBytes)
+        try {
+            LibretroDroid.loadGameFromBytes(gameFileBytes)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun loadGameFromPath(gameFilePath: String) {
-        LibretroDroid.loadGameFromPath(gameFilePath)
+        try {
+            LibretroDroid.loadGameFromPath(gameFilePath)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun catchExceptions(block: () -> Unit) {
@@ -391,12 +439,17 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                 )
             )
+
             is ShaderConfig.CUT2 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT2,
                 buildParams(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_USE_DYNAMIC_BLEND to toParam(config.useDynamicBlend),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MIN_CONTRAST_EDGE to toParam(config.blendMinContrastEdge),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MAX_CONTRAST_EDGE to toParam(config.blendMaxContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MIN_CONTRAST_EDGE to toParam(
+                        config.blendMinContrastEdge
+                    ),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MAX_CONTRAST_EDGE to toParam(
+                        config.blendMaxContrastEdge
+                    ),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MIN_SHARPNESS to toParam(config.blendMinSharpness),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_BLEND_MAX_SHARPNESS to toParam(config.blendMaxSharpness),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
@@ -435,8 +488,8 @@ class GLRetroView(
     }
 
     sealed class GLRetroEvents {
-        object FrameRendered: GLRetroEvents()
-        object SurfaceCreated: GLRetroEvents()
+        object FrameRendered : GLRetroEvents()
+        object SurfaceCreated : GLRetroEvents()
     }
 
     companion object {
