@@ -459,7 +459,7 @@ void LibretroDroid::step() {
 
             video->updateRotation(Environment::getInstance().getScreenRotation());
         }
-    } catch (ExceptionName ex1) {
+    } catch (...) {
       // Block of code to handle errors
     }
     
