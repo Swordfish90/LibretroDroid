@@ -418,47 +418,51 @@ void LibretroDroid::pause() {
 
 void LibretroDroid::step() {
     LOGD("Stepping into retro_run()");
+    try {
+        unsigned frames = 1;
+        if (fpsSync) {
+            unsigned requestedFrames = fpsSync->advanceFrames();
 
-    unsigned frames = 1;
-    if (fpsSync) {
-        unsigned requestedFrames = fpsSync->advanceFrames();
+            // If the application runs too slow it's better to just skip those frames.
+            frames = std::min(requestedFrames, 2u);
+        }
 
-        // If the application runs too slow it's better to just skip those frames.
-        frames = std::min(requestedFrames, 2u);
+        for (size_t i = 0; i < frames * frameSpeed; i++)
+            core->retro_run();
+
+        if (video && !video->rendersInVideoCallback()) {
+            video->renderFrame();
+        }
+
+        if (fpsSync) {
+            fpsSync->wait();
+        }
+
+        if (rumble && rumbleEnabled) {
+            rumble->fetchFromEnvironment();
+        }
+
+        // Some games override the core geometry at runtime. These fields get updated in retro_run().
+        if (video && Environment::getInstance().isGameGeometryUpdated()) {
+            Environment::getInstance().clearGameGeometryUpdated();
+
+            video->updateRendererSize(
+                Environment::getInstance().getGameGeometryWidth(),
+                Environment::getInstance().getGameGeometryHeight()
+            );
+
+            dirtyVideo = true;
+        }
+
+        if (video && Environment::getInstance().isScreenRotationUpdated()) {
+            Environment::getInstance().clearScreenRotationUpdated();
+
+            video->updateRotation(Environment::getInstance().getScreenRotation());
+        }
+    } catch () {
+      // Block of code to handle errors
     }
-
-    for (size_t i = 0; i < frames * frameSpeed; i++)
-        core->retro_run();
-
-    if (video && !video->rendersInVideoCallback()) {
-        video->renderFrame();
-    }
-
-    if (fpsSync) {
-        fpsSync->wait();
-    }
-
-    if (rumble && rumbleEnabled) {
-        rumble->fetchFromEnvironment();
-    }
-
-    // Some games override the core geometry at runtime. These fields get updated in retro_run().
-    if (video && Environment::getInstance().isGameGeometryUpdated()) {
-        Environment::getInstance().clearGameGeometryUpdated();
-
-        video->updateRendererSize(
-            Environment::getInstance().getGameGeometryWidth(),
-            Environment::getInstance().getGameGeometryHeight()
-        );
-
-        dirtyVideo = true;
-    }
-
-    if (video && Environment::getInstance().isScreenRotationUpdated()) {
-        Environment::getInstance().clearScreenRotationUpdated();
-
-        video->updateRotation(Environment::getInstance().getScreenRotation());
-    }
+    
 }
 
 float LibretroDroid::getAspectRatio() {
