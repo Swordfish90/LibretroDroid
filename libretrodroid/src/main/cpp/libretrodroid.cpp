@@ -287,7 +287,7 @@ void LibretroDroid::create(
 
 void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
     try {
-        LibretroDroidLOGD("Performing libretrodroid loadGameFromPath");
+        LOGD("Performing libretrodroid loadGameFromPath");
         struct retro_system_info system_info {};
         core->retro_get_system_info(&system_info);
 
