@@ -286,98 +286,116 @@ void LibretroDroid::create(
 }
 
 void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
-    LOGD("Performing libretrodroid loadGameFromPath");
-    struct retro_system_info system_info {};
-    core->retro_get_system_info(&system_info);
+    try {
+        LibretroDroidLOGD("Performing libretrodroid loadGameFromPath");
+        struct retro_system_info system_info {};
+        core->retro_get_system_info(&system_info);
 
-    struct retro_game_info game_info {};
-    game_info.path = Utils::cloneToCString(gamePath);
-    game_info.meta = nullptr;
+        struct retro_game_info game_info {};
+        game_info.path = Utils::cloneToCString(gamePath);
+        game_info.meta = nullptr;
 
-    if (system_info.need_fullpath) {
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        struct Utils::ReadResult file = Utils::readFileAsBytes(gamePath);
-        game_info.data = file.data;
-        game_info.size = file.size;
+        if (system_info.need_fullpath) {
+            game_info.data = nullptr;
+            game_info.size = 0;
+        } else {
+            struct Utils::ReadResult file = Utils::readFileAsBytes(gamePath);
+            game_info.data = file.data;
+            game_info.size = file.size;
+        }
+
+        bool result = core->retro_load_game(&game_info);
+        if (!result) {
+            LOGE("Cannot load game. Leaving.");
+            /* 
+            throw std::runtime_error("Cannot load game");
+            */
+        }else{
+            afterGameLoad();
+        }
+    } catch (...) {
+        LOGE("Cannot load game. Leaving. catch");
     }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
-        LOGE("Cannot load game. Leaving.");
-        throw std::runtime_error("Cannot load game");
-    }
-
-    afterGameLoad();
 }
 
 void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
-    LOGD("Performing libretrodroid loadGameFromBytes");
+    try {
+        LOGD("Performing libretrodroid loadGameFromBytes");
 
-    struct retro_system_info system_info {};
-    core->retro_get_system_info(&system_info);
+        struct retro_system_info system_info {};
+        core->retro_get_system_info(&system_info);
 
-    struct retro_game_info game_info {};
-    game_info.path = nullptr;
-    game_info.meta = nullptr;
+        struct retro_game_info game_info {};
+        game_info.path = nullptr;
+        game_info.meta = nullptr;
 
-    if (system_info.need_fullpath) {
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        game_info.data = data;
-        game_info.size = size;
+        if (system_info.need_fullpath) {
+            game_info.data = nullptr;
+            game_info.size = 0;
+        } else {
+            game_info.data = data;
+            game_info.size = size;
+        }
+
+        bool result = core->retro_load_game(&game_info);
+        if (!result) {
+            LOGE("Cannot load game. Leaving.");
+            /* 
+                throw std::runtime_error("Cannot load game");
+            */
+        }else{
+            afterGameLoad();
+        }
+    } catch (...) {
+        LOGE("Cannot load game. Leaving. catch");
     }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
-        LOGE("Cannot load game. Leaving.");
-        throw std::runtime_error("Cannot load game");
-    }
-
-    afterGameLoad();
 }
 
 void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) {
-    LOGD("Performing libretrodroid loadGameFromVirtualFiles");
-    struct retro_system_info system_info {};
-    core->retro_get_system_info(&system_info);
+    try {
+        LOGD("Performing libretrodroid loadGameFromVirtualFiles");
+        struct retro_system_info system_info {};
+        core->retro_get_system_info(&system_info);
 
-    if (virtualFiles.empty()) {
-        LOGE("Calling loadGameFromVirtualFiles without any file.");
-        throw std::runtime_error("Calling loadGameFromVirtualFiles without any file.");
+        if (virtualFiles.empty()) {
+            LOGE("Calling loadGameFromVirtualFiles without any file.");
+            throw std::runtime_error("Calling loadGameFromVirtualFiles without any file.");
+        }
+
+        std::string firstFilePath = virtualFiles[0].getFileName();
+        int firstFileFD = virtualFiles[0].getFD();
+
+        bool loadUsingVFS = system_info.need_fullpath || virtualFiles.size() > 1;
+
+        struct retro_game_info game_info {};
+        game_info.path = Utils::cloneToCString(firstFilePath);
+        game_info.meta = nullptr;
+
+        if (loadUsingVFS) {
+            VFS::getInstance().initialize(std::move(virtualFiles));
+        }
+
+        if (loadUsingVFS) {
+            game_info.data = nullptr;
+            game_info.size = 0;
+        } else {
+            struct Utils::ReadResult file = Utils::readFileAsBytes(firstFileFD);
+            game_info.data = file.data;
+            game_info.size = file.size;
+        }
+
+        bool result = core->retro_load_game(&game_info);
+        if (!result) {
+            LOGE("Cannot load game. Leaving.");
+            /*
+            throw std::runtime_error("Cannot load game");
+            */
+        }
+
+        afterGameLoad();
+    } catch (...) {
+        LOGE("Cannot load game. Leaving. catch");
     }
-
-    std::string firstFilePath = virtualFiles[0].getFileName();
-    int firstFileFD = virtualFiles[0].getFD();
-
-    bool loadUsingVFS = system_info.need_fullpath || virtualFiles.size() > 1;
-
-    struct retro_game_info game_info {};
-    game_info.path = Utils::cloneToCString(firstFilePath);
-    game_info.meta = nullptr;
-
-    if (loadUsingVFS) {
-        VFS::getInstance().initialize(std::move(virtualFiles));
-    }
-
-    if (loadUsingVFS) {
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        struct Utils::ReadResult file = Utils::readFileAsBytes(firstFileFD);
-        game_info.data = file.data;
-        game_info.size = file.size;
-    }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
-        LOGE("Cannot load game. Leaving.");
-        throw std::runtime_error("Cannot load game");
-    }
-
-    afterGameLoad();
 }
 
 void LibretroDroid::destroy() {
