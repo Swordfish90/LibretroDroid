@@ -390,9 +390,9 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
             /*
             throw std::runtime_error("Cannot load game");
             */
+        }else{
+            afterGameLoad();
         }
-
-        afterGameLoad();
     } catch (...) {
         LOGE("Cannot load game. Leaving. catch");
     }
