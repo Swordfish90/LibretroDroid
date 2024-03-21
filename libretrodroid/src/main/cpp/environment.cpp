@@ -109,13 +109,13 @@ bool Environment::environment_handle_set_variables(const struct retro_variable* 
 
 bool Environment::environment_handle_get_variable(struct retro_variable* requested) {
     LOGD("Variable requested %s", requested->key);
-    auto currentVariable = variables[std::string(requested->key)];
+    auto foundVariable = variables.find(std::string(requested->key));
 
-    if (currentVariable.value.empty()) {
+    if (foundVariable == variables.end()) {
         return false;
     }
 
-    requested->value = currentVariable.value.c_str();
+    requested->value = foundVariable->second.value.c_str();
     return true;
 }
 
