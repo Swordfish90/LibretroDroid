@@ -67,33 +67,38 @@ void Environment::deinitialize() {
 }
 
 void Environment::updateVariable(const std::string& key, const std::string& value) {
-    for (auto& variable : variables) {
-        if (variable.key == key) {
-            variable.value = value;
-            dirtyVariables = true;
-            break;
-        }
+    auto current = variables[key];
+    current.key = key;
+
+    if (value != current.value) {
+        current.value = value;
+        variables[key] = current;
+        dirtyVariables = true;
     }
 }
 
 bool Environment::environment_handle_set_variables(const struct retro_variable* received) {
-    variables.clear();
-
     unsigned count = 0;
     while (received[count].key != nullptr) {
         LOGD("Received variable %s: %s", received[count].key, received[count].value);
 
-        std::string currentKey(received[count].key);
-        std::string currentDescription(received[count].value);
-        std::string currentValue(received[count].value);
+        std::string key(received[count].key);
+        std::string description(received[count].value);
+        std::string value(received[count].value);
 
-        auto firstValueStart = currentValue.find(';') + 2;
-        auto firstValueEnd = currentValue.find('|', firstValueStart);
-        currentValue = currentValue.substr(firstValueStart, firstValueEnd - firstValueStart);
+        auto firstValueStart = value.find(';') + 2;
+        auto firstValueEnd = value.find('|', firstValueStart);
+        value = value.substr(firstValueStart, firstValueEnd - firstValueStart);
 
-        auto variable = Variable { currentKey, currentValue, currentDescription };
-        variables.push_back(variable);
+        auto currentVariable = variables[key];
+        currentVariable.key = key;
+        currentVariable.description = description;
 
+        if (currentVariable.value.empty()) {
+            currentVariable.value = value;
+        }
+
+        variables[key] = currentVariable;
         LOGD("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
 
         count++;
@@ -104,13 +109,14 @@ bool Environment::environment_handle_set_variables(const struct retro_variable* 
 
 bool Environment::environment_handle_get_variable(struct retro_variable* requested) {
     LOGD("Variable requested %s", requested->key);
-    for (auto& variable : variables) {
-        if (variable.key == requested->key) {
-            requested->value = variable.value.c_str();
-            return true;
-        }
+    auto foundVariable = variables.find(std::string(requested->key));
+
+    if (foundVariable == variables.end()) {
+        return false;
     }
-    return false;
+
+    requested->value = foundVariable->second.value.c_str();
+    return true;
 }
 
 bool Environment::environment_handle_set_controller_info(const struct retro_controller_info* received) {
@@ -403,8 +409,26 @@ float Environment::getGameGeometryAspectRatio() const {
     return gameGeometryAspectRatio;
 }
 
-const std::vector<struct Variable> &Environment::getVariables() const {
-    return variables;
+const std::vector<struct Variable> Environment::getVariables() const {
+    std::vector<struct Variable> result;
+
+    std::for_each(
+        variables.begin(),
+        variables.end(),
+        [&](std::pair<std::string, struct Variable> item) {
+            result.push_back(item.second);
+        }
+    );
+
+    std::sort(
+        result.begin(),
+        result.end(),
+        [](struct Variable v1, struct Variable v2) {
+            return v1.key < v2.key;
+        }
+    );
+
+    return result;
 }
 
 const std::vector<std::vector<struct Controller>> &Environment::getControllers() const {

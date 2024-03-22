@@ -103,7 +103,7 @@ public:
 
     std::array<libretrodroid::RumbleState, 4> & getLastRumbleStates();
 
-    const std::vector<struct Variable> &getVariables() const;
+    const std::vector<struct Variable> getVariables() const;
 
     const std::vector<std::vector<struct Controller>> &getControllers() const;
 
@@ -141,7 +141,7 @@ private:
 
     std::array<libretrodroid::RumbleState, 4> rumbleStates;
 
-    std::vector<struct Variable> variables;
+    std::unordered_map<std::string, struct Variable> variables;
     bool dirtyVariables = false;
 
     std::vector<std::vector<struct Controller>> controllers;
