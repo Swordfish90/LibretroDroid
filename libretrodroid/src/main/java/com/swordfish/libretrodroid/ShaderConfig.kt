@@ -53,4 +53,21 @@ sealed interface ShaderConfig {
         val reduceAntiAliasingMinEdge: Float = 0.02f,
         val reduceAntiAliasingContrastThreshold: Float = 0.98f,
     ) : ShaderConfig
+
+    data class CUT3(
+        val useDynamicBlend: Boolean = true,
+        val blendMinContrastEdge: Float = 0.2f,
+        val blendMaxContrastEdge: Float = 0.6f,
+        val blendMinSharpness: Float = 0.0f,
+        val blendMaxSharpness: Float = 0.75f,
+        val staticSharpness: Float = 0.75f,
+        val edgeUseFastLuma: Boolean = false,
+        val edgeMinValue: Float = 0.05f,
+        val edgeMinContrast: Float = 2.0f,
+        val lumaAdjustGamma: Boolean = false,
+        val reduceAntiAliasing: Boolean = true,
+        val reduceAntiAliasingAmount: Float = 1.00f,
+        val reduceAntiAliasingMinEdge: Float = 0.02f,
+        val reduceAntiAliasingContrastThreshold: Float = 0.98f,
+    ) : ShaderConfig
 }
