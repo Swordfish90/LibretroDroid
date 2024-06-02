@@ -63,11 +63,9 @@ sealed interface ShaderConfig {
         val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
         val edgeMinValue: Float = 0.05f,
-        val edgeMinContrast: Float = 2.0f,
         val lumaAdjustGamma: Boolean = false,
         val reduceAntiAliasing: Boolean = true,
-        val reduceAntiAliasingAmount: Float = 1.00f,
-        val reduceAntiAliasingMinEdge: Float = 0.02f,
-        val reduceAntiAliasingContrastThreshold: Float = 0.98f,
+        val reduceAntiAliasingAmount: Float = 0.5f,
+        val maxSearchDistance: Int = 4,
     ) : ShaderConfig
 }
