@@ -774,8 +774,8 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             {"REDUCE_ANTI_ALIASING",                    "0"},
             {"REDUCE_ANTI_ALIASING_AMOUNT",             "0.5"},
             {"MAX_SEARCH_DISTANCE",                     "4"},
-            {"PACKING_PRECISION_BITS", "8.0"},
-            {"PACKING_PRECISION_SCALE", "6.0"},
+            {"PACKING_PRECISION_BITS",                  "16.0"},
+            {"PACKING_PRECISION_SCALE",                 "12.0"},
     };
 
     const std::string ShaderManager::cut3UpscalePass0Vertex =
@@ -1003,7 +1003,6 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "    reduceAAWeight(l08, l09, l10, l11),\n"
             "    reduceAAWeight(l01, l05, l09, l13)\n"
             "  );\n"
-            "  edges *= (1.0 + 1.0 / PACKING_PRECISION_SCALE);\n"
             "  result.y = quickPackFloats2(edges.xy * 0.5 + vec2(0.5));\n"
             "  result.z = quickPackFloats2(edges.zw * 0.5 + vec2(0.5));\n"
             "#endif\n"
@@ -1191,10 +1190,11 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "  );\n"
             "\n"
             "  edges += (vec4(1.0) - abs(edges)) * softEdges;\n"
-//            "  edges = softEdges;\n"
             "#endif\n"
             "\n"
-            "  edges *= (1.0 + 1.0 / PACKING_PRECISION_SCALE);\n"
+            "  if (pattern == 4) {\n"
+            "    edges = vec4(-edges.x, edges.w, -edges.z, edges.y);\n"
+            "  }\n"
             "\n"
             "  gl_FragColor = vec4(\n"
             "    previousPassPixel.w,\n"
@@ -1332,12 +1332,10 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "Flags parseFlags(lowp vec3 flagsPixel) {\n"
             "\n"
             "  Flags flags;\n"
-            "  lowp vec4 edges = vec4(\n"
+            "  flags.edgeWeight = vec4(\n"
             "    quickUnpackFloats2(flagsPixel.y + 0.001953125),\n"
             "    quickUnpackFloats2(flagsPixel.z + 0.001953125)\n"
             "  );\n"
-            "  edges = (edges - 0.5) * (1.0 - 1.0 / PACKING_PRECISION_SCALE) + vec4(0.5);\n"
-            "  flags.edgeWeight = edges;"
             "  bvec2 boolFlags = quickUnpackBools2(flagsPixel.x + 0.125);\n"
             "  flags.triangle = boolFlags.x;\n"
             "  flags.flip = boolFlags.y;\n"
@@ -1434,7 +1432,6 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "  if (flags.flip) {\n"
             "    pixels = Pixels(pixels.p1, pixels.p0, pixels.p3, pixels.p2);\n"
             "    pxCoords.x = 1.0 - pxCoords.x;\n"
-            "    edges = vec4(1.0 - edges.x, edges.w, 1.0 - edges.z, edges.y);\n"
             "  }\n"
             "\n"
             "  Pattern pattern = pattern(pixels, edges, flags.triangle, pxCoords);\n"
