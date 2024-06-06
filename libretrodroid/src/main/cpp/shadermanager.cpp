@@ -1120,7 +1120,7 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "  return result;\n"
             "}\n"
             "\n"
-            "lowp float blend(lowp vec2 d1, lowp vec2 d2) {\n"
+            "lowp float blendWeights(lowp vec2 d1, lowp vec2 d2) {\n"
             "  const float MAX_DOUBLE_DISTANCE = float(MAX_SEARCH_DISTANCE) * STEP;\n"
             "  const float MAX_DISTANCE = STEP * float(MAX_SEARCH_DISTANCE / 2) + HSTEP;\n"
             "\n"
@@ -1129,7 +1129,9 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "  lowp float totalDistance = d1.x + d2.x;\n"
             "  lowp float d1Ratio = d1.x / totalDistance;\n"
             "\n"
-            "  if (totalDistance <= MAX_DOUBLE_DISTANCE) {\n"
+            "  if (totalDistance <= EPSILON) {\n"
+            "    result = 0.0;\n"
+            "  } else if (totalDistance <= MAX_DOUBLE_DISTANCE) {\n"
             "    result = (d1.x < d2.x) ? mix(d1.y, 0.0, 2.0 * d1Ratio) : mix(0.0, d2.y, (d1Ratio - 0.5) * 2.0);\n"
             "  } else if (d1.x <= MAX_DISTANCE) {\n"
             "    result = mix(d1.y, 0.0, d1.x / MAX_DISTANCE);\n"
@@ -1177,10 +1179,10 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
             "    edgesWeights[1] = vec4(vec2(HSTEP, 1.0), resultE);\n"
             "  }\n"
             "  lowp vec4 edges = vec4(\n"
-            "    blend(edgesWeights[0].xy, edgesWeights[0].zw),\n"
-            "    blend(edgesWeights[1].xy, edgesWeights[1].zw),\n"
-            "    blend(edgesWeights[2].xy, edgesWeights[2].zw),\n"
-            "    blend(edgesWeights[3].xy, edgesWeights[3].zw)\n"
+            "    blendWeights(edgesWeights[0].xy, edgesWeights[0].zw),\n"
+            "    blendWeights(edgesWeights[1].xy, edgesWeights[1].zw),\n"
+            "    blendWeights(edgesWeights[2].xy, edgesWeights[2].zw),\n"
+            "    blendWeights(edgesWeights[3].xy, edgesWeights[3].zw)\n"
             "  );\n"
             "\n"
             "#if REDUCE_ANTI_ALIASING\n"
@@ -1523,7 +1525,7 @@ ShaderManager::Chain ShaderManager::getShader(const ShaderManager::Config& confi
                     defines + cut3UpscalePass2Fragment,
                     false,
                     1.0
-                    },
+                },
             },
             false
         };
