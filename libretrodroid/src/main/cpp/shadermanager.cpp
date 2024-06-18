@@ -56,7 +56,7 @@ const std::string ShaderManager::defaultShaderFragment =
     "uniform lowp sampler2D texture;\n"
     "varying HIGHP vec2 coords;\n"
     "void main() {\n"
-    "  vec4 tex = texture2D(texture, coords);"
+    "  lowp vec4 tex = texture2D(texture, coords);"
     "  gl_FragColor = vec4(tex.rgb, 1.0);\n"
     "}\n";
 
