@@ -734,7 +734,7 @@ const std::string ShaderManager::cut2UpscalePass1Fragment =
     "  return 0.5 * result;\n"
     "}\n"
     "\n"
-    "lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t, lowp float midPoint, float baseSharpness) {\n"
+    "lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t, lowp float midPoint, lowp float baseSharpness) {\n"
     "  lowp float sharpness = baseSharpness * sharpness(luma(a), luma(b));\n"
     "  lowp float nt = adjustMidpoint(t, midPoint);\n"
     "  nt = clamp((nt - sharpness) / (1.0 - 2.0 * sharpness + EPSILON), 0.0 , 1.0);\n"
@@ -842,9 +842,8 @@ const std::string ShaderManager::cut3UpscalePass0Vertex =
     "#define HIGHP highp\n"
     "#else\n"
     "#define HIGHP mediump\n"
-    "#endif\n"
-    "\n"
     "precision mediump float;\n"
+    "#endif\n"
     "\n"
     "attribute vec4 vPosition;\n"
     "attribute vec2 vCoordinate;\n"
@@ -1084,9 +1083,10 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "#define PACKING_PRECISION_BITS 16.0\n"
     "#define PACKING_PRECISION_SCALE 12.0\n"
     "\n"
-    "const float STEP = 0.5 / float(MAX_SEARCH_DISTANCE);\n"
-    "const float HSTEP = (STEP * 0.5);\n"
+    "const lowp float STEP = 0.5 / float(MAX_SEARCH_DISTANCE);\n"
+    "const lowp float HSTEP = (STEP * 0.5);\n"
     "\n"
+    "uniform lowp sampler2D texture;\n"
     "uniform lowp sampler2D previousPass;\n"
     "\n"
     "varying HIGHP vec2 passCoords;\n"
@@ -1251,7 +1251,7 @@ const std::string ShaderManager::cut3UpscalePass1Fragment =
     "    quickPackFloats2(edges.zw * 0.5 + vec2(0.5)),\n"
     "    1.0\n"
     "  );\n"
-    "}";
+    "}\n";
 
 
 const std::string ShaderManager::cut3UpscalePass2Vertex =
@@ -1406,7 +1406,7 @@ const std::string ShaderManager::cut3UpscalePass2Fragment =
     "  return 0.5 * result;\n"
     "}\n"
     "\n"
-    "lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t, lowp float midPoint, float baseSharpness) {\n"
+    "lowp vec3 blend(lowp vec3 a, lowp vec3 b, lowp float t, lowp float midPoint, lowp float baseSharpness) {\n"
     "  lowp float sharpness = baseSharpness * sharpness(luma(a), luma(b));\n"
     "  lowp float nt = adjustMidpoint(t, midPoint);\n"
     "  nt = clamp((nt - sharpness) / (1.0 - 2.0 * sharpness + EPSILON), 0.0 , 1.0);\n"
