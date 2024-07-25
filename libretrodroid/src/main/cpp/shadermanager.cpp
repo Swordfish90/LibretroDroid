@@ -594,7 +594,6 @@ const std::string ShaderManager::cut2UpscalePass1Vertex =
     "uniform lowp sampler2D texture;\n"
     "uniform mat4 vViewModel;\n"
     "uniform HIGHP vec2 textureSize;\n"
-    "uniform mediump float screenDensity;\n"
     "uniform mediump float vFlipY;\n"
     "\n"
     "varying lowp float cutMaxSharpness;\n"
@@ -846,6 +845,7 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut3UpscalePar
     { "LUMA_ADJUST_GAMMA", "0" },
     { "SOFT_EDGES_SHARPENING", "1" },
     { "SOFT_EDGES_SHARPENING_AMOUNT", "0.75" },
+    { "SOFT_EDGES_THRESHOLD", "2.0" },
     { "MAX_SEARCH_DISTANCE", "4" },
 };
 
@@ -1043,7 +1043,7 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "  result.y = quickPackFloats2(softEdges.xy * 0.5 + vec2(0.5));\n"
     "  result.z = quickPackFloats2(softEdges.zw * 0.5 + vec2(0.5));\n"
     "\n"
-    "  reject = reject || (dot(abs(softEdges), vec4(1.0)) > 1.5);\n"
+    "  reject = reject || (dot(abs(softEdges), vec4(1.0)) > SOFT_EDGES_THRESHOLD);\n"
     "#endif\n"
     "\n"
     "  if (reject) {\n"

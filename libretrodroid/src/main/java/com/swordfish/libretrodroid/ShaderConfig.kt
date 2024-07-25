@@ -63,6 +63,7 @@ sealed interface ShaderConfig {
         val lumaAdjustGamma: Boolean = false,
         val softEdgesSharpening: Boolean = true,
         val softEdgesSharpeningAmount: Float = 0.75f,
+        val softEdgesThreshold: Float = 2.0f,
         val maxSearchDistance: Int = 4,
     ) : ShaderConfig
 }
