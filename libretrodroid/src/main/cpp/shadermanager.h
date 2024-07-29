@@ -50,6 +50,7 @@ public:
         SHADER_SHARP = 3,
         SHADER_UPSCALE_CUT = 4,
         SHADER_UPSCALE_CUT2 = 5,
+        SHADER_UPSCALE_CUT3 = 6,
     };
 
     struct Config {
@@ -78,6 +79,14 @@ private:
     static const std::string cut2UpscalePass0Fragment;
     static const std::string cut2UpscalePass1Vertex;
     static const std::string cut2UpscalePass1Fragment;
+
+    static const std::unordered_map<std::string, std::string> cut3UpscaleParams;
+    static const std::string cut3UpscalePass0Vertex;
+    static const std::string cut3UpscalePass0Fragment;
+    static const std::string cut3UpscalePass1Vertex;
+    static const std::string cut3UpscalePass1Fragment;
+    static const std::string cut3UpscalePass2Vertex;
+    static const std::string cut3UpscalePass2Fragment;
 
 private:
     static std::string buildDefines(

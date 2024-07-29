@@ -402,12 +402,27 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTI_ALIASING to toParam(config.reduceAntiAliasing),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTI_ALIASING_AMOUNT to toParam(config.reduceAntiAliasingAmount),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTI_ALIASING_MIN_CONTRAST_EDGE to toParam(config.reduceAntiAliasingMinEdge),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_REDUCE_ANTI_ALIASING_CONTRAST_THRESHOLD to toParam(config.reduceAntiAliasingContrastThreshold),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SOFT_EDGES_SHARPENING to toParam(config.softEdgesSharpening),
+                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SOFT_EDGES_SHARPENING_AMOUNT to toParam(config.softEdgesSharpeningAmount),
+                )
+            )
+            is ShaderConfig.CUT3 -> GLRetroShader(
+                LibretroDroid.SHADER_UPSCALE_CUT3,
+                buildParams(
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_USE_DYNAMIC_BLEND to toParam(config.useDynamicBlend),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MIN_CONTRAST_EDGE to toParam(config.blendMinContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MAX_CONTRAST_EDGE to toParam(config.blendMaxContrastEdge),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MIN_SHARPNESS to toParam(config.blendMinSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_BLEND_MAX_SHARPNESS to toParam(config.blendMaxSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING to toParam(config.softEdgesSharpening),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING_AMOUNT to toParam(config.softEdgesSharpeningAmount),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_THRESHOLD to toParam(config.softEdgesThreshold),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_MAX_SEARCH_DISTANCE to toParam(config.maxSearchDistance),
                 )
             )
         }
@@ -423,6 +438,10 @@ class GLRetroView(
         } else {
             "0"
         }
+    }
+
+    private fun toParam(param: Int): String {
+        return param.toString()
     }
 
     private fun buildParams(vararg pairs: Pair<String, String?>): Map<String, String> {
