@@ -421,7 +421,6 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING to toParam(config.softEdgesSharpening),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING_AMOUNT to toParam(config.softEdgesSharpeningAmount),
-                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_THRESHOLD to toParam(config.softEdgesThreshold),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_MAX_SEARCH_DISTANCE to toParam(config.maxSearchDistance),
                 )
             )
