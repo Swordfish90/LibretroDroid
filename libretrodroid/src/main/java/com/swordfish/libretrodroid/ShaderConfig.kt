@@ -34,7 +34,6 @@ sealed interface ShaderConfig {
         val edgeUseFastLuma: Boolean = true,
         val edgeMinValue: Float = 0.05f,
         val edgeMinContrast: Float = 2.00f,
-        val lumaAdjustGamma: Boolean = false,
     ) : ShaderConfig
 
     data class CUT2(
@@ -46,7 +45,6 @@ sealed interface ShaderConfig {
         val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
         val edgeMinValue: Float = 0.05f,
-        val lumaAdjustGamma: Boolean = false,
         val softEdgesSharpening: Boolean = true,
         val softEdgesSharpeningAmount: Float = 0.75f,
     ) : ShaderConfig
@@ -60,9 +58,8 @@ sealed interface ShaderConfig {
         val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
         val edgeMinValue: Float = 0.05f,
-        val lumaAdjustGamma: Boolean = false,
         val softEdgesSharpening: Boolean = true,
-        val softEdgesSharpeningAmount: Float = 0.95f,
+        val softEdgesSharpeningAmount: Float = 0.75f,
         val maxSearchDistance: Int = 4,
     ) : ShaderConfig
 }

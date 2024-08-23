@@ -162,7 +162,6 @@ const std::unordered_map<std::string, std::string> ShaderManager::cutUpscalePara
     { "EDGE_USE_FAST_LUMA", "0" },
     { "EDGE_MIN_VALUE", "0.03" },
     { "EDGE_MIN_CONTRAST", "2.0" },
-    { "LUMA_ADJUST_GAMMA", "0" },
 };
 
 const std::string ShaderManager::cutUpscaleVertex =
@@ -220,9 +219,6 @@ const std::string ShaderManager::cutUpscaleFragment =
     "  lowp float result = v.g;\n"
     "#else\n"
     "  lowp float result = dot(v, vec3(0.299, 0.587, 0.114));\n"
-    "#endif\n"
-    "#if LUMA_ADJUST_GAMMA\n"
-    "  result = sqrt(result);\n"
     "#endif\n"
     "  return result;\n"
     "}\n"
@@ -348,7 +344,6 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut2UpscalePar
     { "STATIC_BLEND_SHARPNESS", "0.00" },
     { "EDGE_USE_FAST_LUMA", "0" },
     { "EDGE_MIN_VALUE", "0.05" },
-    { "LUMA_ADJUST_GAMMA", "0" },
     { "SOFT_EDGES_SHARPENING", "1" },
     { "SOFT_EDGES_SHARPENING_AMOUNT", "0.75" },
 };
@@ -439,9 +434,6 @@ const std::string ShaderManager::cut2UpscalePass0Fragment =
     "  lowp float result = v.g;\n"
     "#else\n"
     "  lowp float result = dot(v, vec3(0.299, 0.587, 0.114));\n"
-    "#endif\n"
-    "#if LUMA_ADJUST_GAMMA\n"
-    "  result = sqrt(result);\n"
     "#endif\n"
     "  return result;\n"
     "}\n"
@@ -868,7 +860,6 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut3UpscalePar
     { "STATIC_BLEND_SHARPNESS", "0.00" },
     { "EDGE_USE_FAST_LUMA", "0" },
     { "EDGE_MIN_VALUE", "0.05" },
-    { "LUMA_ADJUST_GAMMA", "0" },
     { "SOFT_EDGES_SHARPENING", "1" },
     { "SOFT_EDGES_SHARPENING_AMOUNT", "0.75" },
     { "MAX_SEARCH_DISTANCE", "4" },
@@ -959,9 +950,6 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "  lowp float result = v.g;\n"
     "#else\n"
     "  lowp float result = dot(v, vec3(0.299, 0.587, 0.114));\n"
-    "#endif\n"
-    "#if LUMA_ADJUST_GAMMA\n"
-    "  result = sqrt(result);\n"
     "#endif\n"
     "  return result;\n"
     "}\n"
@@ -1106,8 +1094,15 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "  bvec4 opposite = equal(neighbors, ivec4(pattern == 3 ? 4 : 3));\n"
     "\n"
     "  bool isTriangle = pattern >= 3;\n"
-    "  bool reject = isTriangle && any(bvec2(vertical && any(opposite.yw), horizontal && any(opposite.xz)));\n"
-    "  if (reject) {\n"
+    "  bool reject = any(\n"
+    "    bvec3(\n"
+    "      vertical && any(opposite.yw),\n"
+    "      horizontal && any(opposite.xz),\n"
+    "      vertical && horizontal\n"
+    "    )\n"
+    "  );\n"
+    "\n"
+    "  if (isTriangle && reject) {\n"
     "    pattern = -pattern;\n"
     "  }\n"
     "\n"
