@@ -388,7 +388,6 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
-                    LibretroDroid.SHADER_UPSCALE_CUT_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                 )
             )
             is ShaderConfig.CUT2 -> GLRetroShader(
@@ -402,7 +401,6 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
-                    LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SOFT_EDGES_SHARPENING to toParam(config.softEdgesSharpening),
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_SOFT_EDGES_SHARPENING_AMOUNT to toParam(config.softEdgesSharpeningAmount),
                 )
@@ -418,10 +416,8 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_STATIC_BLEND_SHARPNESS to toParam(config.staticSharpness),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_EDGE_USE_FAST_LUMA to toParam(config.edgeUseFastLuma),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
-                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_LUMA_ADJUST_GAMMA to toParam(config.lumaAdjustGamma),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING to toParam(config.softEdgesSharpening),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING_AMOUNT to toParam(config.softEdgesSharpeningAmount),
-                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_THRESHOLD to toParam(config.softEdgesThreshold),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_MAX_SEARCH_DISTANCE to toParam(config.maxSearchDistance),
                 )
             )
