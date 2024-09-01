@@ -57,7 +57,7 @@ sealed interface ShaderConfig {
         val blendMaxSharpness: Float = 0.75f,
         val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
-        val edgeMinValue: Float = 0.05f,
+        val edgeMinValue: Float = 0.025f,
         val softEdgesSharpening: Boolean = true,
         val softEdgesSharpeningAmount: Float = 0.75f,
         val maxSearchDistance: Int = 4,
