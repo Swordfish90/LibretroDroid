@@ -68,7 +68,8 @@ public class LibretroDroid {
     public static final String SHADER_UPSCALE_CUT3_PARAM_EDGE_MIN_VALUE = "EDGE_MIN_VALUE";
     public static final String SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING = "SOFT_EDGES_SHARPENING";
     public static final String SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING_AMOUNT = "SOFT_EDGES_SHARPENING_AMOUNT";
-    public static final String SHADER_UPSCALE_CUT3_PARAM_MAX_SEARCH_DISTANCE = "MAX_SEARCH_DISTANCE";
+    public static final String SHADER_UPSCALE_CUT3_PARAM_SEARCH_MIN_CONTRAST = "SEARCH_MIN_CONTRAST";
+    public static final String SHADER_UPSCALE_CUT3_PARAM_SEARCH_MAX_DISTANCE = "SEARCH_MAX_DISTANCE";
 
     public static final int ERROR_LOAD_LIBRARY = 0;
     public static final int ERROR_LOAD_GAME = 1;

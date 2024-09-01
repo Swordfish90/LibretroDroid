@@ -418,7 +418,8 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_EDGE_MIN_VALUE to toParam(config.edgeMinValue),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING to toParam(config.softEdgesSharpening),
                     LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SOFT_EDGES_SHARPENING_AMOUNT to toParam(config.softEdgesSharpeningAmount),
-                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_MAX_SEARCH_DISTANCE to toParam(config.maxSearchDistance),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SEARCH_MIN_CONTRAST to toParam(config.searchMinContrast),
+                    LibretroDroid.SHADER_UPSCALE_CUT3_PARAM_SEARCH_MAX_DISTANCE to toParam(config.searchMaxDistance),
                 )
             )
         }
