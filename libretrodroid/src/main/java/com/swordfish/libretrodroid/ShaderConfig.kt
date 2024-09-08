@@ -60,7 +60,7 @@ sealed interface ShaderConfig {
         val edgeMinValue: Float = 0.025f,
         val softEdgesSharpening: Boolean = true,
         val softEdgesSharpeningAmount: Float = 1.0f,
-        val searchMinContrast: Float = 0.50f,
+        val searchMinContrast: Float = 0.75f,
         val searchMaxDistance: Int = 4,
     ) : ShaderConfig
 }
