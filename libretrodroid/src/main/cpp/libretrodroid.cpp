@@ -419,12 +419,17 @@ void LibretroDroid::destroy() {
 }
 
 void LibretroDroid::resume() {
-    LOGD("Performing libretrodroid resume");
+     try {
+        LOGD("Performing libretrodroid resume");
 
-    input = std::make_unique<Input>();
+        input = std::make_unique<Input>();
 
-    fpsSync->reset();
-    audio->start();
+        fpsSync->reset();
+        audio->start();
+    } catch (const std::exception& e) {
+        // Xử lý lỗi
+        std::cerr << "Đã xảy ra lỗi: " << e.what() << std::endl;
+    }
 }
 
 void LibretroDroid::pause() {
