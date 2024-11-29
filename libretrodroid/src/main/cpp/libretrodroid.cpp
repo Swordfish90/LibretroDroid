@@ -313,7 +313,7 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
         }else{
             afterGameLoad();
         }
-    } catch (...) {
+    } catch (const std::exception& e) {
         LOGE("Cannot load game. Leaving. catch");
     }
 }
@@ -346,7 +346,7 @@ void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
         }else{
             afterGameLoad();
         }
-    } catch (...) {
+    } catch (const std::exception& e) {
         LOGE("Cannot load game. Leaving. catch");
     }
 }
@@ -393,7 +393,7 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
         }else{
             afterGameLoad();
         }
-    } catch (...) {
+    } catch (const std::exception& e) {
         LOGE("Cannot load game. Leaving. catch");
     }
 }
@@ -477,7 +477,7 @@ void LibretroDroid::step() {
 
             video->updateRotation(Environment::getInstance().getScreenRotation());
         }
-    } catch (...) {
+    } catch (const std::exception& e) {
       // Block of code to handle errors
     }
     
