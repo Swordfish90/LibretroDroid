@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.13.2)
 
 # now build app's shared lib
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
@@ -82,6 +82,9 @@ add_library(libretrodroid SHARED
         microphone/microphoneinterface.cpp
         ${LIBRETRO_COMMON}
 )
+
+# Support 16k pages for Android 15
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
 
 # add lib dependencies
 target_link_libraries(libretrodroid
