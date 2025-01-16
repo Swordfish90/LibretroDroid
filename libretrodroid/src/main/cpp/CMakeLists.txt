@@ -84,7 +84,7 @@ add_library(libretrodroid SHARED
 )
 
 # Support 16k pages for Android 15
-target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(libretrodroid PRIVATE "-Wl,-z,max-page-size=16384")
 
 # add lib dependencies
 target_link_libraries(libretrodroid
