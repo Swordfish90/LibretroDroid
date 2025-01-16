@@ -93,6 +93,7 @@ class GLRetroView(
             getDefaultRefreshRate(),
             data.preferLowLatencyAudio,
             data.gameVirtualFiles.isNotEmpty(),
+            data.enableMicrophone,
             data.skipDuplicateFrames,
             getDeviceLanguage()
         )

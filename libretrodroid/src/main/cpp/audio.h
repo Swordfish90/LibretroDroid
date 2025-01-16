@@ -39,7 +39,7 @@ private:
 
 public:
     Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio);
-    ~Audio() = default;
+    ~Audio() override = default;
 
     void start();
     void stop();

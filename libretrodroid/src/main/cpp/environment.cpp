@@ -29,6 +29,7 @@
 #include "log.h"
 #include "environment.h"
 #include "vfs/vfs.h"
+#include "microphone/microphoneinterface.h"
 
 void Environment::initialize(
     const std::string &requiredSystemDirectory,
@@ -99,7 +100,7 @@ bool Environment::environment_handle_set_variables(const struct retro_variable* 
         }
 
         variables[key] = currentVariable;
-        LOGD("Assigning variable %s: %s", variable.key.c_str(), variable.value.c_str());
+        LOGD("Assigning variable %s: %s", currentVariable.key.c_str(), currentVariable.value.c_str());
 
         count++;
     }
@@ -168,6 +169,15 @@ bool Environment::environment_handle_get_vfs_interface(struct retro_vfs_interfac
     return true;
 }
 
+bool Environment::environment_handle_get_microphone_interface(struct retro_microphone_interface* microphone_interface) {
+    if (!enableMicrophone) {
+        return false;
+    }
+
+    *microphone_interface = *libretrodroid::MicrophoneInterface::getInterface();
+    return true;
+}
+
 void Environment::callback_retro_log(enum retro_log_level level, const char *fmt, ...) {
     va_list argptr;
     va_start(argptr, fmt);
@@ -175,8 +185,8 @@ void Environment::callback_retro_log(enum retro_log_level level, const char *fmt
     switch (level) {
 #if VERBOSE_LOGGING
         case RETRO_LOG_DEBUG:
-                __android_log_vprint(ANDROID_LOG_DEBUG, MODULE_NAME_CORE, fmt, argptr);
-                break;
+            __android_log_vprint(ANDROID_LOG_DEBUG, MODULE_NAME_CORE, fmt, argptr);
+            break;
 #endif
         case RETRO_LOG_INFO:
             __android_log_vprint(ANDROID_LOG_INFO, MODULE_NAME_CORE, fmt, argptr);
@@ -321,6 +331,10 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_GET_VFS_INTERFACE");
             return environment_handle_get_vfs_interface(static_cast<struct retro_vfs_interface_info*>(data));
 
+        case RETRO_ENVIRONMENT_GET_MICROPHONE_INTERFACE:
+            LOGD("Called RETRO_ENVIRONMENT_GET_MICROPHONE_INTERFACE");
+            return environment_handle_get_microphone_interface(static_cast<struct retro_microphone_interface*>(data));
+
         default:
             LOGD("callback environment has been called: %u", cmd);
             return false;
@@ -459,6 +473,10 @@ std::array<libretrodroid::RumbleState, 4>& Environment::getLastRumbleStates() {
     return rumbleStates;
 }
 
-void Environment::setEnableVirtualFileSystem(bool useVirtualFileSystem) {
-    this->useVirtualFileSystem = useVirtualFileSystem;
+void Environment::setEnableVirtualFileSystem(bool value) {
+    this->useVirtualFileSystem = value;
+}
+
+void Environment::setEnableMicrophone(bool value) {
+    this->enableMicrophone = value;
 }

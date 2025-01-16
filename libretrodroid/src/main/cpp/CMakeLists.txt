@@ -76,6 +76,10 @@ add_library(libretrodroid SHARED
         vfs/vfsfile.cpp
         vfs/fdwrapper.h
         vfs/fdwrapper.cpp
+        microphone/microphone.h
+        microphone/microphone.cpp
+        microphone/microphoneinterface.h
+        microphone/microphoneinterface.cpp
         ${LIBRETRO_COMMON}
 )
 

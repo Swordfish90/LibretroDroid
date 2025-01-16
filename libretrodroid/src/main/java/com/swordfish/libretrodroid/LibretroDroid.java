@@ -88,6 +88,7 @@ public class LibretroDroid {
         float refreshRate,
         boolean preferLowLatencyAudio,
         boolean enableVirtualFileSystem,
+        boolean enableMicrophone,
         boolean skipDuplicateFrames,
         String language
     );

@@ -43,7 +43,7 @@ public:
     void operator=(VFS const&) = delete;
 
     static retro_vfs_interface* getInterface();
-    void initialize(std::vector<VFSFile> virtualFiles);
+    void initialize(std::vector<VFSFile> files);
     void deinitialize();
 
 private:
