@@ -5,6 +5,7 @@
 
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
   <application
       android:allowBackup="false"
@@ -16,7 +17,7 @@
         android:name="com.swordfish.libretrodroid.SampleActivity"
         android:theme="@style/Theme.AppCompat.NoActionBar"
         android:launchMode="singleTask"
-        android:exported="false"
+        android:exported="true"
         android:configChanges="orientation|screenSize|keyboardHidden">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />

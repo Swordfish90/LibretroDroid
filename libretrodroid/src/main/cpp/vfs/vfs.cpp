@@ -111,8 +111,8 @@ retro_vfs_interface * VFS::getInterface() {
     };
 }
 
-void VFS::initialize(std::vector<VFSFile> virtualFiles) {
-    this->virtualFiles = std::move(virtualFiles);
+void VFS::initialize(std::vector<VFSFile> files) {
+    this->virtualFiles = std::move(files);
 }
 
 void VFS::deinitialize() {

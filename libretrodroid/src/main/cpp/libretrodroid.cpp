@@ -241,6 +241,7 @@ void LibretroDroid::create(
     float refreshRate,
     bool lowLatencyAudio,
     bool enableVirtualFileSystem,
+    bool enableMicrophone,
     bool duplicateFrames,
     const std::string& language
 ) {
@@ -251,6 +252,7 @@ void LibretroDroid::create(
     Environment::getInstance().initialize(systemDir, savesDir, &callback_get_current_framebuffer);
     Environment::getInstance().setLanguage(language);
     Environment::getInstance().setEnableVirtualFileSystem(enableVirtualFileSystem);
+    Environment::getInstance().setEnableMicrophone(enableMicrophone);
 
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;

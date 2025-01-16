@@ -82,6 +82,7 @@ public:
         float refreshRate,
         bool lowLatencyAudio,
         bool enableVirtualFileSystem,
+        bool enableMicrophone,
         bool duplicateFrames,
         const std::string& language
     );

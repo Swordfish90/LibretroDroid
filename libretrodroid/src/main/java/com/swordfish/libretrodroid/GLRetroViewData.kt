@@ -32,4 +32,5 @@ class GLRetroViewData(context: Context) {
     var rumbleEventsEnabled: Boolean = true
     var preferLowLatencyAudio: Boolean = true
     var skipDuplicateFrames: Boolean = false
+    var enableMicrophone: Boolean = false
 }
