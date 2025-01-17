@@ -1,10 +1,11 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+apply plugin: 'maven-publish'
 
 group='com.github.Swordfish90'
 
 android {
+    namespace = "com.swordfish.libretrodroid"
     compileSdkVersion 33
     buildToolsVersion "29.0.3"
 
@@ -37,6 +38,24 @@ android {
         cmake {
             version '3.22.1'
             path 'src/main/cpp/CMakeLists.txt'
+        }
+    }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'com.swordfish'
+            artifactId = 'libretrodroid'
+            afterEvaluate {
+                from components.release
+            }
         }
     }
 }
