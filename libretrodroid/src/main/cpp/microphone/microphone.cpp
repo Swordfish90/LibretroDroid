@@ -34,11 +34,14 @@ oboe::DataCallbackResult Microphone::onAudioReady(
 
 Microphone::Microphone(int sampleRate):
     mSampleRate(sampleRate),
-    fifoBuffer(std::make_unique<oboe::FifoBuffer>(2, sampleRate / 4)) { }
+    fifoBuffer(std::make_unique<oboe::FifoBuffer>(2, sampleRate / 2)) { }
 
 bool Microphone::open() {
+    std::lock_guard<std::mutex> l(lock);
+
     oboe::AudioStreamBuilder builder;
     builder.setDirection(oboe::Direction::Input);
+    builder.setInputPreset(oboe::InputPreset::Generic);
     builder.setPerformanceMode(oboe::PerformanceMode::PowerSaving);
     builder.setSharingMode(oboe::SharingMode::Exclusive);
     builder.setSampleRate(mSampleRate);
@@ -62,6 +65,7 @@ bool Microphone::open() {
 }
 
 bool Microphone::close() {
+    std::lock_guard<std::mutex> l(lock);
     oboe::Result result = inputStream->close();
     if (result != oboe::Result::OK) {
         LOGE("Failed to close stream");
@@ -85,7 +89,7 @@ bool Microphone::isRunning() const {
 
 int Microphone::read(int16_t* samples, int numSamples) {
     std::lock_guard<std::mutex> l(lock);
-    return fifoBuffer->read(samples, numSamples);
+    return fifoBuffer->readNow(samples, numSamples);
 }
 
 int Microphone::sampleRate() const {
