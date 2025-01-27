@@ -35,8 +35,7 @@ retro_microphone_interface* MicrophoneInterface::getInterface() {
     };
 }
 
-retro_microphone_t*
-MicrophoneInterface::libretroOpenMicrophone(const retro_microphone_params_t* params) {
+retro_microphone_t* MicrophoneInterface::libretroOpenMicrophone(const retro_microphone_params_t* params) {
     LOGI("Opened microphone");
     auto* result = new Microphone((int) params->rate);
     result->open();
@@ -59,8 +58,10 @@ bool MicrophoneInterface::libretroGetMicrophoneParams(
     return true;
 }
 
-bool
-MicrophoneInterface::libretroSetMicrophoneState(retro_microphone_t* opaqueMicrophone, bool state) {
+bool MicrophoneInterface::libretroSetMicrophoneState(
+    retro_microphone_t* opaqueMicrophone,
+    bool state
+) {
     auto microphone = reinterpret_cast<Microphone*>(opaqueMicrophone);
     microphone->setRunning(state);
     return true;
