@@ -19,6 +19,7 @@ package com.swordfish.libretrodroid
 
 import android.app.ActivityManager
 import android.content.Context
+import android.graphics.RectF
 import android.opengl.GLSurfaceView
 import android.util.Log
 import android.view.InputDevice
@@ -45,7 +46,7 @@ import kotlinx.coroutines.launch
 class GLRetroView(
     context: Context,
     private val data: GLRetroViewData
-) : AspectRatioGLSurfaceView(context), LifecycleObserver {
+) : GLSurfaceView(context), LifecycleObserver {
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
         LibretroDroid.setAudioEnabled(value)
@@ -57,6 +58,10 @@ class GLRetroView(
 
     var shader: ShaderConfig by Delegates.observable(data.shader) { _, _, value ->
         LibretroDroid.setShaderConfig(buildShader(value))
+    }
+
+    var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
+        LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
     }
 
     private val openGLESVersion: Int
@@ -262,7 +267,6 @@ class GLRetroView(
         private fun resume() = catchExceptions {
             LibretroDroid.resume()
             onResume()
-            refreshAspectRatio()
             isEmulationReady = true
         }
 
@@ -297,11 +301,6 @@ class GLRetroView(
                 retroGLEventsSubject.emit(GLRetroEvents.SurfaceCreated)
             }
         }
-    }
-
-    private fun refreshAspectRatio() {
-        val aspectRatio = LibretroDroid.getAspectRatio()
-        KtUtils.runOnUIThread { setAspectRatio(aspectRatio) }
     }
 
     // These functions are called from the GL thread.
