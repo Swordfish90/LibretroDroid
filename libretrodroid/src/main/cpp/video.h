@@ -24,6 +24,7 @@
 #include "renderers/renderer.h"
 #include "shadermanager.h"
 #include "utils/rect.h"
+#include "videobackground.h"
 
 namespace libretrodroid {
 
@@ -69,7 +70,6 @@ public:
     void updateShaderType(ShaderManager::Config shaderConfig);
 
     void renderFrame();
-    void renderBackground();
 
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
 
@@ -178,6 +178,8 @@ private:
     float rotation = 0.0F;
 
     std::vector<ShaderChainEntry> shadersChain;
+
+    VideoBackground videoBackground;
 
     Renderer* renderer;
 };

@@ -21,6 +21,7 @@
 #include <string>
 #include <cmath>
 #include <utility>
+#include <sstream>
 
 #include "log.h"
 
@@ -222,7 +223,13 @@ void Video::renderFrame() {
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderBackground();
+    videoBackground.renderBackground(
+        screenWidth,
+        screenHeight,
+        gBackgroundVertices,
+        renderer->getTexture(),
+        gFlipY
+    );
 
     updateProgram();
     for (int i = 0; i < shadersChain.size(); ++i) {
@@ -379,182 +386,6 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
 
     renderer->setPixelFormat(renderingOptions.pixelFormat);
     updateProgram();
-}
-
-void Video::renderBackground() {
-    static GLuint blurShaderProgram = 0;
-    static GLuint fbo1 = 0, fbo2 = 0;
-    static GLuint texture1 = 0, texture2 = 0;
-    static GLint positionHandle = -1;
-    static GLint texCoordHandle = -1;
-    static GLint textureHandle = -1;
-    static GLint directionHandle = -1;
-
-    static GLuint displayShaderProgram = 0;
-    static GLint displayTextureHandle = -1;
-    static GLint displayFlipYHandle = -1;
-
-    static int smallWidth = 8;
-    static int smallHeight = 8;
-
-    if (blurShaderProgram == 0) {
-        const char* vertexShaderSource = R"(
-            attribute vec2 aPosition;
-            attribute vec2 aTexCoord;
-            uniform mediump float vFlipY;
-
-            varying vec2 vTexCoord;
-            void main() {
-                gl_Position = vec4(aPosition, 0.0, 1.0);
-                vTexCoord = vec2(aTexCoord.x, mix(aTexCoord.y, 1.0 - aTexCoord.y, vFlipY));
-            }
-        )";
-
-        const char* fragmentShaderSource = R"(
-            precision mediump float;
-            varying vec2 vTexCoord;
-            uniform sampler2D texture;
-            uniform vec2 direction;
-
-            void main() {
-                lowp vec4 sum = vec4(0.0);
-                float kernel[5];
-                kernel[0] = 0.227027;
-                kernel[1] = 0.1945946;
-                kernel[2] = 0.1216216;
-                kernel[3] = 0.054054;
-                kernel[4] = 0.016216;
-                for (int i = -2; i <= 2; i++) {
-                    vec2 offset = vec2(float(i)) * direction;
-                    sum += texture2D(texture, vTexCoord + offset) * kernel[i + 2];
-                }
-                gl_FragColor = sum;
-            }
-        )";
-
-        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-        glCompileShader(vertexShader);
-
-        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-        glCompileShader(fragmentShader);
-
-        blurShaderProgram = glCreateProgram();
-        glAttachShader(blurShaderProgram, vertexShader);
-        glAttachShader(blurShaderProgram, fragmentShader);
-        glBindAttribLocation(blurShaderProgram, 0, "aPosition");
-        glBindAttribLocation(blurShaderProgram, 1, "aTexCoord");
-        glLinkProgram(blurShaderProgram);
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        positionHandle = glGetAttribLocation(blurShaderProgram, "aPosition");
-        texCoordHandle = glGetAttribLocation(blurShaderProgram, "aTexCoord");
-        textureHandle = glGetUniformLocation(blurShaderProgram, "texture");
-        directionHandle = glGetUniformLocation(blurShaderProgram, "direction");
-
-        glGenFramebuffers(1, &fbo1);
-        glGenFramebuffers(1, &fbo2);
-        glGenTextures(1, &texture1);
-        glGenTextures(1, &texture2);
-
-        GLuint textures[] = { texture1, texture2 };
-        for (unsigned int texture : textures) {
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, smallWidth, smallHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo1);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture1, 0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo2);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture2, 0);
-
-        const char* displayVertexShaderSource = R"(
-            attribute vec2 aPosition;
-            attribute vec2 aTexCoord;
-            uniform mediump float vFlipY;
-            varying vec2 vTexCoord;
-            void main() {
-                gl_Position = vec4(aPosition, 0.0, 1.0);
-                vTexCoord = vec2(aTexCoord.x, mix(aTexCoord.y, 1.0 - aTexCoord.y, vFlipY));
-            }
-        )";
-
-        const char* displayFragmentShaderSource = R"(
-            precision mediump float;
-            varying vec2 vTexCoord;
-            uniform mediump float vFlipY;
-            uniform sampler2D texture;
-            void main() {
-                gl_FragColor = texture2D(texture, vTexCoord);
-            }
-        )";
-
-        GLuint displayVertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(displayVertexShader, 1, &displayVertexShaderSource, nullptr);
-        glCompileShader(displayVertexShader);
-
-        GLuint displayFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(displayFragmentShader, 1, &displayFragmentShaderSource, nullptr);
-        glCompileShader(displayFragmentShader);
-
-
-        displayShaderProgram = glCreateProgram();
-        glAttachShader(displayShaderProgram, displayVertexShader);
-        glAttachShader(displayShaderProgram, displayFragmentShader);
-        glBindAttribLocation(displayShaderProgram, 0, "aPosition");
-        glBindAttribLocation(displayShaderProgram, 1, "aTexCoord");
-        displayFlipYHandle = glGetUniformLocation(blurShaderProgram, "vFlipY");
-        glLinkProgram(displayShaderProgram);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo1);
-    glViewport(0, 0, smallWidth, smallHeight);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glUseProgram(blurShaderProgram);
-
-    glVertexAttribPointer(positionHandle, 2, GL_FLOAT, GL_FALSE, 0, gBackgroundVertices);
-    glEnableVertexAttribArray(positionHandle);
-
-    glVertexAttribPointer(texCoordHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
-    glEnableVertexAttribArray(texCoordHandle);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, renderer->getTexture());
-    glUniform1i(textureHandle, 0);
-    glUniform2f(directionHandle, 1.0 / smallWidth, 0.0);
-
-    // TODO FILIPPO... Handle gFlipY
-//    glUniform1f(flipYHandle, gFlipY);
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo2);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    glUniform2f(directionHandle, 0.0, 1.0 / smallHeight);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, screenWidth, screenHeight);
-    glUseProgram(displayShaderProgram);
-    glUniform1i(displayTextureHandle, 0);
-    glUniform1f(displayFlipYHandle, gFlipY);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glDisableVertexAttribArray(positionHandle);
-    glDisableVertexAttribArray(texCoordHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
 }
 
 void Video::updateAspectRatio(float aspectRatio) {
