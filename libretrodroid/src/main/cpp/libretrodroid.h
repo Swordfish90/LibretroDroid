@@ -43,6 +43,7 @@
 #include "renderers/es3/framebufferrenderer.h"
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
+#include "utils/rect.h"
 
 namespace libretrodroid {
 
@@ -55,6 +56,8 @@ public:
     }
     LibretroDroid(LibretroDroid const&) = delete;
     void operator=(LibretroDroid const&) = delete;
+
+    void setViewport(Rect viewportRect);
 
 private:
     LibretroDroid() {}
@@ -100,6 +103,7 @@ public:
     void onKeyEvent(unsigned int port, int action, int keyCode);
     void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);
 
+    void refreshAspectRatio();
     float getAspectRatio();
 
     bool requiresVideoRefresh() const;
@@ -156,6 +160,7 @@ private:
         ShaderManager::Type::SHADER_DEFAULT, { }
     };
 
+    Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;

@@ -23,6 +23,7 @@
 
 #include "renderers/renderer.h"
 #include "shadermanager.h"
+#include "utils/rect.h"
 
 namespace libretrodroid {
 
@@ -56,15 +57,19 @@ public:
         ShaderManager::Config shaderConfig,
         bool bottomLeftOrigin,
         float rotation,
-        bool skipDuplicateFrames
+        bool skipDuplicateFrames,
+        Rect viewportRect
     );
 
+    void updateAspectRatio(float aspectRatio);
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
+    void updateViewportSize(Rect viewportRect);
     void updateRendererSize(unsigned width, unsigned height);
     void updateRotation(float rotation);
     void updateShaderType(ShaderManager::Config shaderConfig);
 
     void renderFrame();
+    void renderBackground();
 
     void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
 
@@ -79,6 +84,7 @@ public:
 private:
     void updateProgram();
 
+    void updateForegroundVertices();
     void updateViewModelMatrix(float rotation);
     float getScreenDensity();
     float getTextureWidth();
@@ -87,7 +93,27 @@ private:
     void initializeRenderer(RenderingOptions renderingOptions);
 
 private:
-    GLfloat gTriangleVertices[12] = {
+    GLfloat gBackgroundVertices[12] = {
+        -1.0F,
+        -1.0F,
+
+        -1.0F,
+        +1.0F,
+
+        +1.0F,
+        -1.0F,
+
+        +1.0F,
+        -1.0F,
+
+        -1.0F,
+        +1.0F,
+
+        +1.0F,
+        +1.0F,
+    };
+
+    GLfloat gForegroundVertices[12] = {
         -1.0F,
         -1.0F,
 
@@ -136,6 +162,9 @@ private:
 
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
+    float aspectRatio = 1;
+
+    Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
 
     ShaderManager::Config requestedShaderConfig = ShaderManager::Config {
         ShaderManager::Type::SHADER_DEFAULT
@@ -146,6 +175,7 @@ private:
     bool skipDuplicateFrames = false;
 
     float gFlipY = 0.0F;
+    float rotation = 0.0F;
 
     std::vector<ShaderChainEntry> shadersChain;
 

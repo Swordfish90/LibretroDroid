@@ -502,9 +502,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
 
     if (LibretroDroid::getInstance().requiresVideoRefresh()) {
         LibretroDroid::getInstance().clearRequiresVideoRefresh();
-        jclass cls = env->GetObjectClass(glRetroView);
-        jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
-        env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
+        LibretroDroid::getInstance().refreshAspectRatio();
     }
 
     if (LibretroDroid::getInstance().isRumbleEnabled()) {
@@ -514,13 +512,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
             env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
         });
     }
-}
-
-JNIEXPORT jfloat JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getAspectRatio(
-    JNIEnv* env,
-    jclass obj
-) {
-    return LibretroDroid::getInstance().getAspectRatio();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(
@@ -553,6 +544,17 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderC
     jobject shaderConfig
 ) {
     LibretroDroid::getInstance().setShaderConfig(JavaUtils::shaderFromJava(env, shaderConfig));
+}
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewport(
+    JNIEnv* env,
+    jclass obj,
+    jfloat x,
+    jfloat y,
+    jfloat width,
+    jfloat height
+) {
+    LibretroDroid::getInstance().setViewport(Rect(x, y, width, height));
 }
 
 }

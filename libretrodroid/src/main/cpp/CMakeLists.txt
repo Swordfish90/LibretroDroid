@@ -56,18 +56,20 @@ add_library(libretrodroid SHARED
         input.cpp
         shadermanager.h
         shadermanager.cpp
-        utils/javautils.h
-        utils/javautils.cpp
         rumble.h
         rumble.cpp
         rumblestate.h
         rumblestate.cpp
+        utils/javautils.h
+        utils/javautils.cpp
         utils/utils.cpp
         utils/utils.h
         utils/jnistring.h
         utils/jnistring.cpp
         utils/libretrodroidexception.h
         utils/libretrodroidexception.cpp
+        utils/rect.h
+        utils/rect.cpp
         errorcodes.h
         errorcodes.cpp
         vfs/vfs.h

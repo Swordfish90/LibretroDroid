@@ -41,6 +41,7 @@
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/utils.h"
+#include "utils/rect.h"
 #include "errorcodes.h"
 #include "vfs/vfs.h"
 
@@ -202,7 +203,8 @@ void LibretroDroid::onSurfaceCreated() {
         fragmentShaderConfig,
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
-        skipDuplicateFrames
+        skipDuplicateFrames,
+        viewportRect
     );
 
     video = std::unique_ptr<Video>(newVideo);
@@ -409,6 +411,7 @@ void LibretroDroid::resume() {
 
     fpsSync->reset();
     audio->start();
+    refreshAspectRatio();
 }
 
 void LibretroDroid::pause() {
@@ -466,6 +469,10 @@ void LibretroDroid::step() {
 float LibretroDroid::getAspectRatio() {
     float gameAspectRatio = Environment::getInstance().retrieveGameSpecificAspectRatio();
     return gameAspectRatio > 0 ? gameAspectRatio : defaultAspectRatio;
+}
+
+void LibretroDroid::refreshAspectRatio() {
+    video->updateAspectRatio(getAspectRatio());
 }
 
 void LibretroDroid::setRumbleEnabled(bool enabled) {
@@ -593,6 +600,14 @@ float LibretroDroid::findDefaultAspectRatio(const retro_system_av_info& system_a
 void LibretroDroid::handleRumbleUpdates(const std::function<void(int, float, float)> &handler) {
     if (rumble && rumbleEnabled) {
         rumble->handleRumbleUpdates(handler);
+    }
+}
+
+void LibretroDroid::setViewport(Rect viewportRect) {
+    this->viewportRect = viewportRect;
+
+    if (video != nullptr) {
+        video->updateViewportSize(viewportRect);
     }
 }
 
