@@ -456,6 +456,12 @@ class GLRetroView(
         }
     }
 
+    private fun refreshAspectRatio() {
+        runOnGLThread {
+            LibretroDroid.refreshAspectRatio()
+        }
+    }
+
     sealed class GLRetroEvents {
         object FrameRendered: GLRetroEvents()
         object SurfaceCreated: GLRetroEvents()
