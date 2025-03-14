@@ -98,39 +98,14 @@ void VideoBackground::initializeShaders() {
     displayFlipYHandle = glGetUniformLocation(displayShaderProgram, "vFlipY");
 }
 
-// TODO BLEND... Refactor this function please. It's currently a mess.
 void VideoBackground::initializeFramebuffers() {
-    if (blurFramebuffers[0] != 0) return;
+    if (!blurFramebuffers.empty()) return;
 
-    glGenFramebuffers(1, &blurFramebuffers[0]);
-    glGenFramebuffers(1, &blurFramebuffers[1]);
-    glGenFramebuffers(1, &blurFramebuffers[2]);
-    glGenFramebuffers(1, &blurFramebuffers[3]);
-    glGenTextures(1, &blurTextures[0]);
-    glGenTextures(1, &blurTextures[1]);
-    glGenTextures(1, &blurTextures[2]);
-    glGenTextures(1, &blurTextures[3]);
-
-    for (GLuint texture : blurTextures) {
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, downscaledWidth, downscaledHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    for (int i = 0; i < 4; i++) {
+        blurFramebuffers.push_back(
+            ES3Utils::createFramebuffer(downscaledWidth, downscaledHeight, true, false, false)
+        );
     }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[0]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTextures[0], 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[1]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTextures[1], 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[2]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTextures[2], 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[3]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTextures[3], 0);
 }
 
 void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroundVertices) {
@@ -144,7 +119,7 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
     glVertexAttribPointer(blurTextureCoordinatesHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
     glEnableVertexAttribArray(blurTextureCoordinatesHandle);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[blendFramebufferWriteIndex]);
+    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[blendFramebufferWriteIndex]->framebuffer);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -155,24 +130,24 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
     glUniform1i(blendTextureHandle, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, blurTextures[blendFramebufferReadIndex]);
+    glBindTexture(GL_TEXTURE_2D, blurFramebuffers[blendFramebufferReadIndex]->texture);
     glUniform1i(blendPrevTextureHandle, 1);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glUseProgram(blurShaderProgram);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[2]);
+    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[2]->framebuffer);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, blurTextures[blendFramebufferWriteIndex]);
+    glBindTexture(GL_TEXTURE_2D, blurFramebuffers[blendFramebufferWriteIndex]->texture);
     glUniform1i(blurTextureHandle, 0);
     glUniform2f(blurDirectionHandle, 1.0 / downscaledWidth, 0.0);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[3]);
+    glBindFramebuffer(GL_FRAMEBUFFER, blurFramebuffers[3]->framebuffer);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, blurTextures[2]);
+    glBindTexture(GL_TEXTURE_2D, blurFramebuffers[2]->texture);
     glUniform1i(blurTextureHandle, 0);
     glUniform2f(blurDirectionHandle, 0.0, 1.0 / downscaledHeight);
 
@@ -201,7 +176,7 @@ void VideoBackground::renderToFinalOutput(
     glUniform1f(displayFlipYHandle, gFlipY);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, blurTextures[3]);
+    glBindTexture(GL_TEXTURE_2D, blurFramebuffers[3]->texture);
     glUniform1i(displayTextureHandle, 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
