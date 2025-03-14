@@ -20,6 +20,8 @@
 #include <string>
 #include <GLES2/gl2.h>
 
+#include "renderers/es3/es3utils.h"
+
 namespace libretrodroid {
 
 class VideoBackground {
@@ -111,8 +113,7 @@ private:
     };
 
     GLuint blurShaderProgram = 0;
-    GLuint blurFramebuffers[4];
-    GLuint blurTextures[4];
+    std::vector<std::unique_ptr<ES3Utils::Framebuffer>> blurFramebuffers;
 
     GLint blurPositionHandle = -1;
     GLint blurTextureCoordinatesHandle = -1;
