@@ -141,78 +141,6 @@ void Video::updateProgram() {
     renderer->setShaders(shaders);
 }
 
-// TODO BLUR... We should probably rotate also the background...
-void Video::updateForegroundVertices() {
-    LOGD("Computing foreground vertices from screen (%d x %d), aspect ratio (%f) with rotation (%f radians)", screenWidth, screenHeight, aspectRatio, rotation);
-
-    float screenW = screenWidth  * viewportRect.getWidth();
-    float screenH = screenHeight * viewportRect.getHeight();
-    float screenAspect  = screenW / screenH;
-    float contentAspect = aspectRatio;
-
-    float scaleX = viewportRect.getWidth();
-    float scaleY = viewportRect.getHeight();
-    if (contentAspect > screenAspect) {
-        scaleY *= screenAspect / contentAspect;
-    } else {
-        scaleX *= contentAspect / screenAspect;
-    }
-    // At this point, without rotation the quad covers:
-    // x in [-scaleX, scaleX] and y in [-scaleY, scaleY].
-
-    float viewportXOffset = (viewportRect.getX() * 2.0f) - (1.0f - viewportRect.getWidth());
-    float viewportYOffset = (viewportRect.getY() * 2.0f) - (1.0f - viewportRect.getHeight());
-
-    float cosTheta = cos(-rotation);
-    float sinTheta = sin(-rotation);
-
-    float factorX = scaleX / (scaleX * fabs(cosTheta) + scaleY * fabs(sinTheta));
-    float factorY = scaleY / (scaleX * fabs(sinTheta) + scaleY * fabs(cosTheta));
-
-    float uv[4][2] = {
-        { -1.0f, -1.0f },
-        { -1.0f, +1.0f },
-        { +1.0f, -1.0f },
-        { +1.0f, +1.0f }
-    };
-
-    float rotatedQuad[4][2];
-    for (int i = 0; i < 4; i++) {
-        float u = uv[i][0];
-        float v = uv[i][1];
-
-        float origX = u * scaleX;
-        float origY = v * scaleY;
-
-        float rawX = origX * cosTheta - origY * sinTheta;
-        float rawY = origX * sinTheta + origY * cosTheta;
-
-        float finalX = rawX * factorX + viewportXOffset;
-        float finalY = rawY * factorY - viewportYOffset;
-
-        rotatedQuad[i][0] = finalX;
-        rotatedQuad[i][1] = finalY;
-    }
-
-    gForegroundVertices[0]  = rotatedQuad[0][0];
-    gForegroundVertices[1]  = rotatedQuad[0][1];
-
-    gForegroundVertices[2]  = rotatedQuad[1][0];
-    gForegroundVertices[3]  = rotatedQuad[1][1];
-
-    gForegroundVertices[4]  = rotatedQuad[2][0];
-    gForegroundVertices[5]  = rotatedQuad[2][1];
-
-    gForegroundVertices[6]  = rotatedQuad[2][0];
-    gForegroundVertices[7]  = rotatedQuad[2][1];
-
-    gForegroundVertices[8]  = rotatedQuad[1][0];
-    gForegroundVertices[9]  = rotatedQuad[1][1];
-
-    gForegroundVertices[10] = rotatedQuad[3][0];
-    gForegroundVertices[11] = rotatedQuad[3][1];
-}
-
 void Video::renderFrame() {
     if (skipDuplicateFrames && !isDirty) return;
     isDirty = false;
@@ -224,8 +152,8 @@ void Video::renderFrame() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     videoBackground.renderBackground(
-        screenWidth,
-        screenHeight,
+        videoLayout.getScreenWidth(),
+        videoLayout.getScreenHeight(),
         gBackgroundVertices,
         renderer->getTexture(),
         gFlipY
@@ -239,11 +167,16 @@ void Video::renderFrame() {
 
         glBindFramebuffer(GL_FRAMEBUFFER, passData.framebuffer.value_or(0));
 
-        glViewport(0, 0, passData.width.value_or(screenWidth), passData.height.value_or(screenHeight));
+        glViewport(
+            0,
+            0,
+            passData.width.value_or(videoLayout.getScreenWidth()),
+            passData.height.value_or(videoLayout.getScreenHeight())
+        );
 
         glUseProgram(shader.gProgram);
 
-        auto vertices = isLastPass ? gForegroundVertices : gBackgroundVertices;
+        auto vertices = isLastPass ? videoLayout.getForegroundVertices().data() : gBackgroundVertices;
         glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices);
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
@@ -280,7 +213,7 @@ void Video::renderFrame() {
 }
 
 float Video::getScreenDensity() {
-    return std::min(screenWidth / getTextureWidth(), screenHeight / getTextureHeight());
+    return std::min(videoLayout.getScreenWidth() / getTextureWidth(), videoLayout.getScreenHeight() / getTextureHeight());
 }
 
 float Video::getTextureWidth() {
@@ -307,16 +240,12 @@ void Video::updateViewModelMatrix(float rotation) {
     gViewModelMatrix[5] = cos(rotation);
 }
 
-void Video::updateScreenSize(unsigned screenWidth, unsigned screenHeight) {
-    LOGD("Updating screen size: %d x %d", screenWidth, screenHeight);
-    this->screenWidth = screenWidth;
-    this->screenHeight = screenHeight;
-    updateForegroundVertices();
+void Video::updateScreenSize(unsigned width, unsigned height) {
+    videoLayout.updateScreenSize(width, height);
 }
 
 void Video::updateViewportSize(Rect viewportRect) {
-    this->viewportRect = viewportRect;
-    updateForegroundVertices();
+    videoLayout.updateViewportSize(viewportRect);
 }
 
 void Video::updateRendererSize(unsigned int width, unsigned int height) {
@@ -325,6 +254,7 @@ void Video::updateRendererSize(unsigned int width, unsigned int height) {
 }
 
 void Video::updateRotation(float rotation) {
+    videoLayout.updateRotation(rotation);
 //    updateViewModelMatrix(rotation);
 }
 
@@ -336,11 +266,10 @@ Video::Video(
     bool skipDuplicateFrames,
     Rect viewportRect
 ) :
-    viewportRect(viewportRect),
     requestedShaderConfig(std::move(shaderConfig)),
     skipDuplicateFrames(skipDuplicateFrames),
     gFlipY(bottomLeftOrigin ? 0.0F : 1.0F),
-    rotation(rotation) {
+    videoLayout(rotation, viewportRect) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
@@ -350,11 +279,7 @@ Video::Video(
 
     LOGI("Initializing graphics");
 
-//    updateViewModelMatrix(rotation);
-
-    updateForegroundVertices();
-
-    glViewport(0, 0, screenWidth, screenHeight);
+    glViewport(0, 0, videoLayout.getScreenWidth(), videoLayout.getScreenHeight());
 
     glUseProgram(0);
 
@@ -389,8 +314,7 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
 }
 
 void Video::updateAspectRatio(float aspectRatio) {
-    this->aspectRatio = aspectRatio;
-    updateForegroundVertices();
+    videoLayout.updateAspectRatio(aspectRatio);
 }
 
 } //namespace libretrodroid
