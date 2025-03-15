@@ -226,6 +226,14 @@ void LibretroDroid::onMotionEvent(
     }
 }
 
+void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
+    LOGD("Received touch event: %.2f, %.2f", source, xAxis, yAxis);
+    if (input && video) {
+        auto [x, y] = video->getLayout().getRelativePosition(xAxis, yAxis);
+        input->onMotionEvent(0, Input::MOTION_SOURCE_POINTER, x, y);
+    }
+}
+
 void LibretroDroid::onKeyEvent(unsigned int port, int action, int keyCode) {
     LOGD("Received key event with action (%d) and keycode (%d)", action, keyCode);
     if (input) {

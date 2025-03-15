@@ -20,11 +20,13 @@
 
 #include <GLES2/gl2.h>
 #include <optional>
+#include <array>
 
 #include "renderers/renderer.h"
 #include "shadermanager.h"
 #include "utils/rect.h"
 #include "videobackground.h"
+#include "videolayout.h"
 
 namespace libretrodroid {
 
@@ -61,6 +63,8 @@ public:
         bool skipDuplicateFrames,
         Rect viewportRect
     );
+
+    VideoLayout& getLayout() { return videoLayout; }
 
     void updateAspectRatio(float aspectRatio);
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
@@ -113,26 +117,6 @@ private:
         +1.0F,
     };
 
-    GLfloat gForegroundVertices[12] = {
-        -1.0F,
-        -1.0F,
-
-        -1.0F,
-        +1.0F,
-
-        +1.0F,
-        -1.0F,
-
-        +1.0F,
-        -1.0F,
-
-        -1.0F,
-        +1.0F,
-
-        +1.0F,
-        +1.0F,
-    };
-
     GLfloat gTextureCoords[12] = {
         0.0F,
         0.0F,
@@ -160,12 +144,6 @@ private:
         0.0F, 0.0F, 0.0F, 1.0F,
     };
 
-    unsigned screenWidth = 0;
-    unsigned screenHeight = 0;
-    float aspectRatio = 1;
-
-    Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
-
     ShaderManager::Config requestedShaderConfig = ShaderManager::Config {
         ShaderManager::Type::SHADER_DEFAULT
     };
@@ -180,6 +158,7 @@ private:
     std::vector<ShaderChainEntry> shadersChain;
 
     VideoBackground videoBackground;
+    VideoLayout videoLayout;
 
     Renderer* renderer;
 };

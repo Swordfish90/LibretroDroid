@@ -20,6 +20,7 @@
 
 #include <cstdint>
 #include <unordered_set>
+#include <array>
 
 namespace libretrodroid {
 

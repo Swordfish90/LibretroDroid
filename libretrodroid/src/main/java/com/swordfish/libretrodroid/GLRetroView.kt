@@ -19,6 +19,7 @@ package com.swordfish.libretrodroid
 
 import android.app.ActivityManager
 import android.content.Context
+import android.graphics.PointF
 import android.graphics.RectF
 import android.opengl.GLSurfaceView
 import android.util.Log
@@ -126,26 +127,29 @@ class GLRetroView(
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when (event?.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                sendTouchEvent(event)
-            }
-            MotionEvent.ACTION_MOVE -> {
-                sendTouchEvent(event)
+        val position = when (event?.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                normalizeTouchCoordinates(event.x, event.y)
             }
             MotionEvent.ACTION_UP -> {
-                sendMotionEvent(MOTION_SOURCE_POINTER, -1f, -1f)
+                TOUCH_EVENT_OUTSIDE
             }
+            else -> null
         }
+
+        if (position != null) {
+            LibretroDroid.onTouchEvent(position.x, position.y)
+        }
+
         return true
     }
 
     private fun clamp(x: Float, min: Float, max: Float) = minOf(maxOf(x, min), max)
 
-    private fun sendTouchEvent(event: MotionEvent) {
-        val x = clamp(event.x / width, 0f, 1f)
-        val y = clamp(event.y / height, 0f, 1f)
-        sendMotionEvent(MOTION_SOURCE_POINTER, x, y)
+    private fun normalizeTouchCoordinates(x: Float, y: Float): PointF {
+        val x = clamp(2f * x / width - 1f, -1f, +1f)
+        val y = clamp(2f * y / height - 1f, -1f, +1f)
+        return PointF(x, y)
     }
 
     fun serializeState(): ByteArray = runOnGLThread {
@@ -481,5 +485,7 @@ class GLRetroView(
         const val ERROR_SERIALIZATION = LibretroDroid.ERROR_SERIALIZATION
         const val ERROR_CHEAT = LibretroDroid.ERROR_CHEAT
         const val ERROR_GENERIC = LibretroDroid.ERROR_GENERIC
+
+        private val TOUCH_EVENT_OUTSIDE = PointF(-10f, 10f)
     }
 }

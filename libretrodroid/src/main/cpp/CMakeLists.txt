@@ -33,6 +33,8 @@ add_library(libretrodroid SHARED
         video.cpp
         videobackground.h
         videobackground.cpp
+        videolayout.h
+        videolayout.cpp
         renderers/renderer.h
         renderers/renderer.cpp
         renderers/es3/es3utils.h
