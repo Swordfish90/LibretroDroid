@@ -131,10 +131,6 @@ void Video::updateProgram() {
 
         shader.gScreenDensityHandle = glGetUniformLocation(shader.gProgram, "screenDensity");
 
-        shader.gvFlipYHandle = glGetUniformLocation(shader.gProgram, "vFlipY");
-
-        shader.gViewModelMatrixHandle = glGetUniformLocation(shader.gProgram, "vViewModel");
-
         shadersChain.push_back(shader);
     });
 
@@ -154,9 +150,9 @@ void Video::renderFrame() {
     videoBackground.renderBackground(
         videoLayout.getScreenWidth(),
         videoLayout.getScreenHeight(),
-        gBackgroundVertices,
-        renderer->getTexture(),
-        gFlipY
+        videoLayout.getBackgroundVertices().data(),
+        videoLayout.getFramebufferVertices().data(),
+        renderer->getTexture()
     );
 
     updateProgram();
@@ -176,11 +172,12 @@ void Video::renderFrame() {
 
         glUseProgram(shader.gProgram);
 
-        auto vertices = isLastPass ? videoLayout.getForegroundVertices().data() : gBackgroundVertices;
-        glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+        auto vertices = isLastPass ? videoLayout.getForegroundVertices() : videoLayout.getFramebufferVertices();
+        glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
+        auto coordinates = videoLayout.getTextureCoordinates();
+        glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, coordinates.data());
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
         glActiveTexture(GL_TEXTURE0);
@@ -195,11 +192,7 @@ void Video::renderFrame() {
 
         glUniform2f(shader.gTextureSizeHandle, getTextureWidth(), getTextureHeight());
 
-        glUniform1f(shader.gvFlipYHandle, gFlipY);
-
         glUniform1f(shader.gScreenDensityHandle, getScreenDensity());
-
-        glUniformMatrix4fv(shader.gViewModelMatrixHandle, 1, false, gViewModelMatrix);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -231,15 +224,6 @@ void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t
     }
 }
 
-// TODO BLUR. At this point the viewmodel matrix can be completely removed.
-void Video::updateViewModelMatrix(float rotation) {
-    // Apply simple rotation matrix
-    gViewModelMatrix[0] = cos(rotation);
-    gViewModelMatrix[1] = -sin(rotation);
-    gViewModelMatrix[4] = sin(rotation);
-    gViewModelMatrix[5] = cos(rotation);
-}
-
 void Video::updateScreenSize(unsigned width, unsigned height) {
     videoLayout.updateScreenSize(width, height);
 }
@@ -268,8 +252,7 @@ Video::Video(
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
     skipDuplicateFrames(skipDuplicateFrames),
-    gFlipY(bottomLeftOrigin ? 0.0F : 1.0F),
-    videoLayout(rotation, viewportRect) {
+    videoLayout(bottomLeftOrigin, rotation, viewportRect) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);

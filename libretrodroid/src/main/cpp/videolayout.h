@@ -26,9 +26,7 @@ namespace libretrodroid {
 
 class VideoLayout {
 public:
-    VideoLayout(float rotation, Rect viewportRect);
-
-    void updateForegroundVertices();
+    VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRect);
 
     void updateAspectRatio(float aspectRatio);
 
@@ -38,7 +36,10 @@ public:
 
     void updateRotation(float rotation);
 
-    std::array<float, 12>& getForegroundVertices();
+    std::array<float, 12>& getForegroundVertices() { return videoVertices; }
+    std::array<float, 12>& getBackgroundVertices() { return backgroundVertices; }
+    std::array<float, 12>& getFramebufferVertices() { return framebufferVertices; }
+    std::array<float, 12>& getTextureCoordinates() { return textureCoordinates;}
 
     int getScreenWidth() { return screenWidth; }
 
@@ -46,6 +47,8 @@ public:
 
     std::pair<float, float> getRelativePosition(float touchX, float touchY);
 
+private:
+    void updateBuffers();
 
 private:
     std::array<float, 12> videoVertices = {
@@ -68,12 +71,77 @@ private:
         +1.0F,
     };
 
+    std::array<float, 12> textureCoordinates {
+        0.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        0.0F,
+
+        1.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        1.0F,
+    };
+
+    std::array<float, 12> backgroundVertices = {
+        -1.0F,
+        -1.0F,
+
+        -1.0F,
+        +1.0F,
+
+        +1.0F,
+        -1.0F,
+
+        +1.0F,
+        -1.0F,
+
+        -1.0F,
+        +1.0F,
+
+        +1.0F,
+        +1.0F,
+    };
+
+    std::array<float, 12> framebufferVertices = {
+        -1.0F,
+        -1.0F,
+
+        -1.0F,
+        +1.0F,
+
+        +1.0F,
+        -1.0F,
+
+        +1.0F,
+        -1.0F,
+
+        -1.0F,
+        +1.0F,
+
+        +1.0F,
+        +1.0F,
+    };
+
+    bool bottomLeftOrigin = false;
     float rotation = 0.0F;
     float aspectRatio = 1;
     Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
 
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
+
+    void updateForegroundVertices();
+
+    void updateBackgroundVertices();
 };
 
 } // namespace libretrodroid

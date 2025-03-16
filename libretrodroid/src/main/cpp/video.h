@@ -47,12 +47,10 @@ public:
         GLint gProgram = 0;
         GLint gvPositionHandle = 0;
         GLint gvCoordinateHandle = 0;
-        GLint gvFlipYHandle = 0;
         GLint gTextureHandle = 0;
         GLint gPreviousPassTextureHandle = 0;
         GLint gScreenDensityHandle = 0;
         GLint gTextureSizeHandle = 0;
-        GLint gViewModelMatrixHandle = 0;
     };
 
     Video(
@@ -88,8 +86,6 @@ public:
 private:
     void updateProgram();
 
-    void updateForegroundVertices();
-    void updateViewModelMatrix(float rotation);
     float getScreenDensity();
     float getTextureWidth();
     float getTextureHeight();
@@ -97,53 +93,6 @@ private:
     void initializeRenderer(RenderingOptions renderingOptions);
 
 private:
-    GLfloat gBackgroundVertices[12] = {
-        -1.0F,
-        -1.0F,
-
-        -1.0F,
-        +1.0F,
-
-        +1.0F,
-        -1.0F,
-
-        +1.0F,
-        -1.0F,
-
-        -1.0F,
-        +1.0F,
-
-        +1.0F,
-        +1.0F,
-    };
-
-    GLfloat gTextureCoords[12] = {
-        0.0F,
-        0.0F,
-
-        0.0F,
-        1.0F,
-
-        1.0F,
-        0.0F,
-
-        1.0F,
-        0.0F,
-
-        0.0F,
-        1.0F,
-
-        1.0F,
-        1.0F,
-    };
-
-    GLfloat gViewModelMatrix[16] = {
-        1.0F, 0.0F, 0.0F, 0.0F,
-        0.0F, 1.0F, 0.0F, 0.0F,
-        0.0F, 0.0F, 1.0F, 0.0F,
-        0.0F, 0.0F, 0.0F, 1.0F,
-    };
-
     ShaderManager::Config requestedShaderConfig = ShaderManager::Config {
         ShaderManager::Type::SHADER_DEFAULT
     };
@@ -152,7 +101,6 @@ private:
     bool isDirty = false;
     bool skipDuplicateFrames = false;
 
-    float gFlipY = 0.0F;
     float rotation = 0.0F;
 
     std::vector<ShaderChainEntry> shadersChain;
