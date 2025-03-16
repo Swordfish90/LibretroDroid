@@ -20,19 +20,23 @@
 
 namespace libretrodroid {
 
-VideoLayout::VideoLayout(float rotation, Rect viewportRect) :
-    viewportRect(viewportRect),
-    rotation(rotation)
+VideoLayout::VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRect) :
+    bottomLeftOrigin(bottomLeftOrigin),
+    rotation(rotation),
+    viewportRect(viewportRect)
 {
+    updateBuffers();
+}
+
+void VideoLayout::updateBuffers() {
     updateForegroundVertices();
+    updateBackgroundVertices();
 }
 
-std::array<float, 12>& VideoLayout::getForegroundVertices() {
-    return videoVertices;
-}
-
-// TODO BLUR... We should probably rotate also the background...
 void VideoLayout::updateForegroundVertices() {
+    float cosTheta = cos(-rotation);
+    float sinTheta = sin(-rotation);
+
     LOGD(
         "Computing foreground vertices from screen (%d x %d), aspect ratio (%f) with rotation (%f radians)",
         screenWidth, screenHeight, aspectRatio, rotation);
@@ -50,20 +54,16 @@ void VideoLayout::updateForegroundVertices() {
         scaleX *= contentAspect / screenAspect;
     }
 
-    float viewportXOffset = (viewportRect.getX() * 2.0f) - (1.0f - viewportRect.getWidth());
-    float viewportYOffset = (viewportRect.getY() * 2.0f) - (1.0f - viewportRect.getHeight());
-
-    float cosTheta = cos(-rotation);
-    float sinTheta = sin(-rotation);
-
+    float viewportXOffset = (viewportRect.getX() * 2.0f) - (1.0F - viewportRect.getWidth());
+    float viewportYOffset = (viewportRect.getY() * 2.0f) - (1.0F - viewportRect.getHeight());
     float factorX = scaleX / (scaleX * fabs(cosTheta) + scaleY * fabs(sinTheta));
     float factorY = scaleY / (scaleX * fabs(sinTheta) + scaleY * fabs(cosTheta));
 
     float uv[4][2] = {
-        { -1.0f, -1.0f },
-        { -1.0f, +1.0f },
-        { +1.0f, -1.0f },
-        { +1.0f, +1.0f }
+        { -1.0F, bottomLeftOrigin ? -1.0F : +1.0F },
+        { -1.0F, bottomLeftOrigin ? +1.0F : -1.0F },
+        { +1.0F, bottomLeftOrigin ? -1.0F : +1.0F },
+        { +1.0F, bottomLeftOrigin ? +1.0F : -1.0F }
     };
 
     float rotatedQuad[4][2];
@@ -103,11 +103,50 @@ void VideoLayout::updateForegroundVertices() {
     videoVertices[11] = rotatedQuad[3][1];
 }
 
+void VideoLayout::updateBackgroundVertices() {
+    float cosTheta = cos(-rotation);
+    float sinTheta = sin(-rotation);
+
+    float uv[4][2] = {
+        { -1.0F, bottomLeftOrigin ? -1.0F : +1.0F },
+        { -1.0F, bottomLeftOrigin ? +1.0F : -1.0F },
+        { +1.0F, bottomLeftOrigin ? -1.0F : +1.0F },
+        { +1.0F, bottomLeftOrigin ? +1.0F : -1.0F }
+    };
+
+    float rotatedQuad[4][2];
+    for (int i = 0; i < 4; i++) {
+        float u = uv[i][0];
+        float v = uv[i][1];
+
+        rotatedQuad[i][0] = u * cosTheta - v * sinTheta;
+        rotatedQuad[i][1] = u * sinTheta + v * cosTheta;
+    }
+
+    backgroundVertices[0] = rotatedQuad[0][0];
+    backgroundVertices[1] = rotatedQuad[0][1];
+
+    backgroundVertices[2] = rotatedQuad[1][0];
+    backgroundVertices[3] = rotatedQuad[1][1];
+
+    backgroundVertices[4] = rotatedQuad[2][0];
+    backgroundVertices[5] = rotatedQuad[2][1];
+
+    backgroundVertices[6] = rotatedQuad[2][0];
+    backgroundVertices[7] = rotatedQuad[2][1];
+
+    backgroundVertices[8] = rotatedQuad[1][0];
+    backgroundVertices[9] = rotatedQuad[1][1];
+
+    backgroundVertices[10] = rotatedQuad[3][0];
+    backgroundVertices[11] = rotatedQuad[3][1];
+}
+
 void libretrodroid::VideoLayout::updateAspectRatio(float aspectRatio) {
     LOGD("Updated aspect ratio to : %f", aspectRatio);
 
     this->aspectRatio = aspectRatio;
-    updateForegroundVertices();
+    updateBuffers();
 }
 
 void libretrodroid::VideoLayout::updateScreenSize(unsigned int width,unsigned int height) {
@@ -115,21 +154,21 @@ void libretrodroid::VideoLayout::updateScreenSize(unsigned int width,unsigned in
 
     this->screenWidth = width;
     this->screenHeight = height;
-    updateForegroundVertices();
+    updateBuffers();
 }
 
 void libretrodroid::VideoLayout::updateViewportSize(Rect viewport) {
     LOGD("Updating viewport size: (%f, %f, %f, %f)", viewport.getX(), viewport.getY(), viewport.getWidth(), viewport.getHeight());
 
     this->viewportRect = viewport;
-    updateForegroundVertices();
+    updateBuffers();
 }
 
 void VideoLayout::updateRotation(float rotation) {
     LOGD("Updated rotation to : %f", rotation);
 
     this->rotation = rotation;
-    updateForegroundVertices();
+    updateBuffers();
 }
 
 std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float touchY) {

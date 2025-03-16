@@ -95,7 +95,6 @@ void VideoBackground::initializeShaders() {
     displayPositionHandle = glGetAttribLocation(blurShaderProgram, "aPosition");
     displayTextureCoordinatesHandle = glGetAttribLocation(blurShaderProgram, "aTexCoord");
     displayTextureHandle = glGetUniformLocation(displayShaderProgram, "texture");
-    displayFlipYHandle = glGetUniformLocation(displayShaderProgram, "vFlipY");
 }
 
 void VideoBackground::initializeFramebuffers() {
@@ -159,8 +158,7 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
 void VideoBackground::renderToFinalOutput(
     unsigned screenWidth,
     unsigned screenHeight,
-    GLfloat* gBackgroundVertices,
-    float gFlipY
+    GLfloat* gBackgroundVertices
 ) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, screenWidth, screenHeight);
@@ -173,7 +171,6 @@ void VideoBackground::renderToFinalOutput(
     glEnableVertexAttribArray(displayTextureCoordinatesHandle);
 
     glUniform1i(displayTextureHandle, 0);
-    glUniform1f(displayFlipYHandle, gFlipY);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, blurFramebuffers[3]->texture);
@@ -187,17 +184,23 @@ void VideoBackground::renderToFinalOutput(
     glUseProgram(0);
 }
 
-void VideoBackground::renderBackground(unsigned screenWidth, unsigned screenHeight, GLfloat* gBackgroundVertices, uintptr_t texture, float gFlipY) {
+void VideoBackground::renderBackground(
+    unsigned screenWidth,
+    unsigned screenHeight,
+    GLfloat* backgroundVertices,
+    GLfloat* framebufferVertices,
+    uintptr_t texture
+) {
     initializeShaders();
     initializeFramebuffers();
 
     if (blendFramebufferCurrent == 0) {
-        renderToFramebuffer(texture, gBackgroundVertices);
+        renderToFramebuffer(texture, framebufferVertices);
     }
     // TODO BLEND... Decide what to do with this...
     blendFramebufferCurrent = (blendFramebufferCurrent + 1) % 2;
 
-    renderToFinalOutput(screenWidth, screenHeight, gBackgroundVertices, gFlipY);
+    renderToFinalOutput(screenWidth, screenHeight, backgroundVertices);
 }
 
 std::vector<float> VideoBackground::generateSmoothingWeights(int size, float brightness) {

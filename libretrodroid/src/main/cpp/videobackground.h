@@ -27,11 +27,11 @@ namespace libretrodroid {
 class VideoBackground {
 public:
     void renderBackground(
-        unsigned int screenWidth,
-        unsigned int screenHeight,
-        GLfloat* gBackgroundVertices,
-        uintptr_t texture,
-        float gFlipY
+        unsigned screenWidth,
+        unsigned screenHeight,
+        GLfloat* backgroundVertices,
+        GLfloat* framebufferVertices,
+        uintptr_t texture
     );
 
 private:
@@ -43,26 +43,23 @@ private:
     void renderToFinalOutput(
         unsigned int screenWidth,
         unsigned int screenHeight,
-        GLfloat* gBackgroundVertices,
-        float gFlipY
+        GLfloat* gBackgroundVertices
     );
 
 private:
     const char* defaultVertexShaderSource = R"(
         attribute mediump vec2 aPosition;
         attribute mediump vec2 aTexCoord;
-        uniform mediump float vFlipY;
         varying mediump vec2 vTexCoord;
         void main() {
             gl_Position = vec4(aPosition, 0.0, 1.0);
-            vTexCoord = vec2(aTexCoord.x, mix(aTexCoord.y, 1.0 - aTexCoord.y, vFlipY));
+            vTexCoord = aTexCoord;
         }
     )";
 
     const char* displayFragmentShaderSource = R"(
         precision mediump float;
         varying mediump vec2 vTexCoord;
-        uniform mediump float vFlipY;
         uniform lowp sampler2D texture;
         void main() {
             gl_FragColor = texture2D(texture, vTexCoord);
@@ -123,7 +120,6 @@ private:
 
     GLuint displayShaderProgram = 0;
     GLint displayTextureHandle = -1;
-    GLint displayFlipYHandle = -1;
     GLint displayPositionHandle = -1;
     GLint displayTextureCoordinatesHandle = -1;
 
