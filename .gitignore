@@ -6,3 +6,4 @@ app/*.iml
 .idea
 *.iml
 local.properties
+libretrodroid/.cxx

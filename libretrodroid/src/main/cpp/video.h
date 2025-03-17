@@ -101,8 +101,6 @@ private:
     bool isDirty = false;
     bool skipDuplicateFrames = false;
 
-    float rotation = 0.0F;
-
     std::vector<ShaderChainEntry> shadersChain;
 
     VideoBackground videoBackground;

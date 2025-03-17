@@ -182,8 +182,8 @@ std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float tou
         float y = videoVertices[i + 1];
         xMin = std::min(xMin, x);
         xMax = std::max(xMax, x);
-        yMin = std::min(yMin, y);
-        yMax = std::max(yMax, y);
+        yMin = std::min(yMin, -y);
+        yMax = std::max(yMax, -y);
     }
 
     if (touchX < xMin || touchX > xMax || touchY < yMin || touchY > yMax) {
@@ -192,6 +192,8 @@ std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float tou
 
     float relativeX = (touchX - xMin) / (xMax - xMin);
     float relativeY = (touchY - yMin) / (yMax - yMin);
+
+    LOGD("Computed relative touch position: %.2f, %.2f", relativeX, relativeY);
 
     return {relativeX, relativeY};
 }
