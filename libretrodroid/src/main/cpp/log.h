@@ -21,7 +21,7 @@
 #define MODULE_NAME "libretrodroid"
 
 #define VERBOSE_LOGGING false
-#define GLES_LOGGING true
+#define GLES_LOGGING false
 
 #if GLES_LOGGING
 #include <EGL/egl.h>
