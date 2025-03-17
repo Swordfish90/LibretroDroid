@@ -150,7 +150,8 @@ void Video::renderFrame() {
     videoBackground.renderBackground(
         videoLayout.getScreenWidth(),
         videoLayout.getScreenHeight(),
-        videoLayout.getBackgroundVertices().data(),
+        videoLayout.getBackgroundVertices(),
+        videoLayout.getForegroundVertices(),
         videoLayout.getFramebufferVertices().data(),
         renderer->getTexture()
     );

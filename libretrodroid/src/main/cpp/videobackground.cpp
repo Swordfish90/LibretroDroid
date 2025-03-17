@@ -158,19 +158,46 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
 void VideoBackground::renderToFinalOutput(
     unsigned screenWidth,
     unsigned screenHeight,
-    GLfloat* gBackgroundVertices
+    std::array<float, 12> backgroundVertices,
+    std::array<float, 12> foregroundVertices
 ) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, screenWidth, screenHeight);
     glUseProgram(displayShaderProgram);
 
-    glVertexAttribPointer(displayPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gBackgroundVertices);
+    glVertexAttribPointer(displayPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, backgroundVertices.data());
     glEnableVertexAttribArray(displayPositionHandle);
 
     glVertexAttribPointer(displayTextureCoordinatesHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
     glEnableVertexAttribArray(displayTextureCoordinatesHandle);
 
     glUniform1i(displayTextureHandle, 0);
+
+    float foregroundMinX = +1.0F;
+    float foregroundMinY = +1.0F;
+    float foregroundMaxX = -1.0F;
+    float foregroundMaxY = -1.0F;
+
+    for (size_t i = 0; i < foregroundVertices.size(); i += 2) {
+        float x = foregroundVertices[i];
+        float y = foregroundVertices[i + 1];
+
+        foregroundMinX = std::min(foregroundMinX, x);
+        foregroundMinY = std::min(foregroundMinY, -y);
+        foregroundMaxX = std::max(foregroundMaxX, x);
+        foregroundMaxY = std::max(foregroundMaxY, -y);
+    }
+
+    // Send it to the shader
+    GLint foregroundLoc = glGetUniformLocation(displayShaderProgram, "uForegroundBounds");
+    glUniform4f(foregroundLoc, foregroundMinX, foregroundMinY, foregroundMaxX, foregroundMaxY);
+
+// Set shadow properties
+    GLint shadowStrengthLoc = glGetUniformLocation(displayShaderProgram, "uShadowStrength");
+    glUniform1f(shadowStrengthLoc, 0.5f);  // 0.5 = 50% opacity
+
+    GLint shadowSpreadLoc = glGetUniformLocation(displayShaderProgram, "uShadowSpread");
+    glUniform1f(shadowSpreadLoc, 0.05f);  // Controls softness
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, blurFramebuffers[3]->texture);
@@ -187,7 +214,8 @@ void VideoBackground::renderToFinalOutput(
 void VideoBackground::renderBackground(
     unsigned screenWidth,
     unsigned screenHeight,
-    GLfloat* backgroundVertices,
+    std::array<float, 12> backgroundVertices,
+    std::array<float, 12> foregroundVertices,
     GLfloat* framebufferVertices,
     uintptr_t texture
 ) {
@@ -200,7 +228,7 @@ void VideoBackground::renderBackground(
     // TODO BLEND... Decide what to do with this...
     blendFramebufferCurrent = (blendFramebufferCurrent + 1) % 2;
 
-    renderToFinalOutput(screenWidth, screenHeight, backgroundVertices);
+    renderToFinalOutput(screenWidth, screenHeight, backgroundVertices, foregroundVertices);
 }
 
 std::vector<float> VideoBackground::generateSmoothingWeights(int size, float brightness) {

@@ -18,6 +18,7 @@
 #define LIBRETRODROID_VIDEOBACKGROUND_H
 
 #include <string>
+#include <array>
 #include <GLES2/gl2.h>
 
 #include "renderers/es3/es3utils.h"
@@ -29,7 +30,8 @@ public:
     void renderBackground(
         unsigned screenWidth,
         unsigned screenHeight,
-        GLfloat* backgroundVertices,
+        std::array<float, 12> backgroundVertices,
+        std::array<float, 12> foregroundVertices,
         GLfloat* framebufferVertices,
         uintptr_t texture
     );
@@ -43,7 +45,8 @@ private:
     void renderToFinalOutput(
         unsigned int screenWidth,
         unsigned int screenHeight,
-        GLfloat* gBackgroundVertices
+        std::array<float, 12> foregroundVertices,
+        std::array<float, 12> backgroundVertices
     );
 
 private:
@@ -59,10 +62,48 @@ private:
 
     const char* displayFragmentShaderSource = R"(
         precision mediump float;
+
         varying mediump vec2 vTexCoord;
         uniform lowp sampler2D texture;
+
+        // Foreground bounds in normalized device coordinates (NDC)
+        uniform vec4 uForegroundBounds; // (minX, minY, maxX, maxY)
+
+        // Shadow settings
+        uniform float uShadowStrength; // 0.0 (no shadow) to 1.0 (full shadow)
+        uniform float uShadowSpread;   // Controls how far the shadow extends
+
         void main() {
-            gl_FragColor = texture2D(texture, vTexCoord);
+            vec4 baseColor = texture2D(texture, vTexCoord);
+
+            // Convert texture coordinates (0 to 1) to NDC (-1 to 1)
+            vec2 uv = vTexCoord * 2.0 - 1.0;
+
+            // Get distances from the foreground edges
+            float distLeft   = uv.x - uForegroundBounds.x;
+            float distRight  = uForegroundBounds.z - uv.x;
+            float distBottom = uv.y - uForegroundBounds.y;
+            float distTop    = uForegroundBounds.w - uv.y;
+
+            // Compute the minimum distance to the outside of the foreground
+            float edgeDistance = min(min(distLeft, distRight), min(distBottom, distTop));
+
+            // If inside the foreground, no shadow
+            if (edgeDistance > 0.0) {
+                gl_FragColor = baseColor;
+                return;
+            }
+
+            // Convert edgeDistance to positive value (distance outside)
+            edgeDistance = abs(edgeDistance);
+
+            // Compute shadow intensity (goes from black at the foreground edge to transparent)
+            float shadowFactor = smoothstep(0.0, uShadowSpread, edgeDistance);
+
+            // Blend shadow with the base color (black shadow fading out)
+            vec4 shadowColor = mix(vec4(0.0, 0.0, 0.0, uShadowStrength), baseColor, shadowFactor);
+
+            gl_FragColor = shadowColor;
         }
     )";
 
