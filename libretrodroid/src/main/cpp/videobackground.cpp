@@ -48,7 +48,7 @@ void VideoBackground::initializeShaders() {
     blendTextureHandle = glGetUniformLocation(blendShaderProgram, "currentFrame");
     blendPrevTextureHandle = glGetUniformLocation(blendShaderProgram, "previousFrame");
 
-    std::string fragmentShaderSource = generateBlurShader(7, 0.75);
+    std::string fragmentShaderSource = generateBlurShader();
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &defaultVertexShaderSource, nullptr);
@@ -222,13 +222,13 @@ std::vector<float> VideoBackground::generateSmoothingWeights(int size, float bri
     return kernel;
 }
 
-std::string VideoBackground::generateBlurShader(int maskSize, float brightness) {
-    if (maskSize % 2 == 0) {
+std::string VideoBackground::generateBlurShader() {
+    if (blurMaskSize % 2 == 0) {
         LOGE("Error: maskSize should be an odd number!");
         return "";
     }
 
-    std::vector<float> kernel = generateSmoothingWeights(maskSize, brightness);
+    std::vector<float> kernel = generateSmoothingWeights(blurMaskSize, sqrt(blurBrightness));
 
     std::ostringstream result;
     result << R"(
@@ -239,18 +239,18 @@ std::string VideoBackground::generateBlurShader(int maskSize, float brightness) 
 
         void main() {
             lowp vec4 result = vec4(0.0);
-            lowp float kernel[)" << maskSize << R"(];
+            lowp float kernel[)" << blurMaskSize << R"(];
 
     )";
 
-    for (int i = 0; i < maskSize; i++) {
+    for (int i = 0; i < blurMaskSize; i++) {
         result << "            kernel[" << i << "] = " << kernel[i] << ";\n";
     }
 
-    int halfMask = maskSize / 2;
+    int halfMask = blurMaskSize / 2;
     result << R"(
             for (int i = -)" << halfMask << "; i <= " << halfMask << R"(; i++) {
-                vec2 offset = vec2(float(i)) * direction;
+                lowp vec2 offset = vec2(float(i)) * direction;
                 result += texture2D(texture, vTexCoord + offset) * kernel[i + )" << halfMask << R"(];
             }
             gl_FragColor = result;

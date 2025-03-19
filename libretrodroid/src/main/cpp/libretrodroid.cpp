@@ -204,6 +204,7 @@ void LibretroDroid::onSurfaceCreated() {
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
         skipDuplicateFrames,
+        ambientMode,
         viewportRect
     );
 
@@ -253,6 +254,7 @@ void LibretroDroid::create(
     bool enableVirtualFileSystem,
     bool enableMicrophone,
     bool duplicateFrames,
+    bool enableAmbientMode,
     const std::string& language
 ) {
     LOGD("Performing libretrodroid create");
@@ -267,6 +269,7 @@ void LibretroDroid::create(
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;
     skipDuplicateFrames = duplicateFrames;
+    ambientMode = enableAmbientMode;
     audioEnabled = true;
     frameSpeed = 1;
 

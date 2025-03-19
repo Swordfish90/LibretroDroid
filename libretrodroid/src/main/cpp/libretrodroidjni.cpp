@@ -353,6 +353,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
     jboolean enableVirtualFileSystem,
     jboolean enableMicrophone,
     jboolean skipDuplicateFrames,
+    jboolean enableAmbientMode,
     jstring language
 ) {
     try {
@@ -381,6 +382,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             enableVirtualFileSystem,
             enableMicrophone,
             skipDuplicateFrames,
+            enableAmbientMode,
             deviceLanguage.stdString()
         );
 
