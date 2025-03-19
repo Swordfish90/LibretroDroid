@@ -83,7 +83,9 @@ private:
         uniform lowp sampler2D previousFrame;
 
         void main() {
-            lowp vec4 currentColor = texture2D(currentFrame, vTexCoord);
+            lowp float margin = -0.10;
+            vec2 adjustedCoord = vTexCoord * (1.0 - 2.0 * margin) + margin;
+            lowp vec4 currentColor = texture2D(currentFrame, adjustedCoord);
             lowp vec4 prevColor = texture2D(previousFrame, vTexCoord);
             gl_FragColor = mix(prevColor, currentColor, 0.1);
         }
@@ -125,7 +127,7 @@ private:
 
     int downscaledWidth = 8;
     int downscaledHeight = 8;
-    int blurMaskSize = 7;
+    int blurMaskSize = 3;
     float blurBrightness = 0.5F;
 
     GLuint blendShaderProgram = 0;
