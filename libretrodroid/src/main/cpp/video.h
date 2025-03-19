@@ -59,6 +59,7 @@ public:
         bool bottomLeftOrigin,
         float rotation,
         bool skipDuplicateFrames,
+        bool ambientMode,
         Rect viewportRect
     );
 
@@ -103,6 +104,7 @@ private:
 
     std::vector<ShaderChainEntry> shadersChain;
 
+    bool ambientMode = false;
     VideoBackground videoBackground;
     VideoLayout videoLayout;
 

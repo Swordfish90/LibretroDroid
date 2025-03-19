@@ -35,7 +35,7 @@ public:
     );
 
 private:
-    static std::string generateBlurShader(int maskSize, float brightness);
+    std::string generateBlurShader();
     static std::vector<float> generateSmoothingWeights(int size, float brightness);
     void initializeShaders();
     void initializeFramebuffers();
@@ -125,6 +125,8 @@ private:
 
     int downscaledWidth = 8;
     int downscaledHeight = 8;
+    int blurMaskSize = 7;
+    float blurBrightness = 0.5F;
 
     GLuint blendShaderProgram = 0;
     GLint blendTextureHandle = -1;

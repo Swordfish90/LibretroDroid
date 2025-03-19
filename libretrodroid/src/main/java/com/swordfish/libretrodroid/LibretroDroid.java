@@ -93,6 +93,7 @@ public class LibretroDroid {
         boolean enableVirtualFileSystem,
         boolean enableMicrophone,
         boolean skipDuplicateFrames,
+        boolean enableAmbientMode,
         String language
     );
 

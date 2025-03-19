@@ -147,13 +147,15 @@ void Video::renderFrame() {
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    videoBackground.renderBackground(
-        videoLayout.getScreenWidth(),
-        videoLayout.getScreenHeight(),
-        videoLayout.getBackgroundVertices().data(),
-        videoLayout.getFramebufferVertices().data(),
-        renderer->getTexture()
-    );
+    if (ambientMode) {
+        videoBackground.renderBackground(
+            videoLayout.getScreenWidth(),
+            videoLayout.getScreenHeight(),
+            videoLayout.getBackgroundVertices().data(),
+            videoLayout.getFramebufferVertices().data(),
+            renderer->getTexture()
+        );
+    }
 
     updateProgram();
     for (int i = 0; i < shadersChain.size(); ++i) {
@@ -248,10 +250,12 @@ Video::Video(
     bool bottomLeftOrigin,
     float rotation,
     bool skipDuplicateFrames,
+    bool ambientMode,
     Rect viewportRect
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
     skipDuplicateFrames(skipDuplicateFrames),
+    ambientMode(ambientMode),
     videoLayout(bottomLeftOrigin, rotation, viewportRect) {
 
     printGLString("Version", GL_VERSION);

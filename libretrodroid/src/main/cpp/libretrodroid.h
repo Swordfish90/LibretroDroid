@@ -87,6 +87,7 @@ public:
         bool enableVirtualFileSystem,
         bool enableMicrophone,
         bool duplicateFrames,
+        bool enableAmbientMode,
         const std::string& language
     );
     void resume();
@@ -165,6 +166,7 @@ private:
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;
+    bool ambientMode = false;
 
     float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;
