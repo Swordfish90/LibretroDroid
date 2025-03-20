@@ -269,7 +269,7 @@ void LibretroDroid::create(
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;
     skipDuplicateFrames = duplicateFrames;
-    ambientMode = enableAmbientMode;
+    ambientMode = GLESVersion >= 3 && enableAmbientMode;
     audioEnabled = true;
     frameSpeed = 1;
 
