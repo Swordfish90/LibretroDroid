@@ -52,6 +52,7 @@ public:
         unsigned int width,
         unsigned int height,
         bool linear,
+        bool repeat,
         bool includeDepth,
         bool includeStencil
     );

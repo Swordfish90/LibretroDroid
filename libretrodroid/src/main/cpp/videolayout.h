@@ -36,10 +36,11 @@ public:
 
     void updateRotation(float rotation);
 
-    std::array<float, 12>& getForegroundVertices() { return videoVertices; }
+    std::array<float, 12>& getForegroundVertices() { return foregroundVertices; }
     std::array<float, 12>& getBackgroundVertices() { return backgroundVertices; }
     std::array<float, 12>& getFramebufferVertices() { return framebufferVertices; }
-    std::array<float, 12>& getTextureCoordinates() { return textureCoordinates;}
+    std::array<float, 12>& getTextureCoordinates() { return textureCoordinates; }
+    std::array<float, 4>& getRelativeForegroundBounds() { return relativeForegroundBounds; }
 
     int getScreenWidth() { return screenWidth; }
 
@@ -50,8 +51,14 @@ public:
 private:
     void updateBuffers();
 
+    void updateForegroundVertices();
+
+    void updateBackgroundVertices();
+
+    void updateRelativeForegroundBounds();
+
 private:
-    std::array<float, 12> videoVertices = {
+    std::array<float, 12> foregroundVertices = {
         -1.0F,
         -1.0F,
 
@@ -131,6 +138,13 @@ private:
         +1.0F,
     };
 
+    std::array<float, 4> relativeForegroundBounds = {
+        +0.0F,
+        +0.0F,
+        +1.0F,
+        +1.0F,
+    };
+
     bool bottomLeftOrigin = false;
     float rotation = 0.0F;
     float aspectRatio = 1;
@@ -138,10 +152,6 @@ private:
 
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
-
-    void updateForegroundVertices();
-
-    void updateBackgroundVertices();
 };
 
 } // namespace libretrodroid

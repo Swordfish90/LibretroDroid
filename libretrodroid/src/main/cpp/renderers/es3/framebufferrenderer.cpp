@@ -54,6 +54,7 @@ void FramebufferRenderer::initializeBuffers() {
         width,
         height,
         shaders.linearTexture,
+        false,
         depth,
         stencil
     );

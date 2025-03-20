@@ -31,6 +31,7 @@ VideoLayout::VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRec
 void VideoLayout::updateBuffers() {
     updateForegroundVertices();
     updateBackgroundVertices();
+    updateRelativeForegroundBounds();
 }
 
 void VideoLayout::updateForegroundVertices() {
@@ -39,7 +40,11 @@ void VideoLayout::updateForegroundVertices() {
 
     LOGD(
         "Computing foreground vertices from screen (%d x %d), aspect ratio (%f) with rotation (%f radians)",
-        screenWidth, screenHeight, aspectRatio, rotation);
+        screenWidth,
+        screenHeight,
+        aspectRatio,
+        rotation
+    );
 
     float screenW = screenWidth * viewportRect.getWidth();
     float screenH = screenHeight * viewportRect.getHeight();
@@ -84,23 +89,23 @@ void VideoLayout::updateForegroundVertices() {
         rotatedQuad[i][1] = finalY;
     }
 
-    videoVertices[0] = rotatedQuad[0][0];
-    videoVertices[1] = rotatedQuad[0][1];
+    foregroundVertices[0] = rotatedQuad[0][0];
+    foregroundVertices[1] = rotatedQuad[0][1];
 
-    videoVertices[2] = rotatedQuad[1][0];
-    videoVertices[3] = rotatedQuad[1][1];
+    foregroundVertices[2] = rotatedQuad[1][0];
+    foregroundVertices[3] = rotatedQuad[1][1];
 
-    videoVertices[4] = rotatedQuad[2][0];
-    videoVertices[5] = rotatedQuad[2][1];
+    foregroundVertices[4] = rotatedQuad[2][0];
+    foregroundVertices[5] = rotatedQuad[2][1];
 
-    videoVertices[6] = rotatedQuad[2][0];
-    videoVertices[7] = rotatedQuad[2][1];
+    foregroundVertices[6] = rotatedQuad[2][0];
+    foregroundVertices[7] = rotatedQuad[2][1];
 
-    videoVertices[8] = rotatedQuad[1][0];
-    videoVertices[9] = rotatedQuad[1][1];
+    foregroundVertices[8] = rotatedQuad[1][0];
+    foregroundVertices[9] = rotatedQuad[1][1];
 
-    videoVertices[10] = rotatedQuad[3][0];
-    videoVertices[11] = rotatedQuad[3][1];
+    foregroundVertices[10] = rotatedQuad[3][0];
+    foregroundVertices[11] = rotatedQuad[3][1];
 }
 
 void VideoLayout::updateBackgroundVertices() {
@@ -158,7 +163,13 @@ void libretrodroid::VideoLayout::updateScreenSize(unsigned int width,unsigned in
 }
 
 void libretrodroid::VideoLayout::updateViewportSize(Rect viewport) {
-    LOGD("Updating viewport size: (%f, %f, %f, %f)", viewport.getX(), viewport.getY(), viewport.getWidth(), viewport.getHeight());
+    LOGD(
+        "Updating viewport size: (%f, %f, %f, %f)",
+        viewport.getX(),
+        viewport.getY(),
+        viewport.getWidth(),
+        viewport.getHeight()
+    );
 
     this->viewportRect = viewport;
     updateBuffers();
@@ -177,9 +188,9 @@ std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float tou
     float yMin = std::numeric_limits<float>::max();
     float yMax = std::numeric_limits<float>::lowest();
 
-    for (size_t i = 0; i < videoVertices.size(); i += 2) {
-        float x = videoVertices[i];
-        float y = videoVertices[i + 1];
+    for (size_t i = 0; i < foregroundVertices.size(); i += 2) {
+        float x = foregroundVertices[i];
+        float y = foregroundVertices[i + 1];
         xMin = std::min(xMin, x);
         xMax = std::max(xMax, x);
         yMin = std::min(yMin, -y);
@@ -196,6 +207,33 @@ std::pair<float, float> VideoLayout::getRelativePosition(float touchX, float tou
     LOGD("Computed relative touch position: %.2f, %.2f", relativeX, relativeY);
 
     return {relativeX, relativeY};
+}
+
+void VideoLayout::updateRelativeForegroundBounds() {
+    float xMin = std::numeric_limits<float>::max();
+    float xMax = std::numeric_limits<float>::lowest();
+    float yMin = std::numeric_limits<float>::max();
+    float yMax = std::numeric_limits<float>::lowest();
+
+    for (size_t i = 2; i < foregroundVertices.size(); i += 2) {
+        xMin = std::min(xMin, foregroundVertices[i]);
+        xMax = std::max(xMax, foregroundVertices[i]);
+        yMin = std::min(yMin, (bottomLeftOrigin ? 1.0F : -1.0F) * foregroundVertices[i + 1]);
+        yMax = std::max(yMax, (bottomLeftOrigin ? 1.0F : -1.0F) * foregroundVertices[i + 1]);
+    }
+
+    relativeForegroundBounds[0] = (xMin + 1.0F) / 2.0F;
+    relativeForegroundBounds[1] = (yMin + 1.0F) / 2.0F;
+    relativeForegroundBounds[2] = (xMax + 1.0F) / 2.0F;
+    relativeForegroundBounds[3] = (yMax + 1.0F) / 2.0F;
+
+    LOGD(
+        "Computed relative foreground bounds: (%.2f, %.2f, %.2f, %.2f)",
+        relativeForegroundBounds[0],
+        relativeForegroundBounds[1],
+        relativeForegroundBounds[2],
+        relativeForegroundBounds[3]
+    );
 }
 
 }
