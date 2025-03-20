@@ -93,6 +93,7 @@ void VideoBackground::initializeShaders() {
     glDeleteShader(displayFragmentShader);
 
     displayPositionHandle = glGetAttribLocation(blurShaderProgram, "aPosition");
+    displayForegroundBoundsHandle = glGetUniformLocation(displayShaderProgram, "foregroundBounds");
     displayTextureCoordinatesHandle = glGetAttribLocation(blurShaderProgram, "aTexCoord");
     displayTextureHandle = glGetUniformLocation(displayShaderProgram, "texture");
 }
@@ -100,11 +101,20 @@ void VideoBackground::initializeShaders() {
 void VideoBackground::initializeFramebuffers() {
     if (!blurFramebuffers.empty()) return;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) {
         blurFramebuffers.push_back(
-            ES3Utils::createFramebuffer(downscaledWidth, downscaledHeight, true, false, false)
+            ES3Utils::createFramebuffer(
+                downscaledWidth, downscaledHeight, true, false, false, false
+            )
         );
     }
+
+    // Last framebuffer needs GL_MIRROR_REPEAT
+    blurFramebuffers.push_back(
+        ES3Utils::createFramebuffer(
+            downscaledWidth, downscaledHeight, true, true, false, false
+        )
+    );
 }
 
 void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroundVertices) {
@@ -158,17 +168,26 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
 void VideoBackground::renderToFinalOutput(
     unsigned screenWidth,
     unsigned screenHeight,
-    GLfloat* gBackgroundVertices
+    std::array<float, 12> backgroundVertices,
+    std::array<float, 4> foregroundBounds
 ) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, screenWidth, screenHeight);
     glUseProgram(displayShaderProgram);
 
-    glVertexAttribPointer(displayPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gBackgroundVertices);
+    glVertexAttribPointer(displayPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, backgroundVertices.data());
     glEnableVertexAttribArray(displayPositionHandle);
 
     glVertexAttribPointer(displayTextureCoordinatesHandle, 2, GL_FLOAT, GL_FALSE, 0, gTextureCoords);
     glEnableVertexAttribArray(displayTextureCoordinatesHandle);
+
+    glUniform4f(
+        displayForegroundBoundsHandle,
+        foregroundBounds[0],
+        foregroundBounds[1],
+        foregroundBounds[2],
+        foregroundBounds[3]
+    );
 
     glUniform1i(displayTextureHandle, 0);
 
@@ -187,7 +206,8 @@ void VideoBackground::renderToFinalOutput(
 void VideoBackground::renderBackground(
     unsigned screenWidth,
     unsigned screenHeight,
-    GLfloat* backgroundVertices,
+    std::array<float, 12> backgroundVertices,
+    std::array<float, 4> foregroundBounds,
     GLfloat* framebufferVertices,
     uintptr_t texture
 ) {
@@ -197,10 +217,11 @@ void VideoBackground::renderBackground(
     if (blendFramebufferCurrent == 0) {
         renderToFramebuffer(texture, framebufferVertices);
     }
-    // TODO BLEND... Decide what to do with this...
-    blendFramebufferCurrent = (blendFramebufferCurrent + 1) % 2;
 
-    renderToFinalOutput(screenWidth, screenHeight, backgroundVertices);
+    // Let's update the blurred texture every other frame.
+    blendFramebufferCurrent = (blendFramebufferCurrent + 1) % blurSkipUpdate;
+
+    renderToFinalOutput(screenWidth, screenHeight, backgroundVertices, foregroundBounds);
 }
 
 std::vector<float> VideoBackground::generateSmoothingWeights(int size, float brightness) {

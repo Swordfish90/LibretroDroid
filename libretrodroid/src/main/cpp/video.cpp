@@ -151,7 +151,8 @@ void Video::renderFrame() {
         videoBackground.renderBackground(
             videoLayout.getScreenWidth(),
             videoLayout.getScreenHeight(),
-            videoLayout.getBackgroundVertices().data(),
+            videoLayout.getBackgroundVertices(),
+            videoLayout.getRelativeForegroundBounds(),
             videoLayout.getFramebufferVertices().data(),
             renderer->getTexture()
         );
@@ -241,7 +242,6 @@ void Video::updateRendererSize(unsigned int width, unsigned int height) {
 
 void Video::updateRotation(float rotation) {
     videoLayout.updateRotation(rotation);
-//    updateViewModelMatrix(rotation);
 }
 
 Video::Video(

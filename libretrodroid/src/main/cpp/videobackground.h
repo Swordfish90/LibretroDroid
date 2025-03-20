@@ -18,6 +18,7 @@
 #define LIBRETRODROID_VIDEOBACKGROUND_H
 
 #include <string>
+#include <array>
 #include <GLES2/gl2.h>
 
 #include "renderers/es3/es3utils.h"
@@ -29,7 +30,8 @@ public:
     void renderBackground(
         unsigned screenWidth,
         unsigned screenHeight,
-        GLfloat* backgroundVertices,
+        std::array<float, 12> backgroundVertices,
+        std::array<float, 4> foregroundBounds,
         GLfloat* framebufferVertices,
         uintptr_t texture
     );
@@ -37,13 +39,18 @@ public:
 private:
     std::string generateBlurShader();
     static std::vector<float> generateSmoothingWeights(int size, float brightness);
+
     void initializeShaders();
+
     void initializeFramebuffers();
+
     void renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroundVertices);
+
     void renderToFinalOutput(
-        unsigned int screenWidth,
-        unsigned int screenHeight,
-        GLfloat* gBackgroundVertices
+        unsigned screenWidth,
+        unsigned screenHeight,
+        std::array<float, 12> backgroundVertices,
+        std::array<float, 4> foregroundBounds
     );
 
 private:
@@ -61,8 +68,18 @@ private:
         precision mediump float;
         varying mediump vec2 vTexCoord;
         uniform lowp sampler2D texture;
+        uniform vec4 foregroundBounds; // (minX, minY, maxX, maxY)
+
         void main() {
-            gl_FragColor = texture2D(texture, vTexCoord);
+            mediump vec2 normalizedCoords = (vTexCoord - foregroundBounds.xy) / abs(foregroundBounds.zw - foregroundBounds.xy);
+            lowp vec2 speed = abs(foregroundBounds.zw - foregroundBounds.xy);
+
+            mediump vec2 adjustedCoords = vec2(0.0);
+            adjustedCoords -= speed * normalizedCoords;
+            adjustedCoords += (1.0 + speed) * step(vec2(0.0), normalizedCoords) * normalizedCoords;
+            adjustedCoords -= (1.0 - speed) * step(vec2(1.0), normalizedCoords) * (normalizedCoords - 1.0);
+
+            gl_FragColor = texture2D(texture, adjustedCoords);
         }
     )";
 
@@ -83,8 +100,8 @@ private:
         uniform lowp sampler2D previousFrame;
 
         void main() {
-            lowp float margin = -0.10;
-            vec2 adjustedCoord = vTexCoord * (1.0 - 2.0 * margin) + margin;
+            lowp float margin = -0.125;
+            mediump vec2 adjustedCoord = vTexCoord * (1.0 - 2.0 * margin) + margin;
             lowp vec4 currentColor = texture2D(currentFrame, adjustedCoord);
             lowp vec4 prevColor = texture2D(previousFrame, vTexCoord);
             gl_FragColor = mix(prevColor, currentColor, 0.1);
@@ -123,12 +140,14 @@ private:
     GLuint displayShaderProgram = 0;
     GLint displayTextureHandle = -1;
     GLint displayPositionHandle = -1;
+    GLint displayForegroundBoundsHandle = -1;
     GLint displayTextureCoordinatesHandle = -1;
 
     int downscaledWidth = 8;
     int downscaledHeight = 8;
-    int blurMaskSize = 3;
+    int blurMaskSize = 5;
     float blurBrightness = 0.5F;
+    int blurSkipUpdate = 2;
 
     GLuint blendShaderProgram = 0;
     GLint blendTextureHandle = -1;

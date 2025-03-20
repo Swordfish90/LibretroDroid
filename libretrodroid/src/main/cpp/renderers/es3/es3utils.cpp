@@ -25,6 +25,7 @@ std::unique_ptr<ES3Utils::Framebuffer> ES3Utils::createFramebuffer(
     unsigned int width,
     unsigned int height,
     bool linear,
+    bool repeat,
     bool includeDepth,
     bool includeStencil
 ) {
@@ -45,8 +46,8 @@ std::unique_ptr<ES3Utils::Framebuffer> ES3Utils::createFramebuffer(
 
     glBindTexture(GL_TEXTURE_2D, result->texture);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat ? GL_MIRRORED_REPEAT : GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat ? GL_MIRRORED_REPEAT : GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, result->texture, 0);
@@ -109,6 +110,7 @@ std::unique_ptr<ES3Utils::Framebuffers> ES3Utils::buildShaderPasses(
             passWidth,
             passHeight,
             pass.linear,
+            false,
             false,
             false
         );
