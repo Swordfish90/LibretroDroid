@@ -19,22 +19,31 @@ package com.swordfish.libretrodroid
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import java.util.concurrent.CountDownLatch
 
 object KtUtils {
     fun runOnUIThread(runnable: () -> Unit) {
-        if (isUIThread()) {
-            runnable()
-        } else {
-            Handler(Looper.getMainLooper()).post(runnable)
+        try {
+            if (isUIThread()) {
+                runnable()
+            } else {
+                Handler(Looper.getMainLooper()).post(runnable)
+            }
+        } catch (e: Exception) {
+            Log.d("DQC", "runOnUIThread: ${e.message}")
         }
     }
 
     private fun isUIThread(): Boolean {
-        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            Looper.getMainLooper().isCurrentThread
-        } else {
-            Thread.currentThread() == Looper.getMainLooper().thread
+        return try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                Looper.getMainLooper().isCurrentThread
+            } else {
+                Thread.currentThread() == Looper.getMainLooper().thread
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -48,7 +57,10 @@ object KtUtils {
 
                 }
             }
+        } catch (e: Exception) {
+            Log.d("DQC", "awaitUninterruptibly: ${e.message}")
         } finally {
+
         }
     }
 }

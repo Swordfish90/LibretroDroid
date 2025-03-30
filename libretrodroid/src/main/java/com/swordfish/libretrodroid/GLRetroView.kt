@@ -34,38 +34,51 @@ import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.coroutineScope
 import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
-import java.util.*
-import java.util.concurrent.CountDownLatch
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
-import kotlin.properties.Delegates
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
+import kotlin.properties.Delegates
 
 class GLRetroView(
     context: Context,
     private val data: GLRetroViewData
 ) : GLSurfaceView(context), LifecycleObserver {
 
+    private val handler = CoroutineExceptionHandler { _, exception ->
+        Log.d("DQC", " ---------- CoroutineExceptionHandler in retro view $exception ")
+    }
+
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
-        LibretroDroid.setAudioEnabled(value)
+        catchExceptions {
+            LibretroDroid.setAudioEnabled(value)
+        }
     }
 
     var frameSpeed: Int by Delegates.observable(1) { _, _, value ->
-        LibretroDroid.setFrameSpeed(value)
+        catchExceptions {
+            LibretroDroid.setFrameSpeed(value)
+        }
     }
 
     var shader: ShaderConfig by Delegates.observable(data.shader) { _, _, value ->
-        LibretroDroid.setShaderConfig(buildShader(value))
+        catchExceptions {
+            LibretroDroid.setShaderConfig(buildShader(value))
+        }
     }
 
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
-        LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
+        catchExceptions {
+            LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
+        }
     }
 
-    private val openGLESVersion: Int
+    private var openGLESVersion: Int = 3
 
     private var isGameLoaded = false
     private var isEmulationReady = false
@@ -79,11 +92,13 @@ class GLRetroView(
     private var lifecycle: Lifecycle? = null
 
     init {
-        openGLESVersion = getGLESVersion(context)
-        preserveEGLContextOnPause = true
-        setEGLContextClientVersion(openGLESVersion)
-        setRenderer(Renderer())
-        keepScreenOn = true
+        catchExceptions {
+            openGLESVersion = getGLESVersion(context)
+            preserveEGLContextOnPause = true
+            setEGLContextClientVersion(openGLESVersion)
+            setRenderer(Renderer())
+            keepScreenOn = true
+        }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -113,64 +128,66 @@ class GLRetroView(
         lifecycle = null
     }
 
-    private fun getDeviceLanguage() = Locale.getDefault().language
+    private fun getDeviceLanguage() = catchExceptionsWithResult {
+        Locale.getDefault().language
+    } ?: ""
 
-    private fun getDefaultRefreshRate(): Float {
-        return (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
-    }
+    private fun getDefaultRefreshRate() = catchExceptionsWithResult {
+        (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
+    } ?: 0f
 
-    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) {
+    fun sendKeyEvent(action: Int, keyCode: Int, port: Int = 0) = catchExceptions {
         queueEvent { LibretroDroid.onKeyEvent(port, action, keyCode) }
     }
 
-    fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
+    fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) = catchExceptions {
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        val position = when (event?.actionMasked) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                normalizeTouchCoordinates(event.x, event.y)
+        catchExceptions {
+            when (event?.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> normalizeTouchCoordinates(event.x, event.y)
+                MotionEvent.ACTION_UP -> TOUCH_EVENT_OUTSIDE
+                else -> null
+            }?.let { position ->
+                LibretroDroid.onTouchEvent(position.x, position.y)
             }
-            MotionEvent.ACTION_UP -> {
-                TOUCH_EVENT_OUTSIDE
-            }
-            else -> null
         }
-
-        if (position != null) {
-            LibretroDroid.onTouchEvent(position.x, position.y)
-        }
-
         return true
     }
 
-    private fun clamp(x: Float, min: Float, max: Float) = minOf(maxOf(x, min), max)
+    private fun clamp(x: Float, min: Float, max: Float) = catchExceptionsWithResult {
+        minOf(maxOf(x, min), max)
+    } ?: 0f
 
     private fun normalizeTouchCoordinates(x: Float, y: Float): PointF {
-        val x = clamp(2f * x / width - 1f, -1f, +1f)
-        val y = clamp(2f * y / height - 1f, -1f, +1f)
-        return PointF(x, y)
+        return catchExceptionsWithResult {
+            val x = clamp(2f * x / width - 1f, -1f, +1f)
+            val y = clamp(2f * y / height - 1f, -1f, +1f)
+            PointF(x, y)
+        } ?: PointF(0f, 0f)
     }
 
     fun serializeState(): ByteArray = runOnGLThread {
         LibretroDroid.serializeState()
-    }
-    fun setCheat(index : Int, enable : Boolean, code : String) = runOnGLThread {
+    } ?: byteArrayOf()
+
+    fun setCheat(index: Int, enable: Boolean, code: String) = runOnGLThread {
         LibretroDroid.setCheat(index, enable, code)
     }
 
     fun unserializeState(data: ByteArray): Boolean = runOnGLThread {
         LibretroDroid.unserializeState(data)
-    }
+    } == true
 
     fun serializeSRAM(): ByteArray = runOnGLThread {
         LibretroDroid.serializeSRAM()
-    }
+    } ?: byteArrayOf()
 
     fun unserializeSRAM(data: ByteArray): Boolean = runOnGLThread {
         LibretroDroid.unserializeSRAM(data)
-    }
+    } == true
 
     fun reset() = runOnGLThread {
         LibretroDroid.reset()
@@ -189,81 +206,101 @@ class GLRetroView(
     }
 
     fun getControllers(): Array<Array<Controller>> {
-        return LibretroDroid.getControllers()
+        return catchExceptionsWithResult {
+            LibretroDroid.getControllers()
+        } ?: arrayOf(arrayOf())
     }
 
     fun setControllerType(port: Int, type: Int) {
-        LibretroDroid.setControllerType(port, type)
-    }
-
-    fun getVariables(): Array<Variable> {
-        return LibretroDroid.getVariables()
-    }
-
-    fun updateVariables(vararg variables: Variable) {
-        variables.forEach {
-            LibretroDroid.updateVariable(it)
+        catchExceptions {
+            LibretroDroid.setControllerType(port, type)
         }
     }
 
-    fun getAvailableDisks() = runOnGLThread { LibretroDroid.availableDisks() }
-    fun getCurrentDisk() = runOnGLThread { LibretroDroid.currentDisk() }
+    fun getVariables(): Array<Variable> {
+        return catchExceptionsWithResult {
+            LibretroDroid.getVariables()
+        } ?: arrayOf()
+    }
+
+    fun updateVariables(vararg variables: Variable) {
+        catchExceptions {
+            variables.forEach {
+                LibretroDroid.updateVariable(it)
+            }
+        }
+    }
+
+    fun getAvailableDisks() = runOnGLThread { LibretroDroid.availableDisks() } ?: 0
+
+    fun getCurrentDisk() = runOnGLThread { LibretroDroid.currentDisk() } ?: 0
+
     fun changeDisk(index: Int) = runOnGLThread { LibretroDroid.changeDisk(index) }
 
     private fun getGLESVersion(context: Context): Int {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) { 3 } else { 2 }
+        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) {
+            3
+        } else {
+            2
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        val mappedKey = GamepadsManager.getGamepadKeyEvent(keyCode)
-        val port = (event?.device?.controllerNumber ?: 0) - 1
+       return catchExceptionsWithResult {
+           val mappedKey = GamepadsManager.getGamepadKeyEvent(keyCode)
+           val port = (event?.device?.controllerNumber ?: 0) - 1
 
-        if (event != null && port >= 0 && keyCode in GamepadsManager.GAMEPAD_KEYS) {
-            sendKeyEvent(KeyEvent.ACTION_DOWN, mappedKey, port)
-            return true
-        }
-        return super.onKeyDown(keyCode, event)
+           if (event != null && port >= 0 && keyCode in GamepadsManager.GAMEPAD_KEYS) {
+               sendKeyEvent(KeyEvent.ACTION_DOWN, mappedKey, port)
+               true
+           }
+           super.onKeyDown(keyCode, event)
+       } == true
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        val mappedKey = GamepadsManager.getGamepadKeyEvent(keyCode)
-        val port = (event?.device?.controllerNumber ?: 0) - 1
+        return catchExceptionsWithResult {
+            val mappedKey = GamepadsManager.getGamepadKeyEvent(keyCode)
+            val port = (event?.device?.controllerNumber ?: 0) - 1
 
-        if (event != null && port >= 0 && keyCode in GamepadsManager.GAMEPAD_KEYS) {
-            sendKeyEvent(KeyEvent.ACTION_UP, mappedKey, port)
-            return true
-        }
-        return super.onKeyUp(keyCode, event)
+            if (event != null && port >= 0 && keyCode in GamepadsManager.GAMEPAD_KEYS) {
+                sendKeyEvent(KeyEvent.ACTION_UP, mappedKey, port)
+                 true
+            }
+             super.onKeyUp(keyCode, event)
+        } == true
     }
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
-        val port = (event?.device?.controllerNumber ?: 0) - 1
-        if (port >= 0) {
-            when (event?.source) {
-                InputDevice.SOURCE_JOYSTICK -> {
-                    sendMotionEvent(
-                        MOTION_SOURCE_DPAD,
-                        event.getAxisValue(MotionEvent.AXIS_HAT_X),
-                        event.getAxisValue(MotionEvent.AXIS_HAT_Y),
-                        port
-                    )
-                    sendMotionEvent(
-                        MOTION_SOURCE_ANALOG_LEFT,
-                        event.getAxisValue(MotionEvent.AXIS_X),
-                        event.getAxisValue(MotionEvent.AXIS_Y),
-                        port
-                    )
-                    sendMotionEvent(
-                        MOTION_SOURCE_ANALOG_RIGHT,
-                        event.getAxisValue(MotionEvent.AXIS_Z),
-                        event.getAxisValue(MotionEvent.AXIS_RZ),
-                        port
-                    )
+        return catchExceptionsWithResult {
+            val port = (event?.device?.controllerNumber ?: 0) - 1
+            if (port >= 0) {
+                when (event?.source) {
+                    InputDevice.SOURCE_JOYSTICK -> {
+                        sendMotionEvent(
+                            MOTION_SOURCE_DPAD,
+                            event.getAxisValue(MotionEvent.AXIS_HAT_X),
+                            event.getAxisValue(MotionEvent.AXIS_HAT_Y),
+                            port
+                        )
+                        sendMotionEvent(
+                            MOTION_SOURCE_ANALOG_LEFT,
+                            event.getAxisValue(MotionEvent.AXIS_X),
+                            event.getAxisValue(MotionEvent.AXIS_Y),
+                            port
+                        )
+                        sendMotionEvent(
+                            MOTION_SOURCE_ANALOG_RIGHT,
+                            event.getAxisValue(MotionEvent.AXIS_Z),
+                            event.getAxisValue(MotionEvent.AXIS_RZ),
+                            port
+                        )
+                    }
                 }
             }
-        }
-        return super.onGenericMotionEvent(event)
+            super.onGenericMotionEvent(event)
+        } == true
     }
 
     // These functions are called only after the GLSurfaceView has been created.
@@ -329,17 +366,23 @@ class GLRetroView(
     }
 
     private fun loadGameFromVirtualFiles(virtualFiles: List<VirtualFile>) {
-        val detachedVirtualFiles = virtualFiles
-            .map { DetachedVirtualFile(it.virtualPath, it.fileDescriptor.detachFd()) }
-        LibretroDroid.loadGameFromVirtualFiles(detachedVirtualFiles)
+        catchExceptions {
+            val detachedVirtualFiles = virtualFiles
+                .map { DetachedVirtualFile(it.virtualPath, it.fileDescriptor.detachFd()) }
+            LibretroDroid.loadGameFromVirtualFiles(detachedVirtualFiles)
+        }
     }
 
     private fun loadGameFromBytes(gameFileBytes: ByteArray) {
-        LibretroDroid.loadGameFromBytes(gameFileBytes)
+        catchExceptions {
+            LibretroDroid.loadGameFromBytes(gameFileBytes)
+        }
     }
 
     private fun loadGameFromPath(gameFilePath: String) {
-        LibretroDroid.loadGameFromPath(gameFilePath)
+        catchExceptions {
+            LibretroDroid.loadGameFromPath(gameFilePath)
+        }
     }
 
     private fun catchExceptions(block: () -> Unit) {
@@ -356,23 +399,46 @@ class GLRetroView(
             GlobalScope.launch {
                 retroGLIssuesErrors.emit(LibretroDroid.ERROR_GENERIC)
             }
+            isAborted = true
         }
     }
 
-    private fun <T> runOnGLThread(block: () -> T): T {
-        if (Thread.currentThread().name.startsWith("GLThread")) {
-            return block()
+    private fun <T> catchExceptionsWithResult(block: () -> T?): T? {
+        return try {
+            if (isAborted) return null
+            block()
+        } catch (e: RetroException) {
+            GlobalScope.launch {
+                retroGLIssuesErrors.emit(e.errorCode)
+            }
+            isAborted = true
+            null
+        } catch (e: Exception) {
+            Log.e(TAG_LOG, "Error in GLRetroView", e)
+            GlobalScope.launch {
+                retroGLIssuesErrors.emit(LibretroDroid.ERROR_GENERIC)
+            }
+            isAborted = true
+            null
         }
+    }
 
-        val latch = CountDownLatch(1)
-        var result: T? = null
-        queueEvent {
-            result = block()
-            latch.countDown()
+    private fun <T> runOnGLThread(block: () -> T): T? {
+        return catchExceptionsWithResult {
+            if (Thread.currentThread().name.startsWith("GLThread")) {
+                return@catchExceptionsWithResult block()
+            }
+
+            val latch = CountDownLatch(1)
+            var result: T? = null
+            queueEvent {
+                result = block()
+                latch.countDown()
+            }
+
+            latch.awaitUninterruptibly()
+            result
         }
-
-        latch.awaitUninterruptibly()
-        return result!!
     }
 
     private fun buildShader(config: ShaderConfig): GLRetroShader {
@@ -395,6 +461,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
                 )
             )
+
             is ShaderConfig.CUT2 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT2,
                 buildParams(
@@ -411,6 +478,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_HARD_EDGES_THRESHOLD to toParam(config.hardEdgesThreshold),
                 )
             )
+
             is ShaderConfig.CUT3 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT3,
                 buildParams(
@@ -456,7 +524,7 @@ class GLRetroView(
 
     /** This function gets called from the jni side.*/
     private fun sendRumbleEvent(port: Int, strengthWeak: Float, strengthStrong: Float) {
-        lifecycle?.coroutineScope?.launch {
+        lifecycle?.coroutineScope?.launch(handler) {
             rumbleEventsSubject.emit(RumbleEvent(port, strengthWeak, strengthStrong))
         }
     }
@@ -468,8 +536,8 @@ class GLRetroView(
     }
 
     sealed class GLRetroEvents {
-        object FrameRendered: GLRetroEvents()
-        object SurfaceCreated: GLRetroEvents()
+        object FrameRendered : GLRetroEvents()
+        object SurfaceCreated : GLRetroEvents()
     }
 
     companion object {
