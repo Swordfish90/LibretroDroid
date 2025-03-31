@@ -62,7 +62,9 @@ class GLRetroView(
     }
 
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
-        LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
+        runOnGLThread {
+            LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
+        }
     }
 
     private val openGLESVersion: Int
