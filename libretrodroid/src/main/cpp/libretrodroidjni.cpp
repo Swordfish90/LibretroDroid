@@ -500,7 +500,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
             size,
             data.data()
         );
-        LibretroDroid::getInstance().loadGameFromBytes(data, size);
+        LibretroDroid::getInstance().loadGameFromBytes(data.data(), size);
     } catch (std::exception &exception) {
         LOGE("Error in loadGameFromBytes: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
