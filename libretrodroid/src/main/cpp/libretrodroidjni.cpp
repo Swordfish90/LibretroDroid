@@ -57,14 +57,26 @@ JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_availableD
     JNIEnv* env,
     jclass obj
 ) {
-    return LibretroDroid::getInstance().availableDisks();
+    try {
+        return LibretroDroid::getInstance().availableDisks();
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
+    return 0;
 }
 
 JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_currentDisk(
     JNIEnv* env,
     jclass obj
 ) {
-    return LibretroDroid::getInstance().currentDisk();
+    try {
+        return LibretroDroid::getInstance().currentDisk();
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
+    return 0;
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk(
@@ -72,7 +84,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_changeDisk
     jclass obj,
     jint index
 ) {
-    return LibretroDroid::getInstance().changeDisk(index);
+    try {
+        return LibretroDroid::getInstance().changeDisk(index);
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVariable(
@@ -80,83 +97,100 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_updateVari
     jclass obj,
     jobject variable
 ) {
-    Variable v = JavaUtils::variableFromJava(env, variable);
-    Environment::getInstance().updateVariable(v.key, v.value);
+    try {
+        Variable v = JavaUtils::variableFromJava(env, variable);
+        Environment::getInstance().updateVariable(v.key, v.value);
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getVariables(
     JNIEnv* env,
     jclass obj
 ) {
-    jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
-    jmethodID variableMethodID = env->GetMethodID(variableClass, "<init>", "()V");
+    try {
+        jclass variableClass = env->FindClass("com/swordfish/libretrodroid/Variable");
+        jmethodID variableMethodID = env->GetMethodID(variableClass, "<init>", "()V");
 
-    auto variables = Environment::getInstance().getVariables();
-    jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
+        auto variables = Environment::getInstance().getVariables();
+        jobjectArray result = env->NewObjectArray(variables.size(), variableClass, nullptr);
 
-    for (int i = 0; i < variables.size(); i++) {
-        jobject jVariable = env->NewObject(variableClass, variableMethodID);
+        for (int i = 0; i < variables.size(); i++) {
+            jobject jVariable = env->NewObject(variableClass, variableMethodID);
 
-        jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
-        jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
-        jfieldID jDescriptionField = env->GetFieldID(
-            variableClass,
-            "description",
-            "Ljava/lang/String;"
-        );
+            jfieldID jKeyField = env->GetFieldID(variableClass, "key", "Ljava/lang/String;");
+            jfieldID jValueField = env->GetFieldID(variableClass, "value", "Ljava/lang/String;");
+            jfieldID jDescriptionField = env->GetFieldID(
+                    variableClass,
+                    "description",
+                    "Ljava/lang/String;"
+            );
 
-        env->SetObjectField(jVariable, jKeyField, env->NewStringUTF(variables[i].key.data()));
-        env->SetObjectField(jVariable, jValueField, env->NewStringUTF(variables[i].value.data()));
-        env->SetObjectField(
-            jVariable,
-            jDescriptionField,
-            env->NewStringUTF(variables[i].description.data()));
+            env->SetObjectField(jVariable, jKeyField, env->NewStringUTF(variables[i].key.data()));
+            env->SetObjectField(jVariable, jValueField, env->NewStringUTF(variables[i].value.data()));
+            env->SetObjectField(
+                    jVariable,
+                    jDescriptionField,
+                    env->NewStringUTF(variables[i].description.data()));
 
-        env->SetObjectArrayElement(result, i, jVariable);
+            env->SetObjectArrayElement(result, i, jVariable);
+        }
+        return result;
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
-    return result;
+    return nullptr;
 }
 
 JNIEXPORT jobjectArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getControllers(
     JNIEnv* env,
     jclass obj
 ) {
-    jclass variableClass = env->FindClass("[Lcom/swordfish/libretrodroid/Controller;");
+    try {
+        jclass variableClass = env->FindClass("[Lcom/swordfish/libretrodroid/Controller;");
 
-    auto controllers = Environment::getInstance().getControllers();
-    jobjectArray result = env->NewObjectArray(controllers.size(), variableClass, nullptr);
+        auto controllers = Environment::getInstance().getControllers();
+        jobjectArray result = env->NewObjectArray(controllers.size(), variableClass, nullptr);
 
-    for (int i = 0; i < controllers.size(); i++) {
-        jclass variableClass2 = env->FindClass("com/swordfish/libretrodroid/Controller");
-        jobjectArray controllerArray = env->NewObjectArray(
-            controllers[i].size(),
-            variableClass2,
-            nullptr
-        );
-        jmethodID variableMethodID = env->GetMethodID(variableClass2, "<init>", "()V");
-
-        for (int j = 0; j < controllers[i].size(); j++) {
-            jobject jController = env->NewObject(variableClass2, variableMethodID);
-
-            jfieldID jIdField = env->GetFieldID(variableClass2, "id", "I");
-            jfieldID jDescriptionField = env->GetFieldID(
-                variableClass2,
-                "description",
-                "Ljava/lang/String;"
+        for (int i = 0; i < controllers.size(); i++) {
+            jclass variableClass2 = env->FindClass("com/swordfish/libretrodroid/Controller");
+            jobjectArray controllerArray = env->NewObjectArray(
+                    controllers[i].size(),
+                    variableClass2,
+                    nullptr
             );
+            jmethodID variableMethodID = env->GetMethodID(variableClass2, "<init>", "()V");
 
-            env->SetIntField(jController, jIdField, (int) controllers[i][j].id);
-            env->SetObjectField(
-                jController,
-                jDescriptionField,
-                env->NewStringUTF(controllers[i][j].description.data()));
+            for (int j = 0; j < controllers[i].size(); j++) {
+                jobject jController = env->NewObject(variableClass2, variableMethodID);
 
-            env->SetObjectArrayElement(controllerArray, j, jController);
+                jfieldID jIdField = env->GetFieldID(variableClass2, "id", "I");
+                jfieldID jDescriptionField = env->GetFieldID(
+                        variableClass2,
+                        "description",
+                        "Ljava/lang/String;"
+                );
+
+                env->SetIntField(jController, jIdField, (int) controllers[i][j].id);
+                env->SetObjectField(
+                        jController,
+                        jDescriptionField,
+                        env->NewStringUTF(controllers[i][j].description.data()));
+
+                env->SetObjectArrayElement(controllerArray, j, jController);
+            }
+
+            env->SetObjectArrayElement(result, i, controllerArray);
         }
-
-        env->SetObjectArrayElement(result, i, controllerArray);
+        return result;
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
-    return result;
+    return nullptr;
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControllerType(
@@ -165,7 +199,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setControl
     jint port,
     jint type
 ) {
-    LibretroDroid::getInstance().setControllerType(port, type);
+    try {
+        LibretroDroid::getInstance().setControllerType(port, type);
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(
@@ -299,14 +338,24 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     jint width,
     jint height
 ) {
-    LibretroDroid::getInstance().onSurfaceChanged(width, height);
+    try {
+        LibretroDroid::getInstance().onSurfaceChanged(width, height);
+    } catch (std::exception &exception) {
+        LOGE("Error in resume: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(
     JNIEnv* env,
     jclass obj
 ) {
-    LibretroDroid::getInstance().onSurfaceCreated();
+    try {
+        LibretroDroid::getInstance().onSurfaceCreated();
+    } catch (std::exception &exception) {
+        LOGE("Error in resume: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(
@@ -317,7 +366,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEv
     jfloat xAxis,
     jfloat yAxis
 ) {
-    LibretroDroid::getInstance().onMotionEvent(port, source, xAxis, yAxis);
+    try {
+        LibretroDroid::getInstance().onMotionEvent(port, source, xAxis, yAxis);
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onTouchEvent(
@@ -326,7 +380,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onTouchEve
     jfloat xAxis,
     jfloat yAxis
 ) {
-    LibretroDroid::getInstance().onTouchEvent(xAxis, yAxis);
+    try {
+        LibretroDroid::getInstance().onTouchEvent(xAxis, yAxis);
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(
@@ -336,7 +395,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent
     jint action,
     jint keyCode
 ) {
-    LibretroDroid::getInstance().onKeyEvent(port, action, keyCode);
+    try {
+        LibretroDroid::getInstance().onKeyEvent(port, action, keyCode);
+    } catch (std::exception &exception) {
+        LOGE("Error in serializeState: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
@@ -400,9 +464,8 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
     jclass obj,
     jstring gameFilePath
 ) {
-    auto gamePath = JniString(env, gameFilePath);
-
     try {
+        auto gamePath = JniString(env, gameFilePath);
         LibretroDroid::getInstance().loadGameFromPath(gamePath.stdString());
     } catch (std::exception &exception) {
         LOGE("Error in loadGameFromPath: %s", exception.what());
@@ -509,21 +572,26 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     jclass obj,
     jobject glRetroView
 ) {
-    LibretroDroid::getInstance().step();
+    try {
+        LibretroDroid::getInstance().step();
 
-    if (LibretroDroid::getInstance().requiresVideoRefresh()) {
-        LibretroDroid::getInstance().clearRequiresVideoRefresh();
-        jclass cls = env->GetObjectClass(glRetroView);
-        jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
-        env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
-    }
-
-    if (LibretroDroid::getInstance().isRumbleEnabled()) {
-        LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
+        if (LibretroDroid::getInstance().requiresVideoRefresh()) {
+            LibretroDroid::getInstance().clearRequiresVideoRefresh();
             jclass cls = env->GetObjectClass(glRetroView);
-            jmethodID sendRumbleStrengthMethodID = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
-            env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
-        });
+            jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
+            env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
+        }
+
+        if (LibretroDroid::getInstance().isRumbleEnabled()) {
+            LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
+                jclass cls = env->GetObjectClass(glRetroView);
+                jmethodID sendRumbleStrengthMethodID = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
+                env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
+            });
+        }
+    } catch (std::exception &exception) {
+        LOGE("Error in resume: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }
 
@@ -532,7 +600,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleE
     jclass obj,
     jboolean enabled
 ) {
-    LibretroDroid::getInstance().setRumbleEnabled(enabled);
+    try {
+        LibretroDroid::getInstance().setRumbleEnabled(enabled);
+    } catch (std::exception &exception) {
+        LOGE("Error in setRumbleEnabled: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(
@@ -540,7 +613,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSp
     jclass obj,
     jint speed
 ) {
-    LibretroDroid::getInstance().setFrameSpeed(speed);
+    try {
+        LibretroDroid::getInstance().setFrameSpeed(speed);
+    } catch (std::exception &exception) {
+        LOGE("Error in setFrameSpeed: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEnabled(
@@ -548,7 +626,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEn
     jclass obj,
     jboolean enabled
 ) {
-    LibretroDroid::getInstance().setAudioEnabled(enabled);
+    try {
+        LibretroDroid::getInstance().setAudioEnabled(enabled);
+    } catch (std::exception &exception) {
+        LOGE("Error in setAudioEnabled: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderConfig(
@@ -556,7 +639,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderC
     jclass obj,
     jobject shaderConfig
 ) {
-    LibretroDroid::getInstance().setShaderConfig(JavaUtils::shaderFromJava(env, shaderConfig));
+    try {
+        LibretroDroid::getInstance().setShaderConfig(JavaUtils::shaderFromJava(env, shaderConfig));
+    } catch (std::exception &exception) {
+        LOGE("Error in setShaderConfig: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewport(
@@ -567,14 +655,24 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewpor
     jfloat width,
     jfloat height
 ) {
-    LibretroDroid::getInstance().setViewport(Rect(x, y, width, height));
+    try {
+        LibretroDroid::getInstance().setViewport(Rect(x, y, width, height));
+    } catch (std::exception &exception) {
+        LOGE("Error in setViewport: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_refreshAspectRatio(
     JNIEnv* env,
     jclass obj
 ) {
-    LibretroDroid::getInstance().refreshAspectRatio();
+    try {
+        LibretroDroid::getInstance().refreshAspectRatio();
+    } catch (std::exception &exception) {
+        LOGE("Error in refreshAspectRatio: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 }
