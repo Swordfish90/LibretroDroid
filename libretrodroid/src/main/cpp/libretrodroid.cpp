@@ -322,6 +322,7 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
         game_info.size = file.size;
     }
 
+    core->retro_unload_game();
     bool result = core->retro_load_game(&game_info);
     if (!result) {
         LOGE("Cannot load game. Leaving.");
@@ -353,6 +354,7 @@ void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
         game_info.size = size;
     }
 
+    core->retro_unload_game();
     bool result = core->retro_load_game(&game_info);
     if (!result) {
         LOGE("Cannot load game. Leaving.");
@@ -395,6 +397,7 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
         game_info.size = file.size;
     }
 
+    core->retro_unload_game();
     bool result = core->retro_load_game(&game_info);
     if (!result) {
         LOGE("Cannot load game. Leaving.");
