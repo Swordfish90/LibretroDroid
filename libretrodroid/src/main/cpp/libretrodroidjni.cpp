@@ -466,7 +466,7 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
 ) {
     try {
         if (gameFilePath == nullptr) {
-            LOGE("DQC", "Error: gameFilePath is null");
+            LOGE("Error: gameFilePath is null");
             JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
             return;
         }
