@@ -17,12 +17,18 @@
 
 package com.swordfish.libretrodroid;
 
+import android.util.Log;
+
 import java.util.List;
 
 public class LibretroDroid {
 
     static {
-        System.loadLibrary("libretrodroid");
+        try {
+            System.loadLibrary("libretrodroid");
+        } catch (Exception e) {
+            Log.d("DQC", "static initializer: " + e.getMessage());
+        }
     }
 
     public static final int MOTION_SOURCE_DPAD = 0;
