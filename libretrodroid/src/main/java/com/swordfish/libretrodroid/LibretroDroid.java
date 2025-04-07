@@ -25,6 +25,7 @@ public class LibretroDroid {
 
     static {
         try {
+            Log.d("DQC", "loadLibrary: --------- init ");
             System.loadLibrary("libretrodroid");
         } catch (Exception e) {
             Log.d("DQC", "static initializer: " + e.getMessage());

@@ -465,6 +465,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
     jstring gameFilePath
 ) {
     try {
+        if (gameFilePath == nullptr) {
+            LOGE("DQC", "Error: gameFilePath is null");
+            JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
+            return;
+        }
+
         auto gamePath = JniString(env, gameFilePath);
         LibretroDroid::getInstance().loadGameFromPath(gamePath.stdString());
     } catch (std::exception &exception) {
@@ -479,13 +485,20 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
     jbyteArray gameFileBytes
 ) {
     try {
+        if (gameFileBytes == nullptr) {
+            JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
+            return;
+        }
+
         size_t size = env->GetArrayLength(gameFileBytes);
-        auto* data = new int8_t[size];
+
+        std::vector<int8_t> data(size);
+
         env->GetByteArrayRegion(
             gameFileBytes,
             0,
             size,
-            reinterpret_cast<int8_t*>(data)
+            data.data()
         );
         LibretroDroid::getInstance().loadGameFromBytes(data, size);
     } catch (std::exception &exception) {
@@ -501,26 +514,57 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
 ) {
 
     try {
+        jclass detachedVirtualFileClass = env->FindClass("com/swordfish/libretrodroid/DetachedVirtualFile");
+        if (!detachedVirtualFileClass) {
+            LOGE("DQC", "Failed to find class: com/swordfish/libretrodroid/DetachedVirtualFile");
+            JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
+            return;
+        }
         jmethodID getVirtualFileMethodID = env->GetMethodID(
-                env->FindClass("com/swordfish/libretrodroid/DetachedVirtualFile"),
+                detachedVirtualFileClass,
                 "getVirtualPath",
                 "()Ljava/lang/String;"
         );
+        if (!getVirtualFileMethodID) {
+            LOGE("Failed to find DetachedVirtualFile class!");
+            env->DeleteLocalRef(detachedVirtualFileClass);
+            JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
+            return;
+        }
         jmethodID getFileDescriptorMethodID = env->GetMethodID(
                 env->FindClass("com/swordfish/libretrodroid/DetachedVirtualFile"),
                 "getFileDescriptor",
                 "()I"
         );
 
+        if (!getFileDescriptorMethodID) {
+            LOGE("Failed to find getFileDescriptorMethodID class!");
+            env->DeleteLocalRef(detachedVirtualFileClass);
+            JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
+            return;
+        }
+
         std::vector<VFSFile> virtualFiles;
 
         JavaUtils::forEachOnJavaIterable(env, virtualFileList, [&](jobject item) {
-            JniString virtualFileName(env,(jstring) env->CallObjectMethod(
-                item,
-                getVirtualFileMethodID
-            ));
+            if (!item) {
+                LOGE("DQC", "Encountered a null DetachedVirtualFile object in the iterable");
+                return; // Skip this item
+            }
+
+            jstring jVirtualPath = (jstring) env->CallObjectMethod(item, getVirtualFileMethodID);
+
+            if (!jVirtualPath) {
+                LOGE("Virtual file path is null");
+                return;
+            }
+            JniString virtualFileName(env, jVirtualPath);
 
             int fileDescriptor = env->CallIntMethod(item, getFileDescriptorMethodID);
+            if (fileDescriptor < 0) {
+                LOGE("Invalid file descriptor for: %s", virtualFileName.stdString().c_str());
+                return;
+            }
             virtualFiles.emplace_back(VFSFile(virtualFileName.stdString(), fileDescriptor));
         });
 
