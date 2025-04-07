@@ -516,7 +516,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
     try {
         jclass detachedVirtualFileClass = env->FindClass("com/swordfish/libretrodroid/DetachedVirtualFile");
         if (!detachedVirtualFileClass) {
-            LOGE("DQC", "Failed to find class: com/swordfish/libretrodroid/DetachedVirtualFile");
             JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
             return;
         }
@@ -548,7 +547,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
 
         JavaUtils::forEachOnJavaIterable(env, virtualFileList, [&](jobject item) {
             if (!item) {
-                LOGE("DQC", "Encountered a null DetachedVirtualFile object in the iterable");
                 return; // Skip this item
             }
 
