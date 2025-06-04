@@ -58,6 +58,7 @@ public:
     void operator=(LibretroDroid const&) = delete;
 
     void setViewport(Rect viewportRect);
+    void initializeSignalHandlers();
 
 private:
     LibretroDroid() {}

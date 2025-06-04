@@ -44,6 +44,7 @@
 #include "utils/rect.h"
 #include "errorcodes.h"
 #include "vfs/vfs.h"
+#include <csignal>
 
 namespace libretrodroid {
 
@@ -661,6 +662,38 @@ void LibretroDroid::setViewport(Rect viewportRect) {
     if (video != nullptr) {
         video->updateViewportSize(viewportRect);
     }
+}
+
+
+void custom_signal_handler(int signum) {
+    LOGF("Caught signal %d. This is where the app would normally crash.", signum);
+    signal(signum, SIG_DFL);
+    throw LibretroDroidError("Crash detected",ERROR_GENERIC);
+    _exit(0);
+    raise(signum);
+}
+void LibretroDroid::initializeSignalHandlers() {
+    LOGI("Initializing custom signal handlers for LibretroDroid...");
+    signal(SIGSEGV, custom_signal_handler);
+    signal(SIGILL, custom_signal_handler);
+    signal(SIGABRT, custom_signal_handler);
+}
+
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+            LOGE("Failed to get JNIEnv in JNI_OnLoad");
+            return JNI_ERR;
+    }
+
+    LibretroDroid::getInstance().initializeSignalHandlers();
+    LOGI("libretrodroid JNI_OnLoad successful, signal handlers initialized.");
+    return JNI_VERSION_1_6;
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_nativeInit(JNIEnv* env,jclass clazz) {
+    LOGI("libretrodroid JNI_OnLoad successful, signal handlers LibretroDroid_nativeInit.");
+    LibretroDroid::getInstance().initializeSignalHandlers();
 }
 
 } //namespace libretrodroid
