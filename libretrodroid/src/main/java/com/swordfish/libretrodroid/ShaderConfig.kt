@@ -44,10 +44,9 @@ sealed interface ShaderConfig {
         val blendMaxSharpness: Float = 0.75f,
         val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
-        val edgeMinValue: Float = 0.025f,
         val softEdgesSharpening: Boolean = true,
         val softEdgesSharpeningAmount: Float = 1.0f,
-        val hardEdgesThreshold: Float = 0.2f,
+        val hardEdgesSearchMinContrast: Float = 0.85f,
     ) : ShaderConfig
 
     data class CUT3(
@@ -58,11 +57,9 @@ sealed interface ShaderConfig {
         val blendMaxSharpness: Float = 0.75f,
         val staticSharpness: Float = 0.75f,
         val edgeUseFastLuma: Boolean = false,
-        val edgeMinValue: Float = 0.05f,
         val softEdgesSharpening: Boolean = true,
         val softEdgesSharpeningAmount: Float = 1.0f,
-        val hardEdgesThreshold: Float = 0.2f,
-        val hardEdgesSearchMinContrast: Float = 0.5f,
+        val hardEdgesSearchMinContrast: Float = 0.85f,
         val hardEdgesSearchMaxDistance: Int = 4,
     ) : ShaderConfig
 }
