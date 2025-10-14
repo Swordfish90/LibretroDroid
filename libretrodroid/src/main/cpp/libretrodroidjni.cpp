@@ -570,6 +570,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewpor
     LibretroDroid::getInstance().setViewport(Rect(x, y, width, height));
 }
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewportAlignment(
+        JNIEnv* env,
+        jclass obj,
+        jint viewportAlignment
+) {
+    LibretroDroid::getInstance().setViewportAlignment(viewportAlignment);
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_refreshAspectRatio(
     JNIEnv* env,
     jclass obj

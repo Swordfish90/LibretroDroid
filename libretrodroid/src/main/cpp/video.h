@@ -60,7 +60,8 @@ public:
         float rotation,
         bool skipDuplicateFrames,
         bool ambientMode,
-        Rect viewportRect
+        Rect viewportRect,
+        unsigned int viewportAlignment
     );
 
     VideoLayout& getLayout() { return videoLayout; }
@@ -68,6 +69,7 @@ public:
     void updateAspectRatio(float aspectRatio);
     void updateScreenSize(unsigned screenWidth, unsigned screenHeight);
     void updateViewportSize(Rect viewportRect);
+    void updateViewportAlignment(unsigned int viewportAlignment);
     void updateRendererSize(unsigned width, unsigned height);
     void updateRotation(float rotation);
     void updateShaderType(ShaderManager::Config shaderConfig);

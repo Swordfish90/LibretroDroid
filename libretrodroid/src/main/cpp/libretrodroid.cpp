@@ -205,7 +205,8 @@ void LibretroDroid::onSurfaceCreated() {
         Environment::getInstance().getScreenRotation(),
         skipDuplicateFrames,
         ambientMode,
-        viewportRect
+        viewportRect,
+        viewportAlignment
     );
 
     video = std::unique_ptr<Video>(newVideo);
@@ -619,6 +620,14 @@ void LibretroDroid::setViewport(Rect viewportRect) {
 
     if (video != nullptr) {
         video->updateViewportSize(viewportRect);
+    }
+}
+
+void LibretroDroid::setViewportAlignment(unsigned int viewportAlignment) {
+    this-> viewportAlignment = viewportAlignment;
+
+    if (video) {
+        this->video->updateViewportAlignment(viewportAlignment);
     }
 }
 
