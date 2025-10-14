@@ -29,9 +29,16 @@ class GLRetroViewData(context: Context) {
     var variables: Array<Variable> = arrayOf()
     var saveRAMState: ByteArray? = null
     var shader: ShaderConfig = ShaderConfig.Default
+    var verticalAlignment = VerticalAlignment.CENTER
     var rumbleEventsEnabled: Boolean = true
     var preferLowLatencyAudio: Boolean = true
     var skipDuplicateFrames: Boolean = false
     var enableMicrophone: Boolean = false
     var enableAmbientMode: Boolean = false
+}
+
+enum class VerticalAlignment(val value: Int) {
+    CENTER(0),
+    TOP(1),
+    BOTTOM(2)
 }

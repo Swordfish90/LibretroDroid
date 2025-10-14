@@ -559,6 +559,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderC
     LibretroDroid::getInstance().setShaderConfig(JavaUtils::shaderFromJava(env, shaderConfig));
 }
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setVerticalAlignment(
+        JNIEnv* env,
+        jclass obj,
+        jint verticalAlignment
+) {
+    LibretroDroid::getInstance().setVerticalAlignment(verticalAlignment);
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewport(
     JNIEnv* env,
     jclass obj,

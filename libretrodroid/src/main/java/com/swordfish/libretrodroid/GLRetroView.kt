@@ -34,15 +34,15 @@ import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.coroutineScope
 import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
-import java.util.*
-import java.util.concurrent.CountDownLatch
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
-import kotlin.properties.Delegates
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
+import kotlin.properties.Delegates
 
 class GLRetroView(
     context: Context,
@@ -65,6 +65,10 @@ class GLRetroView(
         runOnGLThread {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
         }
+    }
+
+    var verticalAlignment: VerticalAlignment by Delegates.observable(VerticalAlignment.CENTER) { _, _, value ->
+        LibretroDroid.setVerticalAlignment(value.value)
     }
 
     private val openGLESVersion: Int
@@ -107,6 +111,7 @@ class GLRetroView(
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
+        LibretroDroid.setVerticalAlignment(data.verticalAlignment.value)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)

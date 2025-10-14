@@ -131,6 +131,8 @@ public:
 
     void setShaderConfig(ShaderManager::Config shaderConfig);
 
+    void setVerticalAlignment(unsigned int verticalAlignment);
+
     void resetGlobalVariables();
 
     // Handle callbacks
@@ -163,6 +165,7 @@ private:
     };
 
     Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
+    unsigned int verticalAlignment = V_ALIGN_CENTER;
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;

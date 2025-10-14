@@ -22,11 +22,15 @@
 
 #include "utils/rect.h"
 
+#define V_ALIGN_CENTER  0
+#define V_ALIGN_TOP     1
+#define V_ALIGN_BOTTOM  2
+
 namespace libretrodroid {
 
 class VideoLayout {
 public:
-    VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRect);
+    VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRect, unsigned int verticalAlignment);
 
     void updateAspectRatio(float aspectRatio);
 
@@ -35,6 +39,8 @@ public:
     void updateViewportSize(Rect viewportRect);
 
     void updateRotation(float rotation);
+
+    void updateVerticalAlignment(unsigned int verticalAlignment);
 
     std::array<float, 12>& getForegroundVertices() { return foregroundVertices; }
     std::array<float, 12>& getBackgroundVertices() { return backgroundVertices; }
@@ -152,6 +158,8 @@ private:
 
     unsigned screenWidth = 0;
     unsigned screenHeight = 0;
+
+    unsigned verticalAlignment = V_ALIGN_CENTER;
 };
 
 } // namespace libretrodroid

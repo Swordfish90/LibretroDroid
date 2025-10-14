@@ -107,6 +107,9 @@ class SampleActivity : AppCompatActivity() {
              */
             shader = ShaderConfig.Default
 
+            /* (Optional) Vertical alignment to apply to the view: CENTER, TOP, BOTTOM */
+            verticalAlignment = VerticalAlignment.CENTER
+
             /* Rumble events enabled */
             rumbleEventsEnabled = true
 

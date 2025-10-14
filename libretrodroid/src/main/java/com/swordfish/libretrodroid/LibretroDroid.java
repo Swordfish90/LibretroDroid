@@ -113,6 +113,7 @@ public class LibretroDroid {
     public static native void setFrameSpeed(int speed);
     public static native void setAudioEnabled(boolean enabled);
     public static native void setShaderConfig(GLRetroShader shader);
+    public static native void setVerticalAlignment(int verticalAlignment);
     public static native void setViewport(float x, float y, float width, float height);
 
     public static native byte[] serializeState();

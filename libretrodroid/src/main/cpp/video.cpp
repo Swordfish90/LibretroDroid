@@ -244,6 +244,10 @@ void Video::updateRotation(float rotation) {
     videoLayout.updateRotation(rotation);
 }
 
+void Video::updateVerticalAlignment(unsigned int verticalAlignment) {
+    videoLayout.updateVerticalAlignment(verticalAlignment);
+}
+
 Video::Video(
     RenderingOptions renderingOptions,
     ShaderManager::Config shaderConfig,
@@ -251,12 +255,13 @@ Video::Video(
     float rotation,
     bool skipDuplicateFrames,
     bool ambientMode,
-    Rect viewportRect
+    Rect viewportRect,
+    unsigned int verticalAlignment
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
     skipDuplicateFrames(skipDuplicateFrames),
     ambientMode(ambientMode),
-    videoLayout(bottomLeftOrigin, rotation, viewportRect) {
+    videoLayout(bottomLeftOrigin, rotation, viewportRect, verticalAlignment) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
