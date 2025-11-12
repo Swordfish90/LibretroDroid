@@ -202,6 +202,11 @@ void Video::renderFrame() {
         glDisableVertexAttribArray(shader.gvPositionHandle);
         glDisableVertexAttribArray(shader.gvCoordinateHandle);
 
+        if (shader.gPreviousPassTextureHandle != -1 && passData.texture.has_value()) {
+            glActiveTexture(GL_TEXTURE0 + 1);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         glUseProgram(0);
