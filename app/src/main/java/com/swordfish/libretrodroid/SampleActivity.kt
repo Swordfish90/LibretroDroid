@@ -62,8 +62,14 @@ class SampleActivity : AppCompatActivity() {
             /*
              * The path to the ROM to load.
              * Example: /data/data/<package-id>/files/example.gba
+             *
+             * Add files via
+             * 1. adb push example.gba /data/local/tmp/example.gba
+             * 2. adb shell
+             * 3. run-as package-id
+             * 4. cp /data/local/tmp/example.gba /data/data/package-id/files/example.gba
              */
-            gameFilePath = "/data/data/<package-id>/files/example.gba"
+            gameFilePath = "/data/data/com.android.gl2jni/files/example.gba"
 
             /*
              * Direct ROM bytes to load.
@@ -100,6 +106,9 @@ class SampleActivity : AppCompatActivity() {
              * SHADER_UPSCALING:    Improve the quality of retro graphics.
              */
             shader = ShaderConfig.Default
+
+            /* (Optional) Viewport alignment to apply to the view: CENTER, TOP, BOTTOM */
+            viewportAlignment = ViewportAlignment.CENTER
 
             /* Rumble events enabled */
             rumbleEventsEnabled = true

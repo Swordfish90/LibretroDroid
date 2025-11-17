@@ -240,6 +240,10 @@ void Video::updateViewportSize(Rect viewportRect) {
     videoLayout.updateViewportSize(viewportRect);
 }
 
+void Video::updateViewportAlignment(unsigned int viewportAlignment) {
+    videoLayout.updateViewportAlignment(viewportAlignment);
+}
+
 void Video::updateRendererSize(unsigned int width, unsigned int height) {
     LOGD("Updating renderer size: %d x %d", width, height);
     renderer->updateRenderedResolution(width, height);
@@ -256,12 +260,13 @@ Video::Video(
     float rotation,
     bool skipDuplicateFrames,
     bool ambientMode,
-    Rect viewportRect
+    Rect viewportRect,
+    unsigned int viewportAlignment
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
     skipDuplicateFrames(skipDuplicateFrames),
     ambientMode(ambientMode),
-    videoLayout(bottomLeftOrigin, rotation, viewportRect) {
+    videoLayout(bottomLeftOrigin, rotation, viewportRect, viewportAlignment) {
 
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);

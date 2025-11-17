@@ -7,7 +7,7 @@ group='com.github.Swordfish90'
 android {
     namespace = "com.swordfish.libretrodroid"
     compileSdkVersion 33
-    buildToolsVersion "29.0.3"
+    buildToolsVersion "34.0.0"
 
 
     defaultConfig {
@@ -45,6 +45,14 @@ android {
         singleVariant('release') {
             withSourcesJar()
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
     }
 }
 

@@ -20,10 +20,11 @@
 
 namespace libretrodroid {
 
-VideoLayout::VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRect) :
+VideoLayout::VideoLayout(bool bottomLeftOrigin, float rotation, Rect viewportRect, unsigned int viewportAlignment) :
     bottomLeftOrigin(bottomLeftOrigin),
     rotation(rotation),
-    viewportRect(viewportRect)
+    viewportRect(viewportRect),
+    viewportAlignment(viewportAlignment)
 {
     updateBuffers();
 }
@@ -61,6 +62,20 @@ void VideoLayout::updateForegroundVertices() {
 
     float viewportXOffset = (viewportRect.getX() * 2.0f) - (1.0F - viewportRect.getWidth());
     float viewportYOffset = (viewportRect.getY() * 2.0f) - (1.0F - viewportRect.getHeight());
+
+    float emptyVerticalSpace = viewportRect.getHeight() - scaleY;
+    switch (viewportAlignment) {
+        case V_ALIGN_TOP:
+            viewportYOffset -= emptyVerticalSpace;
+            break;
+        case V_ALIGN_BOTTOM:
+            viewportYOffset += emptyVerticalSpace;
+            break;
+        case V_ALIGN_CENTER:
+            // do nothing
+            break;
+    }
+
     float factorX = scaleX / (scaleX * fabs(cosTheta) + scaleY * fabs(sinTheta));
     float factorY = scaleY / (scaleX * fabs(sinTheta) + scaleY * fabs(cosTheta));
 
@@ -172,6 +187,13 @@ void libretrodroid::VideoLayout::updateViewportSize(Rect viewport) {
     );
 
     this->viewportRect = viewport;
+    updateBuffers();
+}
+
+void VideoLayout::updateViewportAlignment(unsigned int viewportAlignment) {
+    LOGD("Updated viewport alignment to : %d", viewportAlignment);
+
+    this->viewportAlignment = viewportAlignment;
     updateBuffers();
 }
 
