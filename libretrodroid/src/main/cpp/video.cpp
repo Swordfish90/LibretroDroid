@@ -147,8 +147,8 @@ void Video::renderFrame() {
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (ambientMode) {
-        videoBackground.renderBackground(
+    if (immersiveModeEnabled) {
+        immersiveMode.renderBackground(
             videoLayout.getScreenWidth(),
             videoLayout.getScreenHeight(),
             videoLayout.getBackgroundVertices(),
@@ -255,12 +255,14 @@ Video::Video(
     bool bottomLeftOrigin,
     float rotation,
     bool skipDuplicateFrames,
-    bool ambientMode,
-    Rect viewportRect
+    bool immersiveModeEnabled,
+    Rect viewportRect,
+    ImmersiveMode::Config immersiveModeConfig
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
     skipDuplicateFrames(skipDuplicateFrames),
-    ambientMode(ambientMode),
+    immersiveModeEnabled(immersiveModeEnabled),
+    immersiveMode(immersiveModeConfig),
     videoLayout(bottomLeftOrigin, rotation, viewportRect) {
 
     printGLString("Version", GL_VERSION);

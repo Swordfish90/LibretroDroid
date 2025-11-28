@@ -25,7 +25,7 @@
 #include "renderers/renderer.h"
 #include "shadermanager.h"
 #include "utils/rect.h"
-#include "videobackground.h"
+#include "immersivemode.h"
 #include "videolayout.h"
 
 namespace libretrodroid {
@@ -59,8 +59,9 @@ public:
         bool bottomLeftOrigin,
         float rotation,
         bool skipDuplicateFrames,
-        bool ambientMode,
-        Rect viewportRect
+        bool immersiveMode,
+        Rect viewportRect,
+        ImmersiveMode::Config immersiveModeConfig
     );
 
     VideoLayout& getLayout() { return videoLayout; }
@@ -104,8 +105,8 @@ private:
 
     std::vector<ShaderChainEntry> shadersChain;
 
-    bool ambientMode = false;
-    VideoBackground videoBackground;
+    bool immersiveModeEnabled = false;
+    ImmersiveMode immersiveMode;
     VideoLayout videoLayout;
 
     Renderer* renderer;

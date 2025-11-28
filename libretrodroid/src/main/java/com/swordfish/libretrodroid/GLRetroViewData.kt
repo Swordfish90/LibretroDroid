@@ -33,5 +33,5 @@ class GLRetroViewData(context: Context) {
     var preferLowLatencyAudio: Boolean = true
     var skipDuplicateFrames: Boolean = false
     var enableMicrophone: Boolean = false
-    var enableAmbientMode: Boolean = false
+    var immersiveMode: ImmersiveMode? = null
 }
