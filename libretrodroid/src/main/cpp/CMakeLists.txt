@@ -31,8 +31,8 @@ add_library(libretrodroid SHARED
         core.cpp
         video.h
         video.cpp
-        videobackground.h
-        videobackground.cpp
+        immersivemode.h
+        immersivemode.cpp
         videolayout.h
         videolayout.cpp
         renderers/renderer.h
@@ -100,4 +100,3 @@ target_link_libraries(libretrodroid
                       oboe
                       GLESv3
 )
-

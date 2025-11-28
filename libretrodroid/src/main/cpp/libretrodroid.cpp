@@ -204,8 +204,9 @@ void LibretroDroid::onSurfaceCreated() {
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
         skipDuplicateFrames,
-        ambientMode,
-        viewportRect
+        immersiveModeEnabled,
+        viewportRect,
+        immersiveModeConfig
     );
 
     video = std::unique_ptr<Video>(newVideo);
@@ -254,7 +255,7 @@ void LibretroDroid::create(
     bool enableVirtualFileSystem,
     bool enableMicrophone,
     bool duplicateFrames,
-    bool enableAmbientMode,
+    std::optional<ImmersiveMode::Config> immersiveModeConfig,
     const std::string& language
 ) {
     LOGD("Performing libretrodroid create");
@@ -269,7 +270,8 @@ void LibretroDroid::create(
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;
     skipDuplicateFrames = duplicateFrames;
-    ambientMode = GLESVersion >= 3 && enableAmbientMode;
+    immersiveModeEnabled = GLESVersion >= 3 && immersiveModeConfig.has_value();
+    this->immersiveModeConfig = immersiveModeConfig.value_or(ImmersiveMode::Config{});
     audioEnabled = true;
     frameSpeed = 1;
 

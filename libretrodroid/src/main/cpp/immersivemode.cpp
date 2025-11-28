@@ -15,7 +15,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "videobackground.h"
+#include "immersivemode.h"
 
 #include <sstream>
 #include <vector>
@@ -24,7 +24,7 @@
 
 namespace libretrodroid {
 
-void VideoBackground::initializeShaders() {
+void ImmersiveMode::initializeShaders() {
     if (blendShaderProgram != 0) return;
 
     GLuint blendingVertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -47,6 +47,7 @@ void VideoBackground::initializeShaders() {
 
     blendTextureHandle = glGetUniformLocation(blendShaderProgram, "currentFrame");
     blendPrevTextureHandle = glGetUniformLocation(blendShaderProgram, "previousFrame");
+    blendFactorHandle = glGetUniformLocation(blendShaderProgram, "blendFactor");
 
     std::string fragmentShaderSource = generateBlurShader();
 
@@ -98,7 +99,7 @@ void VideoBackground::initializeShaders() {
     displayTextureHandle = glGetUniformLocation(displayShaderProgram, "texture");
 }
 
-void VideoBackground::initializeFramebuffers() {
+void ImmersiveMode::initializeFramebuffers() {
     if (!blurFramebuffers.empty()) return;
 
     for (int i = 0; i < 3; i++) {
@@ -117,7 +118,7 @@ void VideoBackground::initializeFramebuffers() {
     );
 }
 
-void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroundVertices) {
+void ImmersiveMode::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroundVertices) {
     int blendFramebufferReadIndex = (blendFramebufferWriteIndex + 1) % 2;
 
     glViewport(0, 0, downscaledWidth, downscaledHeight);
@@ -133,6 +134,7 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(blendShaderProgram);
+    glUniform1f(blendFactorHandle, blendFactor);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -165,7 +167,7 @@ void VideoBackground::renderToFramebuffer(uintptr_t texture, GLfloat* gBackgroun
     blendFramebufferWriteIndex = blendFramebufferReadIndex;
 }
 
-void VideoBackground::renderToFinalOutput(
+void ImmersiveMode::renderToFinalOutput(
     unsigned screenWidth,
     unsigned screenHeight,
     std::array<float, 12> backgroundVertices,
@@ -203,7 +205,7 @@ void VideoBackground::renderToFinalOutput(
     glUseProgram(0);
 }
 
-void VideoBackground::renderBackground(
+void ImmersiveMode::renderBackground(
     unsigned screenWidth,
     unsigned screenHeight,
     std::array<float, 12> backgroundVertices,
@@ -224,7 +226,7 @@ void VideoBackground::renderBackground(
     renderToFinalOutput(screenWidth, screenHeight, backgroundVertices, foregroundBounds);
 }
 
-std::vector<float> VideoBackground::generateSmoothingWeights(int size, float brightness) {
+std::vector<float> ImmersiveMode::generateSmoothingWeights(int size, float brightness) {
     std::vector<float> kernel(size);
     float sigma = size / 3.0f;
     float sum = 0.0f;
@@ -243,7 +245,7 @@ std::vector<float> VideoBackground::generateSmoothingWeights(int size, float bri
     return kernel;
 }
 
-std::string VideoBackground::generateBlurShader() {
+std::string ImmersiveMode::generateBlurShader() {
     if (blurMaskSize % 2 == 0) {
         LOGE("Error: maskSize should be an odd number!");
         return "";

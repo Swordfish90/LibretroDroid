@@ -14,19 +14,55 @@
  *     You should have received a copy of the GNU General Public License
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef LIBRETRODROID_VIDEOBACKGROUND_H
-#define LIBRETRODROID_VIDEOBACKGROUND_H
+#ifndef LIBRETRODROID_IMMERSIVEMODE_H
+#define LIBRETRODROID_IMMERSIVEMODE_H
 
 #include <string>
 #include <array>
+#include <vector>
+#include <memory>
 #include <GLES2/gl2.h>
 
 #include "renderers/es3/es3utils.h"
 
 namespace libretrodroid {
 
-class VideoBackground {
+class ImmersiveMode {
 public:
+    struct Config {
+        Config(
+            int downscaledWidth = 8,
+            int downscaledHeight = 8,
+            int blurMaskSize = 5,
+            float blurBrightness = 0.5F,
+            int blurSkipUpdate = 2,
+            float blendFactor = 0.1F
+        ) :
+            downscaledWidth(downscaledWidth),
+            downscaledHeight(downscaledHeight),
+            blurMaskSize(blurMaskSize),
+            blurBrightness(blurBrightness),
+            blurSkipUpdate(blurSkipUpdate),
+            blendFactor(blendFactor)
+        {}
+
+        int downscaledWidth;
+        int downscaledHeight;
+        int blurMaskSize;
+        float blurBrightness;
+        int blurSkipUpdate;
+        float blendFactor;
+    };
+
+    explicit ImmersiveMode(const Config& config = Config()) :
+        downscaledWidth(config.downscaledWidth),
+        downscaledHeight(config.downscaledHeight),
+        blurMaskSize(config.blurMaskSize),
+        blurBrightness(config.blurBrightness),
+        blurSkipUpdate(config.blurSkipUpdate > 0 ? config.blurSkipUpdate : 1),
+        blendFactor(config.blendFactor)
+    {}
+
     void renderBackground(
         unsigned screenWidth,
         unsigned screenHeight,
@@ -98,13 +134,14 @@ private:
         varying mediump vec2 vTexCoord;
         uniform lowp sampler2D currentFrame;
         uniform lowp sampler2D previousFrame;
+        uniform float blendFactor;
 
         void main() {
             lowp float margin = -0.125;
             mediump vec2 adjustedCoord = vTexCoord * (1.0 - 2.0 * margin) + margin;
             lowp vec4 currentColor = texture2D(currentFrame, adjustedCoord);
             lowp vec4 prevColor = texture2D(previousFrame, vTexCoord);
-            gl_FragColor = mix(prevColor, currentColor, 0.1);
+            gl_FragColor = mix(prevColor, currentColor, blendFactor);
         }
     )";
 
@@ -143,19 +180,21 @@ private:
     GLint displayForegroundBoundsHandle = -1;
     GLint displayTextureCoordinatesHandle = -1;
 
-    int downscaledWidth = 8;
-    int downscaledHeight = 8;
-    int blurMaskSize = 5;
-    float blurBrightness = 0.5F;
-    int blurSkipUpdate = 2;
+    int downscaledWidth;
+    int downscaledHeight;
+    int blurMaskSize;
+    float blurBrightness;
+    int blurSkipUpdate;
+    float blendFactor;
 
     GLuint blendShaderProgram = 0;
     GLint blendTextureHandle = -1;
     GLint blendPrevTextureHandle = -1;
+    GLint blendFactorHandle = -1;
     int blendFramebufferWriteIndex = 0;
     int blendFramebufferCurrent = 0;
 };
 
 } // libretrodroid
 
-#endif //LIBRETRODROID_VIDEOBACKGROUND_H
+#endif //LIBRETRODROID_IMMERSIVEMODE_H

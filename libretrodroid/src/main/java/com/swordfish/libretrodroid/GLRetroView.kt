@@ -103,7 +103,7 @@ class GLRetroView(
             data.gameVirtualFiles.isNotEmpty(),
             data.enableMicrophone,
             data.skipDuplicateFrames,
-            data.enableAmbientMode,
+            data.immersiveMode,
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)

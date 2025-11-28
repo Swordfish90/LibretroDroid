@@ -27,6 +27,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <memory>
+#include <optional>
 
 #include "log.h"
 #include "core.h"
@@ -87,7 +88,7 @@ public:
         bool enableVirtualFileSystem,
         bool enableMicrophone,
         bool duplicateFrames,
-        bool enableAmbientMode,
+        std::optional<ImmersiveMode::Config> immersiveModeConfig,
         const std::string& language
     );
     void resume();
@@ -166,7 +167,8 @@ private:
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;
-    bool ambientMode = false;
+    bool immersiveModeEnabled = false;
+    ImmersiveMode::Config immersiveModeConfig {};
 
     float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;
