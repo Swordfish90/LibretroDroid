@@ -341,7 +341,7 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut2UpscalePar
     { "EDGE_USE_FAST_LUMA", "0" },
     { "SOFT_EDGES_SHARPENING", "1" },
     { "SOFT_EDGES_SHARPENING_AMOUNT", "0.75" },
-    { "HARD_EDGES_SEARCH_MIN_CONTRAST", "0.85" },
+    { "HARD_EDGES_SEARCH_MAX_ERROR", "0.25" },
 };
 
 const std::string ShaderManager::cut2UpscalePass0Vertex =
@@ -485,7 +485,8 @@ const std::string ShaderManager::cut2UpscalePass0Fragment =
     "    }\n"
     "  }\n"
     "\n"
-    "  if (max(quad.maxScore, 0.125) < HARD_EDGES_SEARCH_MIN_CONTRAST * 2.0 * quad.maxEdgeContrast) {\n"
+    "  lowp float error = 2.0 * quad.maxEdgeContrast - quad.maxScore;\n"
+    "  if (error > HARD_EDGES_SEARCH_MAX_ERROR * (0.5 + 0.5 * quad.maxEdgeContrast)) {\n"
     "    result = -result;\n"
     "  }\n"
     "\n"
@@ -508,8 +509,8 @@ const std::string ShaderManager::cut2UpscalePass0Fragment =
     "lowp float softEdgeWeight(lowp float a, lowp float b, lowp float c, lowp float d) {\n"
     "  lowp float result = 0.0;\n"
     "  lowp float diff = abs(b - c);\n"
-    "  result += (diff / clamp(abs(a - c), diff + EPSILON, 1.0 + EPSILON));\n"
-    "  result -= (diff / clamp(abs(b - d), diff + EPSILON, 1.0 + EPSILON));\n"
+    "  result += clamp(diff / (abs(a - c) + EPSILON), 0.0, 1.0);\n"
+    "  result -= clamp(diff / (abs(b - d) + EPSILON), 0.0, 1.0);\n"
     "  return clamp(2.0 * result, -1.0, 1.0);\n"
     "}\n"
     "\n"
@@ -837,7 +838,7 @@ const std::unordered_map<std::string, std::string> ShaderManager::cut3UpscalePar
     { "EDGE_USE_FAST_LUMA", "0" },
     { "SOFT_EDGES_SHARPENING", "1" },
     { "SOFT_EDGES_SHARPENING_AMOUNT", "0.75" },
-    { "HARD_EDGES_SEARCH_MIN_CONTRAST", "0.85" },
+    { "HARD_EDGES_SEARCH_MAX_ERROR", "0.25" },
     { "HARD_EDGES_SEARCH_MAX_DISTANCE", "4" },
 };
 
@@ -982,7 +983,8 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "    }\n"
     "  }\n"
     "\n"
-    "  if (max(quad.maxScore, 0.125) < HARD_EDGES_SEARCH_MIN_CONTRAST * 2.0 * quad.maxEdgeContrast) {\n"
+    "  lowp float error = 2.0 * quad.maxEdgeContrast - quad.maxScore;\n"
+    "  if (error > HARD_EDGES_SEARCH_MAX_ERROR * (0.5 + 0.5 * quad.maxEdgeContrast)) {\n"
     "    result = -result;\n"
     "  }\n"
     "\n"
@@ -1005,8 +1007,8 @@ const std::string ShaderManager::cut3UpscalePass0Fragment =
     "lowp float softEdgeWeight(lowp float a, lowp float b, lowp float c, lowp float d) {\n"
     "  lowp float result = 0.0;\n"
     "  lowp float diff = abs(b - c);\n"
-    "  result += (diff / clamp(abs(a - c), diff + EPSILON, 1.0 + EPSILON));\n"
-    "  result -= (diff / clamp(abs(b - d), diff + EPSILON, 1.0 + EPSILON));\n"
+    "  result += clamp(diff / (abs(a - c) + EPSILON), 0.0, 1.0);\n"
+    "  result -= clamp(diff / (abs(b - d) + EPSILON), 0.0, 1.0);\n"
     "  return clamp(2.0 * result, -1.0, 1.0);\n"
     "}\n"
     "\n"
