@@ -46,7 +46,7 @@ import kotlinx.coroutines.launch
 
 class GLRetroView(
     context: Context,
-    private val data: GLRetroViewData
+    private val data: GLRetroViewData,
 ) : GLSurfaceView(context), LifecycleObserver {
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
@@ -62,7 +62,7 @@ class GLRetroView(
     }
 
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
-        runOnGLThread {
+        runOnEmulationThread(true) {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
         }
     }
@@ -134,9 +134,11 @@ class GLRetroView(
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
                 normalizeTouchCoordinates(event.x, event.y)
             }
+
             MotionEvent.ACTION_UP -> {
                 TOUCH_EVENT_OUTSIDE
             }
+
             else -> null
         }
 
@@ -155,26 +157,37 @@ class GLRetroView(
         return PointF(x, y)
     }
 
-    fun serializeState(): ByteArray = runOnGLThread {
-        LibretroDroid.serializeState()
-    }
-    fun setCheat(index : Int, enable : Boolean, code : String) = runOnGLThread {
-        LibretroDroid.setCheat(index, enable, code)
-    }
-
-    fun unserializeState(data: ByteArray): Boolean = runOnGLThread {
-        LibretroDroid.unserializeState(data)
+    fun serializeState(useEmulationThread: Boolean = true): ByteArray {
+        return runOnEmulationThread(useEmulationThread) {
+            LibretroDroid.serializeState()
+        }
     }
 
-    fun serializeSRAM(): ByteArray = runOnGLThread {
-        LibretroDroid.serializeSRAM()
+    fun setCheat(index: Int, enable: Boolean, code: String, useEmulationThread: Boolean = true) {
+        runOnEmulationThread(useEmulationThread) {
+            LibretroDroid.setCheat(index, enable, code)
+        }
     }
 
-    fun unserializeSRAM(data: ByteArray): Boolean = runOnGLThread {
-        LibretroDroid.unserializeSRAM(data)
+    fun unserializeState(data: ByteArray, useEmulationThread: Boolean = true): Boolean {
+        return runOnEmulationThread(useEmulationThread) {
+            LibretroDroid.unserializeState(data)
+        }
     }
 
-    fun reset() = runOnGLThread {
+    fun serializeSRAM(useEmulationThread: Boolean = true): ByteArray {
+        return runOnEmulationThread(useEmulationThread) {
+            LibretroDroid.serializeSRAM()
+        }
+    }
+
+    fun unserializeSRAM(data: ByteArray, useEmulationThread: Boolean = true): Boolean {
+        return runOnEmulationThread(useEmulationThread) {
+            LibretroDroid.unserializeSRAM(data)
+        }
+    }
+
+    fun reset(useEmulationThread: Boolean = true) = runOnEmulationThread(useEmulationThread) {
         LibretroDroid.reset()
     }
 
@@ -208,13 +221,25 @@ class GLRetroView(
         }
     }
 
-    fun getAvailableDisks() = runOnGLThread { LibretroDroid.availableDisks() }
-    fun getCurrentDisk() = runOnGLThread { LibretroDroid.currentDisk() }
-    fun changeDisk(index: Int) = runOnGLThread { LibretroDroid.changeDisk(index) }
+    fun getAvailableDisks(useEmulationThread: Boolean = true): Int {
+        return runOnEmulationThread(useEmulationThread) { LibretroDroid.availableDisks() }
+    }
+
+    fun getCurrentDisk(useEmulationThread: Boolean = true): Int {
+        return runOnEmulationThread(useEmulationThread) { LibretroDroid.currentDisk() }
+    }
+
+    fun changeDisk(index: Int, useEmulationThread: Boolean = true) {
+        runOnEmulationThread(useEmulationThread) { LibretroDroid.changeDisk(index) }
+    }
 
     private fun getGLESVersion(context: Context): Int {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) { 3 } else { 2 }
+        return if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) {
+            3
+        } else {
+            2
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -361,8 +386,8 @@ class GLRetroView(
         }
     }
 
-    private fun <T> runOnGLThread(block: () -> T): T {
-        if (Thread.currentThread().name.startsWith("GLThread")) {
+    private fun <T> runOnEmulationThread(useEmulationThread: Boolean, block: () -> T): T {
+        if (!useEmulationThread || Thread.currentThread().name.startsWith("GLThread")) {
             return block()
         }
 
@@ -397,6 +422,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT_PARAM_EDGE_MIN_CONTRAST to toParam(config.edgeMinContrast),
                 )
             )
+
             is ShaderConfig.CUT2 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT2,
                 buildParams(
@@ -412,6 +438,7 @@ class GLRetroView(
                     LibretroDroid.SHADER_UPSCALE_CUT2_PARAM_HARD_EDGES_SEARCH_MAX_ERROR to toParam(config.hardEdgesSearchMaxError),
                 )
             )
+
             is ShaderConfig.CUT3 -> GLRetroShader(
                 LibretroDroid.SHADER_UPSCALE_CUT3,
                 buildParams(
@@ -461,14 +488,14 @@ class GLRetroView(
     }
 
     private fun refreshAspectRatio() {
-        runOnGLThread {
+        runOnEmulationThread(true) {
             LibretroDroid.refreshAspectRatio()
         }
     }
 
     sealed class GLRetroEvents {
-        object FrameRendered: GLRetroEvents()
-        object SurfaceCreated: GLRetroEvents()
+        object FrameRendered : GLRetroEvents()
+        object SurfaceCreated : GLRetroEvents()
     }
 
     companion object {
