@@ -173,6 +173,8 @@ private:
     float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;
 
+    std::mutex coreLock;
+
     std::unique_ptr<Core> core;
     std::unique_ptr<Audio> audio;
     std::unique_ptr<Video> video;

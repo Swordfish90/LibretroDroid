@@ -145,10 +145,14 @@ void LibretroDroid::setControllerType(unsigned int port, unsigned int type) {
 }
 
 bool LibretroDroid::unserializeState(int8_t *data, size_t size) {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     return core->retro_unserialize(data, size);
 }
 
 JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t size) {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
     void *sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
 
@@ -168,6 +172,8 @@ JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t s
 }
 
 std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
     auto* data = new int8_t[size];
     memcpy(data, (int8_t*) core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM), size);
@@ -398,6 +404,8 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
 }
 
 void LibretroDroid::destroy() {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     LOGD("Performing libretrodroid destroy");
 
     if (Environment::getInstance().getHwContextDestroy() != nullptr) {
@@ -435,6 +443,8 @@ void LibretroDroid::pause() {
 }
 
 void LibretroDroid::step() {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     LOGD("Stepping into retro_run()");
 
     unsigned frames = 1;
@@ -554,10 +564,14 @@ uintptr_t LibretroDroid::handleGetCurrentFrameBuffer() {
 }
 
 void LibretroDroid::reset() {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     core->retro_reset();
 }
 
 std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     size_t size = core->retro_serialize_size();
     auto data = new int8_t[size];
 
@@ -567,10 +581,14 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
 }
 
 void LibretroDroid::resetCheat() {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     core->retro_cheat_reset();
 }
 
 void LibretroDroid::setCheat(unsigned index, bool enabled, const std::string& code) {
+    std::lock_guard<std::mutex> lock(coreLock);
+
     core->retro_cheat_set(index, enabled, Utils::cloneToCString(code));
 }
 
