@@ -23,6 +23,8 @@
 #include <cstring>
 #include <cmath>
 #include <EGL/egl.h>
+#include <GLES2/gl2.h>
+#include <cstdio>
 #include <unordered_map>
 
 #include "../../libretro-common/include/libretro.h"
@@ -146,6 +148,49 @@ bool Environment::environment_handle_set_controller_info(const struct retro_cont
 }
 
 bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
+    if (hw_render_callback == nullptr) {
+        LOGW("Rejected SET_HW_RENDER with null callback");
+        return false;
+    }
+
+    // The core is initialized on the GL thread, so the current EGL context
+    // is available here. Validate versioned GLES requests against the context
+    // that will actually be used, rather than the device's advertised maximum.
+    const auto* glVersion = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    unsigned actualMajor = 0;
+    unsigned actualMinor = 0;
+    if (glVersion == nullptr ||
+        std::sscanf(glVersion, "OpenGL ES %u.%u", &actualMajor, &actualMinor) != 2) {
+        LOGW("Cannot determine the active OpenGL ES context version");
+        return false;
+    }
+
+    switch (hw_render_callback->context_type) {
+        case RETRO_HW_CONTEXT_OPENGLES2:
+            if (actualMajor < 2) return false;
+            break;
+        case RETRO_HW_CONTEXT_OPENGLES3:
+            if (actualMajor < 3) return false;
+            break;
+        case RETRO_HW_CONTEXT_OPENGLES_VERSION:
+            if (hw_render_callback->version_major == 0 ||
+                actualMajor < hw_render_callback->version_major ||
+                (actualMajor == hw_render_callback->version_major &&
+                 actualMinor < hw_render_callback->version_minor)) {
+                LOGW("Rejected GLES %u.%u request; active context is GLES %u.%u",
+                     hw_render_callback->version_major,
+                     hw_render_callback->version_minor,
+                     actualMajor,
+                     actualMinor);
+                return false;
+            }
+            break;
+        default:
+            LOGW("Rejected unsupported hardware render context type: %u",
+                 static_cast<unsigned>(hw_render_callback->context_type));
+            return false;
+    }
+
     useHWAcceleration = true;
     useDepth = hw_render_callback->depth;
     useStencil = hw_render_callback->stencil;
@@ -160,11 +205,20 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
 }
 
 bool Environment::environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfsInterfaceInfo) {
-    if (!useVirtualFileSystem) {
+    if (!useVirtualFileSystem || vfsInterfaceInfo == nullptr) {
         return false;
     }
 
-    vfsInterfaceInfo->required_interface_version = libretrodroid::VFS::SUPPORTED_VERSION;
+    // The requested version is an input from the core. Reject newer APIs so
+    // the core can fall back to a supported version (ARMSX2 requests v3,
+    // then v2). Do not advertise v2 when the core requested another version.
+    if (vfsInterfaceInfo->required_interface_version >
+        libretrodroid::VFS::SUPPORTED_VERSION) {
+        LOGW("Unsupported VFS interface version requested: %u",
+             vfsInterfaceInfo->required_interface_version);
+        return false;
+    }
+
     vfsInterfaceInfo->iface = libretrodroid::VFS::getInterface();
     return true;
 }
@@ -264,6 +318,23 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
         case RETRO_ENVIRONMENT_SET_HW_RENDER:
             LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
             return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
+
+        case RETRO_ENVIRONMENT_SET_HW_SHARED_CONTEXT: {
+            // The core is called from GLSurfaceView's GL thread. Shared
+            // contexts are safe only while a valid EGL context is current.
+            const EGLContext currentContext = eglGetCurrentContext();
+            const EGLDisplay currentDisplay = eglGetCurrentDisplay();
+            const EGLSurface currentSurface = eglGetCurrentSurface(EGL_DRAW);
+
+            const bool canShareContext =
+                currentContext != EGL_NO_CONTEXT &&
+                currentDisplay != EGL_NO_DISPLAY &&
+                currentSurface != EGL_NO_SURFACE;
+
+            LOGD("SET_HW_SHARED_CONTEXT: EGL context sharing %s",
+                 canShareContext ? "available" : "unavailable");
+            return canShareContext;
+        }
 
         case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");

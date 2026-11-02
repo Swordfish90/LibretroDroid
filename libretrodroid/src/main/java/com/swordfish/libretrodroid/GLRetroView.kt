@@ -40,7 +40,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
+import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.egl.EGLContext
+import javax.microedition.khronos.egl.EGLDisplay
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
 
@@ -48,6 +51,10 @@ class GLRetroView(
     context: Context,
     private val data: GLRetroViewData,
 ) : GLSurfaceView(context), LifecycleObserver {
+
+    private companion object {
+        const val EGL_CONTEXT_MINOR_VERSION_KHR = 0x30FB
+    }
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
         LibretroDroid.setAudioEnabled(value)
@@ -73,7 +80,9 @@ class GLRetroView(
 
     private val openGLESVersion: Int
 
+    private var isCoreCreated = false
     private var isGameLoaded = false
+    private var isRenderLifecycleObserverAdded = false
     private var isEmulationReady = false
     private var isAborted = false
 
@@ -88,35 +97,63 @@ class GLRetroView(
         openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
         setEGLContextClientVersion(openGLESVersion)
+        if (openGLESVersion >= 3) {
+            // ARMSX2 can require GLES 3.1/3.2. GLSurfaceView's default
+            // factory requests only the major version (which commonly yields
+            // GLES 3.0), so try the KHR minor-version attribute explicitly.
+            setEGLContextFactory(object : EGLContextFactory {
+                override fun createContext(
+                    egl: EGL10,
+                    display: EGLDisplay,
+                    config: EGLConfig
+                ): EGLContext {
+                    val extensions = egl.eglQueryString(display, EGL10.EGL_EXTENSIONS).orEmpty()
+                    val supportsMinorVersion = extensions.split(' ').contains("EGL_KHR_create_context")
+                    val versions = if (supportsMinorVersion) listOf(2, 1, 0) else listOf(0)
+                    for (minorVersion in versions) {
+                        val attributes = if (minorVersion > 0) {
+                            intArrayOf(
+                                EGL10.EGL_CONTEXT_CLIENT_VERSION, 3,
+                                EGL_CONTEXT_MINOR_VERSION_KHR, minorVersion,
+                                EGL10.EGL_NONE
+                            )
+                        } else {
+                            intArrayOf(EGL10.EGL_CONTEXT_CLIENT_VERSION, openGLESVersion, EGL10.EGL_NONE)
+                        }
+                        val created = egl.eglCreateContext(
+                            display,
+                            config,
+                            EGL10.EGL_NO_CONTEXT,
+                            attributes
+                        )
+                        if (created != null && created != EGL10.EGL_NO_CONTEXT) return created
+                    }
+                    return EGL10.EGL_NO_CONTEXT
+                }
+
+                override fun destroyContext(egl: EGL10, display: EGLDisplay, context: EGLContext) {
+                    if (!egl.eglDestroyContext(display, context)) {
+                        throw RuntimeException("eglDestroyContext failed")
+                    }
+                }
+            })
+        }
         setRenderer(Renderer())
         keepScreenOn = true
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    fun onCreate(lifecycleOwner: LifecycleOwner) = catchExceptions {
+    fun onCreate(lifecycleOwner: LifecycleOwner) {
         lifecycle = lifecycleOwner.lifecycle
-        LibretroDroid.create(
-            openGLESVersion,
-            data.coreFilePath,
-            data.systemDirectory,
-            data.savesDirectory,
-            data.variables,
-            buildShader(data.shader),
-            getDefaultRefreshRate(),
-            data.preferLowLatencyAudio,
-            data.gameVirtualFiles.isNotEmpty(),
-            data.enableMicrophone,
-            data.skipDuplicateFrames,
-            data.immersiveMode,
-            getDeviceLanguage()
-        )
-        LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
-        LibretroDroid.setViewportAlignment(data.viewportAlignment.value)
+        if (isGameLoaded) attachRenderLifecycleObserver()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() = catchExceptions {
-        LibretroDroid.destroy()
+        if (isCoreCreated) {
+            LibretroDroid.destroy()
+            isCoreCreated = false
+        }
         lifecycle = null
     }
 
@@ -343,6 +380,26 @@ class GLRetroView(
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
         if (isGameLoaded) return@catchExceptions
+        if (!isCoreCreated) {
+            LibretroDroid.create(
+                openGLESVersion,
+                data.coreFilePath,
+                data.systemDirectory,
+                data.savesDirectory,
+                data.variables,
+                buildShader(data.shader),
+                getDefaultRefreshRate(),
+                data.preferLowLatencyAudio,
+                data.gameVirtualFiles.isNotEmpty(),
+                data.enableMicrophone,
+                data.skipDuplicateFrames,
+                data.immersiveMode,
+                getDeviceLanguage()
+            )
+            isCoreCreated = true
+            LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
+            LibretroDroid.setViewportAlignment(data.viewportAlignment.value)
+        }
         when {
             data.gameFilePath != null -> loadGameFromPath(data.gameFilePath!!)
             data.gameFileBytes != null -> loadGameFromBytes(data.gameFileBytes!!)
@@ -356,7 +413,14 @@ class GLRetroView(
         isGameLoaded = true
 
         KtUtils.runOnUIThread {
+            attachRenderLifecycleObserver()
+        }
+    }
+
+    private fun attachRenderLifecycleObserver() {
+        if (!isRenderLifecycleObserverAdded && lifecycle != null) {
             lifecycle?.addObserver(RenderLifecycleObserver())
+            isRenderLifecycleObserverAdded = true
         }
     }
 
