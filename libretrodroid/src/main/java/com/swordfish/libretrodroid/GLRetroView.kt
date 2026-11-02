@@ -40,7 +40,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
+import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.egl.EGLContext
+import javax.microedition.khronos.egl.EGLDisplay
 import javax.microedition.khronos.opengles.GL10
 import kotlin.properties.Delegates
 
@@ -48,6 +51,10 @@ class GLRetroView(
     context: Context,
     private val data: GLRetroViewData,
 ) : GLSurfaceView(context), LifecycleObserver {
+
+    private companion object {
+        const val EGL_CONTEXT_MINOR_VERSION_KHR = 0x30FB
+    }
 
     var audioEnabled: Boolean by Delegates.observable(true) { _, _, value ->
         LibretroDroid.setAudioEnabled(value)
@@ -90,6 +97,47 @@ class GLRetroView(
         openGLESVersion = getGLESVersion(context)
         preserveEGLContextOnPause = true
         setEGLContextClientVersion(openGLESVersion)
+        if (openGLESVersion >= 3) {
+            // ARMSX2 can require GLES 3.1/3.2. GLSurfaceView's default
+            // factory requests only the major version (which commonly yields
+            // GLES 3.0), so try the KHR minor-version attribute explicitly.
+            setEGLContextFactory(object : EGLContextFactory {
+                override fun createContext(
+                    egl: EGL10,
+                    display: EGLDisplay,
+                    config: EGLConfig
+                ): EGLContext {
+                    val extensions = egl.eglQueryString(display, EGL10.EGL_EXTENSIONS).orEmpty()
+                    val supportsMinorVersion = extensions.split(' ').contains("EGL_KHR_create_context")
+                    val versions = if (supportsMinorVersion) listOf(2, 1, 0) else listOf(0)
+                    for (minorVersion in versions) {
+                        val attributes = if (minorVersion > 0) {
+                            intArrayOf(
+                                EGL10.EGL_CONTEXT_CLIENT_VERSION, 3,
+                                EGL_CONTEXT_MINOR_VERSION_KHR, minorVersion,
+                                EGL10.EGL_NONE
+                            )
+                        } else {
+                            intArrayOf(EGL10.EGL_CONTEXT_CLIENT_VERSION, openGLESVersion, EGL10.EGL_NONE)
+                        }
+                        val created = egl.eglCreateContext(
+                            display,
+                            config,
+                            EGL10.EGL_NO_CONTEXT,
+                            attributes
+                        )
+                        if (created != null && created != EGL10.EGL_NO_CONTEXT) return created
+                    }
+                    return EGL10.EGL_NO_CONTEXT
+                }
+
+                override fun destroyContext(egl: EGL10, display: EGLDisplay, context: EGLContext) {
+                    if (!egl.eglDestroyContext(display, context)) {
+                        throw RuntimeException("eglDestroyContext failed")
+                    }
+                }
+            })
+        }
         setRenderer(Renderer())
         keepScreenOn = true
     }
