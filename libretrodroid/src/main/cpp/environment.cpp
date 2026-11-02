@@ -291,6 +291,23 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             LOGD("Called RETRO_ENVIRONMENT_SET_HW_RENDER");
             return environment_handle_set_hw_render(static_cast<struct retro_hw_render_callback*>(data));
 
+        case RETRO_ENVIRONMENT_SET_HW_SHARED_CONTEXT: {
+            // The core is called from GLSurfaceView's GL thread. Shared
+            // contexts are safe only while a valid EGL context is current.
+            const EGLContext currentContext = eglGetCurrentContext();
+            const EGLDisplay currentDisplay = eglGetCurrentDisplay();
+            const EGLSurface currentSurface = eglGetCurrentSurface(EGL_DRAW);
+
+            const bool canShareContext =
+                currentContext != EGL_NO_CONTEXT &&
+                currentDisplay != EGL_NO_DISPLAY &&
+                currentSurface != EGL_NO_SURFACE;
+
+            LOGD("SET_HW_SHARED_CONTEXT: EGL context sharing %s",
+                 canShareContext ? "available" : "unavailable");
+            return canShareContext;
+        }
+
         case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
             ((struct retro_rumble_interface*) data)->set_rumble_state = &callback_set_rumble_state;
