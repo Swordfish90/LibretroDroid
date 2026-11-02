@@ -75,6 +75,7 @@ class GLRetroView(
 
     private var isCoreCreated = false
     private var isGameLoaded = false
+    private var isRenderLifecycleObserverAdded = false
     private var isEmulationReady = false
     private var isAborted = false
 
@@ -96,6 +97,7 @@ class GLRetroView(
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate(lifecycleOwner: LifecycleOwner) {
         lifecycle = lifecycleOwner.lifecycle
+        if (isGameLoaded) attachRenderLifecycleObserver()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -363,7 +365,14 @@ class GLRetroView(
         isGameLoaded = true
 
         KtUtils.runOnUIThread {
+            attachRenderLifecycleObserver()
+        }
+    }
+
+    private fun attachRenderLifecycleObserver() {
+        if (!isRenderLifecycleObserverAdded && lifecycle != null) {
             lifecycle?.addObserver(RenderLifecycleObserver())
+            isRenderLifecycleObserverAdded = true
         }
     }
 
