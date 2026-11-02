@@ -23,6 +23,8 @@
 #include <cstring>
 #include <cmath>
 #include <EGL/egl.h>
+#include <GLES2/gl2.h>
+#include <cstdio>
 #include <unordered_map>
 
 #include "../../libretro-common/include/libretro.h"
@@ -151,11 +153,37 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
         return false;
     }
 
-    // LibretroDroid creates an OpenGL ES context; it cannot provide Vulkan
-    // or desktop OpenGL contexts through this renderer.
+    // The core is initialized on the GL thread, so the current EGL context
+    // is available here. Validate versioned GLES requests against the context
+    // that will actually be used, rather than the device's advertised maximum.
+    const auto* glVersion = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    unsigned actualMajor = 0;
+    unsigned actualMinor = 0;
+    if (glVersion == nullptr ||
+        std::sscanf(glVersion, "OpenGL ES %u.%u", &actualMajor, &actualMinor) != 2) {
+        LOGW("Cannot determine the active OpenGL ES context version");
+        return false;
+    }
+
     switch (hw_render_callback->context_type) {
         case RETRO_HW_CONTEXT_OPENGLES2:
+            if (actualMajor < 2) return false;
+            break;
         case RETRO_HW_CONTEXT_OPENGLES3:
+            if (actualMajor < 3) return false;
+            break;
+        case RETRO_HW_CONTEXT_OPENGLES_VERSION:
+            if (hw_render_callback->version_major == 0 ||
+                actualMajor < hw_render_callback->version_major ||
+                (actualMajor == hw_render_callback->version_major &&
+                 actualMinor < hw_render_callback->version_minor)) {
+                LOGW("Rejected GLES %u.%u request; active context is GLES %u.%u",
+                     hw_render_callback->version_major,
+                     hw_render_callback->version_minor,
+                     actualMajor,
+                     actualMinor);
+                return false;
+            }
             break;
         default:
             LOGW("Rejected unsupported hardware render context type: %u",
