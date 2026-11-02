@@ -146,6 +146,23 @@ bool Environment::environment_handle_set_controller_info(const struct retro_cont
 }
 
 bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callback* hw_render_callback) {
+    if (hw_render_callback == nullptr) {
+        LOGW("Rejected SET_HW_RENDER with null callback");
+        return false;
+    }
+
+    // LibretroDroid creates an OpenGL ES context; it cannot provide Vulkan
+    // or desktop OpenGL contexts through this renderer.
+    switch (hw_render_callback->context_type) {
+        case RETRO_HW_CONTEXT_OPENGLES2:
+        case RETRO_HW_CONTEXT_OPENGLES3:
+            break;
+        default:
+            LOGW("Rejected unsupported hardware render context type: %u",
+                 static_cast<unsigned>(hw_render_callback->context_type));
+            return false;
+    }
+
     useHWAcceleration = true;
     useDepth = hw_render_callback->depth;
     useStencil = hw_render_callback->stencil;
@@ -160,11 +177,20 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
 }
 
 bool Environment::environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfsInterfaceInfo) {
-    if (!useVirtualFileSystem) {
+    if (!useVirtualFileSystem || vfsInterfaceInfo == nullptr) {
         return false;
     }
 
-    vfsInterfaceInfo->required_interface_version = libretrodroid::VFS::SUPPORTED_VERSION;
+    // The requested version is an input from the core. Reject newer APIs so
+    // the core can fall back to a supported version (ARMSX2 requests v3,
+    // then v2). Do not advertise v2 when the core requested another version.
+    if (vfsInterfaceInfo->required_interface_version >
+        libretrodroid::VFS::SUPPORTED_VERSION) {
+        LOGW("Unsupported VFS interface version requested: %u",
+             vfsInterfaceInfo->required_interface_version);
+        return false;
+    }
+
     vfsInterfaceInfo->iface = libretrodroid::VFS::getInterface();
     return true;
 }
