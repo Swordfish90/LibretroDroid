@@ -73,6 +73,7 @@ class GLRetroView(
 
     private val openGLESVersion: Int
 
+    private var isCoreCreated = false
     private var isGameLoaded = false
     private var isEmulationReady = false
     private var isAborted = false
@@ -93,30 +94,16 @@ class GLRetroView(
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    fun onCreate(lifecycleOwner: LifecycleOwner) = catchExceptions {
+    fun onCreate(lifecycleOwner: LifecycleOwner) {
         lifecycle = lifecycleOwner.lifecycle
-        LibretroDroid.create(
-            openGLESVersion,
-            data.coreFilePath,
-            data.systemDirectory,
-            data.savesDirectory,
-            data.variables,
-            buildShader(data.shader),
-            getDefaultRefreshRate(),
-            data.preferLowLatencyAudio,
-            data.gameVirtualFiles.isNotEmpty(),
-            data.enableMicrophone,
-            data.skipDuplicateFrames,
-            data.immersiveMode,
-            getDeviceLanguage()
-        )
-        LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
-        LibretroDroid.setViewportAlignment(data.viewportAlignment.value)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() = catchExceptions {
-        LibretroDroid.destroy()
+        if (isCoreCreated) {
+            LibretroDroid.destroy()
+            isCoreCreated = false
+        }
         lifecycle = null
     }
 
@@ -343,6 +330,26 @@ class GLRetroView(
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
         if (isGameLoaded) return@catchExceptions
+        if (!isCoreCreated) {
+            LibretroDroid.create(
+                openGLESVersion,
+                data.coreFilePath,
+                data.systemDirectory,
+                data.savesDirectory,
+                data.variables,
+                buildShader(data.shader),
+                getDefaultRefreshRate(),
+                data.preferLowLatencyAudio,
+                data.gameVirtualFiles.isNotEmpty(),
+                data.enableMicrophone,
+                data.skipDuplicateFrames,
+                data.immersiveMode,
+                getDeviceLanguage()
+            )
+            isCoreCreated = true
+            LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
+            LibretroDroid.setViewportAlignment(data.viewportAlignment.value)
+        }
         when {
             data.gameFilePath != null -> loadGameFromPath(data.gameFilePath!!)
             data.gameFileBytes != null -> loadGameFromBytes(data.gameFileBytes!!)
