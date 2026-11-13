@@ -28,6 +28,7 @@
 #include "../../libretro-common/include/libretro.h"
 #include "log.h"
 #include "environment.h"
+#include "vfs/vfsinterfacenegotiation.h"
 #include "vfs/vfs.h"
 #include "microphone/microphoneinterface.h"
 
@@ -160,13 +161,12 @@ bool Environment::environment_handle_set_hw_render(struct retro_hw_render_callba
 }
 
 bool Environment::environment_handle_get_vfs_interface(struct retro_vfs_interface_info* vfsInterfaceInfo) {
-    if (!useVirtualFileSystem) {
-        return false;
-    }
-
-    vfsInterfaceInfo->required_interface_version = libretrodroid::VFS::SUPPORTED_VERSION;
-    vfsInterfaceInfo->iface = libretrodroid::VFS::getInterface();
-    return true;
+    return libretrodroid::negotiateVFSInterface(
+        vfsInterfaceInfo,
+        useVirtualFileSystem,
+        libretrodroid::VFS::SUPPORTED_VERSION,
+        libretrodroid::VFS::getInterface()
+    );
 }
 
 bool Environment::environment_handle_get_microphone_interface(struct retro_microphone_interface* microphone_interface) {

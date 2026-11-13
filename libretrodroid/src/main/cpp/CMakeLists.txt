@@ -78,6 +78,7 @@ add_library(libretrodroid SHARED
         errorcodes.cpp
         vfs/vfs.h
         vfs/vfs.cpp
+        vfs/vfsinterfacenegotiation.h
         vfs/vfsfile.h
         vfs/vfsfile.cpp
         vfs/fdwrapper.h
