@@ -21,7 +21,6 @@ import android.app.ActivityManager
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.RectF
-import android.opengl.GLSurfaceView
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent

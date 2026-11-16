@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package android.opengl;
+package com.swordfish.libretrodroid;
 
-import android.compat.annotation.UnsupportedAppUsage;
 import android.content.Context;
 import android.os.Trace;
+import android.opengl.GLDebugHelper;
+import android.opengl.EGL14;
+import android.opengl.EGLExt;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -1228,7 +1230,7 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         }
 
         public static String formatEglError(String function, int error) {
-            return function + " failed: " + EGLLogWrapper.getErrorString(error);
+            return function + " failed: " + "0x" + Integer.toHexString(error);
         }
 
         private WeakReference<GLSurfaceView> mGLSurfaceViewWeakRef;
@@ -1236,7 +1238,6 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         EGLDisplay mEglDisplay;
         EGLSurface mEglSurface;
         EGLConfig mEglConfig;
-        @UnsupportedAppUsage
         EGLContext mEglContext;
 
     }
@@ -1537,10 +1538,10 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
                         GLSurfaceView view = mGLSurfaceViewWeakRef.get();
                         if (view != null) {
                             try {
-                                Trace.traceBegin(Trace.TRACE_TAG_VIEW, "onSurfaceCreated");
+                                Trace.beginSection("onSurfaceCreated");
                                 view.mRenderer.onSurfaceCreated(gl, mEglHelper.mEglConfig);
                             } finally {
-                                Trace.traceEnd(Trace.TRACE_TAG_VIEW);
+                                Trace.endSection();
                             }
                         }
                         createEglContext = false;
@@ -1553,10 +1554,10 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
                         GLSurfaceView view = mGLSurfaceViewWeakRef.get();
                         if (view != null) {
                             try {
-                                Trace.traceBegin(Trace.TRACE_TAG_VIEW, "onSurfaceChanged");
+                                Trace.beginSection("onSurfaceChanged");
                                 view.mRenderer.onSurfaceChanged(gl, w, h);
                             } finally {
-                                Trace.traceEnd(Trace.TRACE_TAG_VIEW);
+                                Trace.endSection();
                             }
                         }
                         sizeChanged = false;
@@ -1569,14 +1570,14 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
                         GLSurfaceView view = mGLSurfaceViewWeakRef.get();
                         if (view != null) {
                             try {
-                                Trace.traceBegin(Trace.TRACE_TAG_VIEW, "onDrawFrame");
+                                Trace.beginSection("onDrawFrame");
                                 view.mRenderer.onDrawFrame(gl);
                                 if (finishDrawingRunnable != null) {
                                     finishDrawingRunnable.run();
                                     finishDrawingRunnable = null;
                                 }
                             } finally {
-                                Trace.traceEnd(Trace.TRACE_TAG_VIEW);
+                                Trace.endSection();
                             }
                         }
                     }
@@ -1854,7 +1855,6 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
         // End of member variables protected by the sGLThreadManager monitor.
 
-        @UnsupportedAppUsage
         private EglHelper mEglHelper;
 
         /**
@@ -1930,9 +1930,7 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
     private final WeakReference<GLSurfaceView> mThisWeakRef =
             new WeakReference<GLSurfaceView>(this);
-    @UnsupportedAppUsage
     private GLThread mGLThread;
-    @UnsupportedAppUsage
     private Renderer mRenderer;
     private boolean mDetached;
     private EGLConfigChooser mEGLConfigChooser;
