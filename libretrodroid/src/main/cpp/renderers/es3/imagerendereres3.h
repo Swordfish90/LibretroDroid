@@ -40,7 +40,6 @@ public:
     void setPixelFormat(int pixelFormat) override;
     void updateRenderedResolution(unsigned int width, unsigned int height) override;
 
-    bool rendersInVideoCallback() override;
 
     void setShaders(ShaderManager::Chain shaders) override;
 

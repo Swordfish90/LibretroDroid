@@ -402,7 +402,6 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(
             preferLowLatencyAudio,
             enableVirtualFileSystem,
             enableMicrophone,
-            skipDuplicateFrames,
             parsedConfig,
             deviceLanguage.stdString()
         );
@@ -525,12 +524,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(
     }
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
+JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     JNIEnv* env,
     jclass obj,
     jobject glRetroView
 ) {
-    LibretroDroid::getInstance().step();
+    bool frameSubmitted = LibretroDroid::getInstance().step();
 
     if (LibretroDroid::getInstance().requiresVideoRefresh()) {
         LibretroDroid::getInstance().clearRequiresVideoRefresh();
@@ -546,6 +545,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
             env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
         });
     }
+
+    if (!frameSubmitted) return EGL_SUCCESS;
+    EGLDisplay display = eglGetCurrentDisplay();
+    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+    return eglSwapBuffers(display, surface) ? EGL_SUCCESS : eglGetError();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(

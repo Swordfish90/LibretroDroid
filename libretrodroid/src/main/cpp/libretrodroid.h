@@ -87,12 +87,11 @@ public:
         bool lowLatencyAudio,
         bool enableVirtualFileSystem,
         bool enableMicrophone,
-        bool duplicateFrames,
         std::optional<ImmersiveMode::Config> immersiveModeConfig,
         const std::string& language
     );
     void resume();
-    void step();
+    bool step();
     void pause();
     void destroy();
 
@@ -169,12 +168,12 @@ private:
     unsigned int viewportAlignment = V_ALIGN_CENTER;
     float screenRefreshRate = 60.0;
     int openglESVersion = 2;
-    bool skipDuplicateFrames = false;
     bool immersiveModeEnabled = false;
     ImmersiveMode::Config immersiveModeConfig {};
 
     float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;
+    bool frameSubmitted = false;
 
     std::mutex coreLock;
 

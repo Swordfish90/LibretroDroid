@@ -42,7 +42,6 @@ public:
     virtual void updateRenderedResolution(unsigned width, unsigned height) = 0;
     virtual void setPixelFormat(int pixelFormat) = 0;
     virtual void onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch);
-    virtual bool rendersInVideoCallback() = 0;
     virtual void setShaders(ShaderManager::Chain shaders) = 0;
     virtual PassData getPassData(unsigned int layer) = 0;
 

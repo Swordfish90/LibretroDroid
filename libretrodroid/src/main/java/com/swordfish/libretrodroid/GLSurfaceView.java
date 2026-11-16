@@ -1164,17 +1164,6 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
             return gl;
         }
 
-        /**
-         * Display the current render surface.
-         * @return the EGL error code from eglSwapBuffers.
-         */
-        public int swap() {
-            if (! mEgl.eglSwapBuffers(mEglDisplay, mEglSurface)) {
-                return mEgl.eglGetError();
-            }
-            return EGL10.EGL_SUCCESS;
-        }
-
         public void destroySurface() {
             if (LOG_EGL) {
                 Log.w("EglHelper", "destroySurface()  tid=" + Thread.currentThread().getId());
@@ -1242,6 +1231,14 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
     }
 
+    /** Records the EGL result of presentation on the render thread. */
+    protected final void setPresentationError(int error) {
+        if (Thread.currentThread() != mGLThread) {
+            throw new IllegalStateException("Presentation must run on the GL thread");
+        }
+        mGLThread.mPresentationError = error;
+    }
+
     /**
      * A generic GL Thread. Takes care of initializing EGL and GL. Delegates
      * to a Renderer instance to do the actual drawing. Can be configured to
@@ -1249,9 +1246,9 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
      *
      * All potentially blocking synchronization is done through the
      * sGLThreadManager object. This avoids multiple-lock ordering issues.
-     *
      */
     static class GLThread extends Thread {
+        private int mPresentationError = EGL10.EGL_SUCCESS;
         GLThread(WeakReference<GLSurfaceView> glSurfaceViewWeakRef) {
             super();
             mWidth = 0;
@@ -1566,12 +1563,15 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
                     if (LOG_RENDERER_DRAW_FRAME) {
                         Log.w("GLThread", "onDrawFrame tid=" + getId());
                     }
+                    int swapError = EGL10.EGL_SUCCESS;
+                    mPresentationError = EGL10.EGL_SUCCESS;
                     {
                         GLSurfaceView view = mGLSurfaceViewWeakRef.get();
                         if (view != null) {
                             try {
                                 Trace.beginSection("onDrawFrame");
                                 view.mRenderer.onDrawFrame(gl);
+                                swapError = mPresentationError;
                                 if (finishDrawingRunnable != null) {
                                     finishDrawingRunnable.run();
                                     finishDrawingRunnable = null;
@@ -1581,7 +1581,6 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             }
                         }
                     }
-                    int swapError = mEglHelper.swap();
                     switch (swapError) {
                         case EGL10.EGL_SUCCESS:
                             break;

@@ -58,7 +58,6 @@ public:
         ShaderManager::Config shaderConfig,
         bool bottomLeftOrigin,
         float rotation,
-        bool skipDuplicateFrames,
         bool immersiveMode,
         Rect viewportRect,
         ImmersiveMode::Config immersiveModeConfig,
@@ -83,10 +82,6 @@ public:
         return renderer->getFramebuffer();
     };
 
-    bool rendersInVideoCallback() {
-        return renderer->rendersInVideoCallback();
-    }
-
 private:
     void updateProgram();
 
@@ -102,8 +97,6 @@ private:
     };
     std::optional<ShaderManager::Config> loadedShaderType = std::nullopt;
 
-    bool isDirty = false;
-    bool skipDuplicateFrames = false;
 
     std::vector<ShaderChainEntry> shadersChain;
 

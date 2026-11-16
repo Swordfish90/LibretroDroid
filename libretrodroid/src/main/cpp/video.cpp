@@ -138,9 +138,6 @@ void Video::updateProgram() {
 }
 
 void Video::renderFrame() {
-    if (skipDuplicateFrames && !isDirty) return;
-    isDirty = false;
-
     glDisable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -228,7 +225,6 @@ float Video::getTextureHeight() {
 void Video::onNewFrame(const void *data, unsigned width, unsigned height, size_t pitch) {
     if (data != nullptr) {
         renderer->onNewFrame(data, width, height, pitch);
-        isDirty = true;
     }
 }
 
@@ -258,14 +254,12 @@ Video::Video(
     ShaderManager::Config shaderConfig,
     bool bottomLeftOrigin,
     float rotation,
-    bool skipDuplicateFrames,
     bool immersiveModeEnabled,
     Rect viewportRect,
     ImmersiveMode::Config immersiveModeConfig,
     unsigned int viewportAlignment
 ) :
     requestedShaderConfig(std::move(shaderConfig)),
-    skipDuplicateFrames(skipDuplicateFrames),
     immersiveModeEnabled(immersiveModeEnabled),
     immersiveMode(immersiveModeConfig),
     videoLayout(bottomLeftOrigin, rotation, viewportRect, viewportAlignment) {

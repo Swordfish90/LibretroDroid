@@ -105,7 +105,7 @@ class GLRetroView(
             data.preferLowLatencyAudio,
             data.gameVirtualFiles.isNotEmpty(),
             data.enableMicrophone,
-            data.skipDuplicateFrames,
+            false,
             data.immersiveMode,
             getDeviceLanguage()
         )
@@ -315,11 +315,13 @@ class GLRetroView(
     }
 
     inner class Renderer : GLSurfaceView.Renderer {
-        override fun onDrawFrame(gl: GL10) = catchExceptions {
-            if (isEmulationReady) {
-                LibretroDroid.step(this@GLRetroView)
-                lifecycle?.coroutineScope?.launch {
-                    retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+        override fun onDrawFrame(gl: GL10) {
+            catchExceptions {
+                if (isEmulationReady) {
+                    setPresentationError(LibretroDroid.step(this@GLRetroView))
+                    lifecycle?.coroutineScope?.launch {
+                        retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+                    }
                 }
             }
         }

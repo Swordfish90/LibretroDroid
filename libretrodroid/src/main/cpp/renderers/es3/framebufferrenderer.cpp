@@ -80,10 +80,6 @@ void FramebufferRenderer::updateRenderedResolution(unsigned int width, unsigned 
     }
 }
 
-bool FramebufferRenderer::rendersInVideoCallback() {
-    return true;
-}
-
 void FramebufferRenderer::setShaders(ShaderManager::Chain shaders) {
     if (shaders != this->shaders) {
         this->shaders = shaders;

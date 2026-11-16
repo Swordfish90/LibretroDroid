@@ -209,7 +209,6 @@ void LibretroDroid::onSurfaceCreated() {
         fragmentShaderConfig,
         Environment::getInstance().isBottomLeftOrigin(),
         Environment::getInstance().getScreenRotation(),
-        skipDuplicateFrames,
         immersiveModeEnabled,
         viewportRect,
         immersiveModeConfig,
@@ -261,7 +260,6 @@ void LibretroDroid::create(
     bool lowLatencyAudio,
     bool enableVirtualFileSystem,
     bool enableMicrophone,
-    bool duplicateFrames,
     std::optional<ImmersiveMode::Config> immersiveModeConfig,
     const std::string& language
 ) {
@@ -276,7 +274,6 @@ void LibretroDroid::create(
 
     openglESVersion = GLESVersion;
     screenRefreshRate = refreshRate;
-    skipDuplicateFrames = duplicateFrames;
     immersiveModeEnabled = GLESVersion >= 3 && immersiveModeConfig.has_value();
     this->immersiveModeConfig = immersiveModeConfig.value_or(ImmersiveMode::Config{});
     audioEnabled = true;
@@ -443,8 +440,9 @@ void LibretroDroid::pause() {
     input = nullptr;
 }
 
-void LibretroDroid::step() {
+bool LibretroDroid::step() {
     std::lock_guard<std::mutex> lock(coreLock);
+    frameSubmitted = false;
 
     LOGD("Stepping into retro_run()");
 
@@ -454,17 +452,11 @@ void LibretroDroid::step() {
 
         // If the application runs too slow it's better to just skip those frames.
         frames = std::min(requestedFrames, 2u);
-    }
-
-    for (size_t i = 0; i < frames * frameSpeed; i++)
-        core->retro_run();
-
-    if (video && !video->rendersInVideoCallback()) {
-        video->renderFrame();
-    }
-
-    if (fpsSync) {
         fpsSync->wait();
+    }
+
+    for (size_t i = 0; i < frames * frameSpeed; i++) {
+        core->retro_run();
     }
 
     if (rumble && rumbleEnabled) {
@@ -488,6 +480,7 @@ void LibretroDroid::step() {
 
         video->updateRotation(Environment::getInstance().getScreenRotation());
     }
+    return frameSubmitted;
 }
 
 float LibretroDroid::getAspectRatio() {
@@ -529,12 +522,10 @@ void LibretroDroid::handleVideoRefresh(
     unsigned int height,
     size_t pitch
 ) {
-    if (video) {
+    if (video && data != nullptr) {
+        frameSubmitted = true;
         video->onNewFrame(data, width, height, pitch);
-
-        if (video->rendersInVideoCallback()) {
-            video->renderFrame();
-        }
+        video->renderFrame();
     }
 }
 
