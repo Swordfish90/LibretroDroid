@@ -15,8 +15,11 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <stdexcept>
+
 #include "framebufferrenderer.h"
 #include "es3utils.h"
+#include "../../sharedcontext.h"
 #include "../../log.h"
 
 namespace libretrodroid {
@@ -26,8 +29,9 @@ FramebufferRenderer::FramebufferRenderer(
     unsigned height,
     bool depth,
     bool stencil,
-    ShaderManager::Chain shaders
-) {
+    ShaderManager::Chain shaders,
+    SharedContext* sharedContext
+) : sharedContext(sharedContext) {
     this->depth = depth;
     this->stencil = stencil;
     this->width = width;
@@ -58,6 +62,28 @@ void FramebufferRenderer::initializeBuffers() {
         depth,
         stencil
     );
+
+    if (sharedContext) {
+        sharedContext->bindCore();
+        GLint previousFramebuffer;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousFramebuffer);
+        if (!coreFramebuffer) glGenFramebuffers(1, &coreFramebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, coreFramebuffer);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer->texture, 0);
+        glFramebufferRenderbuffer(
+            GL_DRAW_FRAMEBUFFER,
+            stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT,
+            GL_RENDERBUFFER,
+            framebuffer->depth.value_or(0)
+        );
+
+        auto status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, previousFramebuffer);
+        sharedContext->bindFrontend();
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            throw std::runtime_error("Cannot create the core framebuffer");
+        }
+    }
 }
 
 uintptr_t FramebufferRenderer::getTexture() {
@@ -65,7 +91,7 @@ uintptr_t FramebufferRenderer::getTexture() {
 }
 
 uintptr_t FramebufferRenderer::getFramebuffer() {
-    return framebuffer->framebuffer;
+    return sharedContext ? coreFramebuffer : framebuffer->framebuffer;
 }
 
 void FramebufferRenderer::setPixelFormat(int pixelFormat) {

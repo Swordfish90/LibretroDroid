@@ -88,6 +88,7 @@ public:
 
     int getPixelFormat() const;
     bool isUseHwAcceleration() const;
+    bool isUseSharedContext() const;
     bool isUseDepth() const;
     bool isUseStencil() const;
     bool isBottomLeftOrigin() const;
@@ -130,6 +131,7 @@ private:
 
     int pixelFormat = RETRO_PIXEL_FORMAT_RGB565;
     bool useHWAcceleration = false;
+    bool useSharedContext = false;
     bool useDepth = false;
     bool useStencil = false;
     bool bottomLeftOrigin = false;

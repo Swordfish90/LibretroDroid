@@ -29,6 +29,8 @@ add_library(libretrodroid SHARED
         log.h
         core.h
         core.cpp
+        sharedcontext.h
+        sharedcontext.cpp
         video.h
         video.cpp
         immersivemode.h

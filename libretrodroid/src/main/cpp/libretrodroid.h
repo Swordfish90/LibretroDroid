@@ -33,6 +33,7 @@
 #include "core.h"
 #include "audio.h"
 #include "video.h"
+#include "sharedcontext.h"
 #include "renderers/renderer.h"
 #include "fpssync.h"
 #include "input.h"
@@ -180,6 +181,7 @@ private:
     std::unique_ptr<Core> core;
     std::unique_ptr<Audio> audio;
     std::unique_ptr<Video> video;
+    std::unique_ptr<SharedContext> sharedContext;
     std::unique_ptr<FPSSync> fpsSync;
     std::unique_ptr<Input> input;
     std::unique_ptr<Rumble> rumble;

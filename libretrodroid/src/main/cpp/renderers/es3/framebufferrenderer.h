@@ -26,6 +26,8 @@
 
 namespace libretrodroid {
 
+class SharedContext;
+
 class FramebufferRenderer: public Renderer {
 public:
     FramebufferRenderer(
@@ -33,7 +35,8 @@ public:
         unsigned height,
         bool depth,
         bool stencil,
-        ShaderManager::Chain shaders
+        ShaderManager::Chain shaders,
+        SharedContext* sharedContext
     );
     uintptr_t getTexture() override;
     uintptr_t getFramebuffer() override;
@@ -53,6 +56,8 @@ private:
     unsigned int height;
 
     bool isDirty = false;
+    SharedContext* sharedContext;
+    GLuint coreFramebuffer = 0;
 
     std::unique_ptr<ES3Utils::Framebuffer> framebuffer = std::make_unique<ES3Utils::Framebuffer>();
 

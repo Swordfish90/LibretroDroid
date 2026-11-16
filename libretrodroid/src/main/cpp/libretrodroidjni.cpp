@@ -307,7 +307,12 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     JNIEnv* env,
     jclass obj
 ) {
-    LibretroDroid::getInstance().onSurfaceCreated();
+    try {
+        LibretroDroid::getInstance().onSurfaceCreated();
+    } catch (const std::exception& exception) {
+        LOGE("Error creating surface: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onMotionEvent(
@@ -529,7 +534,14 @@ JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     jclass obj,
     jobject glRetroView
 ) {
-    bool frameSubmitted = LibretroDroid::getInstance().step();
+    bool frameSubmitted;
+    try {
+        frameSubmitted = LibretroDroid::getInstance().step();
+    } catch (const std::exception& exception) {
+        LOGE("Error rendering frame: %s", exception.what());
+        JavaUtils::throwRetroException(env, ERROR_GENERIC);
+        return EGL_SUCCESS;
+    }
 
     if (LibretroDroid::getInstance().requiresVideoRefresh()) {
         LibretroDroid::getInstance().clearRequiresVideoRefresh();

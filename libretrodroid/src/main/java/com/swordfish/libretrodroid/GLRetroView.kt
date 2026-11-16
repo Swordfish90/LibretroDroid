@@ -343,7 +343,10 @@ class GLRetroView(
 
     // These functions are called from the GL thread.
     private fun initializeCore() = catchExceptions {
-        if (isGameLoaded) return@catchExceptions
+        if (isGameLoaded) {
+            LibretroDroid.onSurfaceCreated()
+            return@catchExceptions
+        }
         when {
             data.gameFilePath != null -> loadGameFromPath(data.gameFilePath!!)
             data.gameFileBytes != null -> loadGameFromBytes(data.gameFileBytes!!)

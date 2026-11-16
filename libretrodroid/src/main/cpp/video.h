@@ -30,6 +30,8 @@
 
 namespace libretrodroid {
 
+class SharedContext;
+
 class Video {
 public:
 
@@ -41,6 +43,7 @@ public:
         bool useStencil;
         int openglESVersion;
         int pixelFormat;
+        SharedContext* sharedContext = nullptr;
     };
 
     struct ShaderChainEntry {

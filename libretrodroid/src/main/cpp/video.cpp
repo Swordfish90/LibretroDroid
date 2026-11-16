@@ -292,7 +292,8 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
             renderingOptions.height,
             renderingOptions.useDepth,
             renderingOptions.useStencil,
-            std::move(shaders)
+            std::move(shaders),
+            renderingOptions.sharedContext
         );
     } else {
         if (renderingOptions.openglESVersion >= 3) {

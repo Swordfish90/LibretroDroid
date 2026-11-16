@@ -193,6 +193,9 @@ void LibretroDroid::onSurfaceCreated() {
     core->retro_get_system_av_info(&system_av_info);
 
     video = nullptr;
+    sharedContext = Environment::getInstance().isUseSharedContext()
+        ? std::make_unique<SharedContext>()
+        : nullptr;
 
     Video::RenderingOptions renderingOptions {
         Environment::getInstance().isUseHwAcceleration(),
@@ -201,7 +204,8 @@ void LibretroDroid::onSurfaceCreated() {
         Environment::getInstance().isUseDepth(),
         Environment::getInstance().isUseStencil(),
         openglESVersion,
-        Environment::getInstance().getPixelFormat()
+        Environment::getInstance().getPixelFormat(),
+        sharedContext.get()
     };
 
     auto newVideo = new Video(
@@ -217,9 +221,11 @@ void LibretroDroid::onSurfaceCreated() {
 
     video = std::unique_ptr<Video>(newVideo);
 
+    if (sharedContext) sharedContext->bindCore();
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
+    if (sharedContext) sharedContext->bindFrontend();
 }
 
 void LibretroDroid::onMotionEvent(
@@ -414,6 +420,7 @@ void LibretroDroid::destroy() {
     core->retro_deinit();
 
     video = nullptr;
+    sharedContext = nullptr;
     core = nullptr;
     rumble = nullptr;
     fpsSync = nullptr;
@@ -455,9 +462,11 @@ bool LibretroDroid::step() {
         fpsSync->wait();
     }
 
+    if (sharedContext) sharedContext->bindCore();
     for (size_t i = 0; i < frames * frameSpeed; i++) {
         core->retro_run();
     }
+    if (sharedContext) sharedContext->bindFrontend();
 
     if (rumble && rumbleEnabled) {
         rumble->fetchFromEnvironment();
@@ -524,8 +533,10 @@ void LibretroDroid::handleVideoRefresh(
 ) {
     if (video && data != nullptr) {
         frameSubmitted = true;
+        if (sharedContext) sharedContext->bindFrontend();
         video->onNewFrame(data, width, height, pitch);
         video->renderFrame();
+        if (sharedContext) sharedContext->bindCore();
     }
 }
 
