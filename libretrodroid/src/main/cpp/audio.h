@@ -73,6 +73,11 @@ private:
     LinearResampler resampler;
     std::unique_ptr<oboe::FifoBuffer> fifoBuffer = nullptr;
     std::unique_ptr<int16_t[]> temporaryAudioBuffer = nullptr;
+    int32_t temporaryAudioBufferSize = 0;
+
+    // Fast-forward multiplies the frames read in each callback, so the temporary buffer must be
+    // large enough to hold them. Speeds above this value are clamped when reading.
+    static constexpr int32_t MAX_PLAYBACK_SPEED = 16;
 
     oboe::ManagedStream stream = nullptr;
     std::unique_ptr<oboe::LatencyTuner> latencyTuner = nullptr;

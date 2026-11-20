@@ -20,6 +20,7 @@
 #include "audio.h"
 #include <cmath>
 #include <memory>
+#include <algorithm>
 
 namespace libretrodroid {
 
@@ -54,7 +55,8 @@ bool Audio::initializeStream() {
     if (result == oboe::Result::OK) {
         baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
-        temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
+        temporaryAudioBufferSize = audioBufferSize * MAX_PLAYBACK_SPEED;
+        temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[temporaryAudioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
         return true;
     } else {
@@ -115,9 +117,19 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     int32_t currentFramesToSubmit = std::round(framesToSubmit);
     framesToSubmit -= currentFramesToSubmit;
 
-    fifoBuffer->readNow(temporaryAudioBuffer.get(), currentFramesToSubmit * 2);
+    // Never read more than the temporary buffer can hold. At high playback speeds (fast-forward)
+    // the requested frames exceed its capacity and would overflow it, producing crackles.
+    currentFramesToSubmit = std::clamp(currentFramesToSubmit, 0, temporaryAudioBufferSize / 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
+
+    if (currentFramesToSubmit == 0) {
+        std::fill(outputArray, outputArray + numFrames * 2, 0);
+        latencyTuner->tune();
+        return oboe::DataCallbackResult::Continue;
+    }
+
+    fifoBuffer->readNow(temporaryAudioBuffer.get(), currentFramesToSubmit * 2);
     resampler.resample(temporaryAudioBuffer.get(), currentFramesToSubmit, outputArray, numFrames);
 
     latencyTuner->tune();
