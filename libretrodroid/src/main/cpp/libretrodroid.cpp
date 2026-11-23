@@ -88,16 +88,6 @@ void LibretroDroid::updateAudioSampleRateMultiplier() {
     }
 }
 
-// TODO... Do we really need this?
-void LibretroDroid::resetGlobalVariables() {
-    core = nullptr;
-    audio = nullptr;
-    video = nullptr;
-    fpsSync = nullptr;
-    input = nullptr;
-    rumble = nullptr;
-}
-
 int LibretroDroid::availableDisks() {
     return Environment::getInstance().getRetroDiskControlCallback() != nullptr
            ? Environment::getInstance().getRetroDiskControlCallback()->get_num_images()
@@ -145,14 +135,10 @@ void LibretroDroid::setControllerType(unsigned int port, unsigned int type) {
 }
 
 bool LibretroDroid::unserializeState(int8_t *data, size_t size) {
-    std::lock_guard<std::mutex> lock(coreLock);
-
     return core->retro_unserialize(data, size);
 }
 
-JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t size) {
-    std::lock_guard<std::mutex> lock(coreLock);
-
+bool LibretroDroid::unserializeSRAM(int8_t* data, size_t size) {
     size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
     void *sramState = core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
 
@@ -171,14 +157,10 @@ JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t s
     return true;
 }
 
-std::pair<int8_t*, size_t> LibretroDroid::serializeSRAM() {
-    std::lock_guard<std::mutex> lock(coreLock);
-
+std::vector<int8_t> LibretroDroid::serializeSRAM() {
     size_t size = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
-    auto* data = new int8_t[size];
-    memcpy(data, (int8_t*) core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM), size);
-
-    return std::pair(data, size);
+    auto* source = static_cast<int8_t*>(core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM));
+    return {source, source + size};
 }
 
 void LibretroDroid::onSurfaceChanged(unsigned int width, unsigned int height) {
@@ -186,8 +168,11 @@ void LibretroDroid::onSurfaceChanged(unsigned int width, unsigned int height) {
     video->updateScreenSize(width, height);
 }
 
-void LibretroDroid::onSurfaceCreated() {
-    LOGD("Performing libretrodroid onSurfaceCreated");
+void LibretroDroid::onContextCreated() {
+    LOGD("Performing libretrodroid onContextCreated");
+    if (initializationStage != InitializationStage::GameLoaded) {
+        throw std::logic_error("A game must be loaded before creating the context");
+    }
 
     struct retro_system_av_info system_av_info {};
     core->retro_get_system_av_info(&system_av_info);
@@ -225,6 +210,7 @@ void LibretroDroid::onSurfaceCreated() {
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
     }
+    initializationStage = InitializationStage::GraphicsInitialized;
     if (sharedContext) sharedContext->bindFrontend();
 }
 
@@ -271,7 +257,9 @@ void LibretroDroid::create(
 ) {
     LOGD("Performing libretrodroid create");
 
-    resetGlobalVariables();
+    if (initializationStage != InitializationStage::New || core) {
+        throw std::logic_error("The previous native session must be destroyed before create");
+    }
 
     Environment::getInstance().initialize(systemDir, savesDir, &callback_get_current_framebuffer);
     Environment::getInstance().setLanguage(language);
@@ -285,6 +273,20 @@ void LibretroDroid::create(
     audioEnabled = true;
     frameSpeed = 1;
 
+    initializeCore(soFilePath, variables);
+
+    preferLowLatencyAudio = lowLatencyAudio;
+
+    if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
+        throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
+    }
+
+    fragmentShaderConfig = shaderConfig;
+
+    rumble = std::make_unique<Rumble>();
+}
+
+void LibretroDroid::initializeCore(const std::string& soFilePath, const std::vector<Variable>& variables) {
     core = std::make_unique<Core>(soFilePath);
 
     core->retro_set_video_refresh(&callback_hw_video_refresh);
@@ -300,16 +302,7 @@ void LibretroDroid::create(
 
     core->retro_init();
 
-    preferLowLatencyAudio = lowLatencyAudio;
-
-    // HW accelerated cores are only supported on opengles 3.
-    if (Environment::getInstance().isUseHwAcceleration() && openglESVersion < 3) {
-        throw LibretroDroidError("OpenGL ES 3 is required for this Core", ERROR_GL_NOT_COMPATIBLE);
-    }
-
-    fragmentShaderConfig = shaderConfig;
-
-    rumble = std::make_unique<Rumble>();
+    initializationStage = InitializationStage::CoreInitialized;
 }
 
 void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
@@ -336,6 +329,7 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
         throw std::runtime_error("Cannot load game");
     }
 
+    initializationStage = InitializationStage::GameLoaded;
     afterGameLoad();
 }
 
@@ -363,6 +357,7 @@ void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
         throw std::runtime_error("Cannot load game");
     }
 
+    initializationStage = InitializationStage::GameLoaded;
     afterGameLoad();
 }
 
@@ -404,20 +399,42 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
         throw std::runtime_error("Cannot load game");
     }
 
+    initializationStage = InitializationStage::GameLoaded;
     afterGameLoad();
 }
 
-void LibretroDroid::destroy() {
-    std::lock_guard<std::mutex> lock(coreLock);
-
-    LOGD("Performing libretrodroid destroy");
-
+void LibretroDroid::onContextDestroyed() {
     if (Environment::getInstance().getHwContextDestroy() != nullptr) {
         Environment::getInstance().getHwContextDestroy()();
     }
+}
 
-    core->retro_unload_game();
-    core->retro_deinit();
+void LibretroDroid::destroy() {
+    LOGD("Performing libretrodroid destroy");
+
+    if (audio) audio->stop();
+    input = nullptr;
+
+    if (sharedContext) sharedContext->bindCore();
+
+    switch (initializationStage) {
+        case InitializationStage::GraphicsInitialized:
+            onContextDestroyed();
+            initializationStage = InitializationStage::GameLoaded;
+            [[fallthrough]];
+        case InitializationStage::GameLoaded:
+            core->retro_unload_game();
+            initializationStage = InitializationStage::CoreInitialized;
+            [[fallthrough]];
+        case InitializationStage::CoreInitialized:
+            core->retro_deinit();
+            initializationStage = InitializationStage::New;
+            [[fallthrough]];
+        case InitializationStage::New:
+            break;
+    }
+
+    if (sharedContext) sharedContext->bindFrontend();
 
     video = nullptr;
     sharedContext = nullptr;
@@ -428,6 +445,8 @@ void LibretroDroid::destroy() {
 
     Environment::getInstance().deinitialize();
     VFS::getInstance().deinitialize();
+    dirtyVideo = false;
+    frameSubmitted = false;
 }
 
 void LibretroDroid::resume() {
@@ -448,7 +467,6 @@ void LibretroDroid::pause() {
 }
 
 bool LibretroDroid::step() {
-    std::lock_guard<std::mutex> lock(coreLock);
     frameSubmitted = false;
 
     LOGD("Stepping into retro_run()");
@@ -488,6 +506,10 @@ bool LibretroDroid::step() {
         Environment::getInstance().clearScreenRotationUpdated();
 
         video->updateRotation(Environment::getInstance().getScreenRotation());
+    }
+    if (dirtyVideo) {
+        refreshAspectRatio();
+        dirtyVideo = false;
     }
     return frameSubmitted;
 }
@@ -567,40 +589,23 @@ uintptr_t LibretroDroid::handleGetCurrentFrameBuffer() {
 }
 
 void LibretroDroid::reset() {
-    std::lock_guard<std::mutex> lock(coreLock);
-
     core->retro_reset();
 }
 
-std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
-    std::lock_guard<std::mutex> lock(coreLock);
-
+std::vector<int8_t> LibretroDroid::serializeState() {
     size_t size = core->retro_serialize_size();
-    auto data = new int8_t[size];
-
-    core->retro_serialize(data, size);
-
-    return std::pair(data, size);
+    std::vector<int8_t> data(size);
+    auto result = core->retro_serialize(data.data(), data.size());
+    if (!result) return { };
+    return data;
 }
 
 void LibretroDroid::resetCheat() {
-    std::lock_guard<std::mutex> lock(coreLock);
-
     core->retro_cheat_reset();
 }
 
 void LibretroDroid::setCheat(unsigned index, bool enabled, const std::string& code) {
-    std::lock_guard<std::mutex> lock(coreLock);
-
     core->retro_cheat_set(index, enabled, Utils::cloneToCString(code));
-}
-
-bool LibretroDroid::requiresVideoRefresh() const {
-    return dirtyVideo;
-}
-
-void LibretroDroid::clearRequiresVideoRefresh() {
-    dirtyVideo = false;
 }
 
 void LibretroDroid::afterGameLoad() {
@@ -649,7 +654,7 @@ void LibretroDroid::setViewportAlignment(unsigned int viewportAlignment) {
     this-> viewportAlignment = viewportAlignment;
 
     if (video) {
-        this->video->updateViewportAlignment(viewportAlignment);
+        video->updateViewportAlignment(viewportAlignment);
     }
 }
 

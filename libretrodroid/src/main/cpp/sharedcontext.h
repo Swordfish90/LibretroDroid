@@ -5,7 +5,7 @@
 
 namespace libretrodroid {
 
-// Both contexts are used on the GLSurfaceView thread and share its window surface.
+// Both contexts are used on the renderer thread and share its current surface.
 class SharedContext {
 public:
     SharedContext();

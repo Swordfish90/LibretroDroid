@@ -6,7 +6,7 @@ group='com.github.Swordfish90'
 
 android {
     namespace = "com.swordfish.libretrodroid"
-    compileSdkVersion 33
+    compileSdkVersion 34
     buildToolsVersion "34.0.0"
 
 
@@ -72,8 +72,5 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
-
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    implementation 'androidx.graphics:graphics-core:1.0.4'
 }

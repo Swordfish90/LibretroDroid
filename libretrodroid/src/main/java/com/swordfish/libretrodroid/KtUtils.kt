@@ -38,17 +38,23 @@ object KtUtils {
         }
     }
 
-    fun CountDownLatch.awaitUninterruptibly() {
+    fun CountDownLatch.awaitUninterruptibly() = uninterruptibly { await() }
+
+    fun Thread.joinUninterruptibly() = uninterruptibly { join() }
+
+    private inline fun uninterruptibly(block: () -> Unit) {
+        var interrupted = false
         try {
             while (true) {
                 try {
-                    await()
+                    block()
                     return
-                } catch (e: InterruptedException) {
-
+                } catch (_: InterruptedException) {
+                    interrupted = true
                 }
             }
         } finally {
+            if (interrupted) Thread.currentThread().interrupt()
         }
     }
 }

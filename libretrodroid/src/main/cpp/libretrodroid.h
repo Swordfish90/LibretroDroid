@@ -25,7 +25,6 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <mutex>
 #include <memory>
 #include <optional>
 
@@ -59,24 +58,10 @@ public:
     LibretroDroid(LibretroDroid const&) = delete;
     void operator=(LibretroDroid const&) = delete;
 
-    void setViewport(Rect viewportRect);
-
 private:
     LibretroDroid() {}
 
 public:
-    void setCheat(unsigned index, bool enabled, const std::string& code);
-    void resetCheat();
-
-    std::pair<int8_t*, size_t> serializeState();
-    bool unserializeState(int8_t *data, size_t size);
-
-    std::pair<int8_t *, size_t> serializeSRAM();
-    jboolean unserializeSRAM(int8_t *data, size_t size);
-
-    void onSurfaceCreated();
-    void onSurfaceChanged(unsigned int width, unsigned int height);
-
     void create(
         unsigned int GLESVersion,
         const std::string& soFilePath,
@@ -102,23 +87,42 @@ public:
     void loadGameFromBytes(const int8_t *data, size_t size);
     void loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles);
 
+    std::vector<int8_t> serializeState();
+    bool unserializeState(int8_t *data, size_t size);
+
+    std::vector<int8_t> serializeSRAM();
+    bool unserializeSRAM(int8_t *data, size_t size);
+
+    void setCheat(unsigned index, bool enabled, const std::string& code);
+    void resetCheat();
+
     void onKeyEvent(unsigned int port, int action, int keyCode);
     void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);
     void onTouchEvent(float xAxis, float yAxis);
 
-    void refreshAspectRatio();
-    float getAspectRatio();
-
-    bool requiresVideoRefresh() const;
-    void clearRequiresVideoRefresh();
-
-    std::vector<Variable> getVariables();
-    void updateVariable(const Variable& variable);
-
     std::vector<std::vector<struct Controller>> getControllers();
     void setControllerType(unsigned int port, unsigned int type);
 
+    void onContextCreated();
+    void onSurfaceChanged(unsigned int width, unsigned int height);
+    void onContextDestroyed();
+
+    void refreshAspectRatio();
+    float getAspectRatio();
+
+    void setViewport(Rect viewportRect);
+    void setViewportAlignment(unsigned int viewportAlignment);
+
+    void setShaderConfig(ShaderManager::Config shaderConfig);
+
+    void setFrameSpeed(unsigned int speed);
+
+    void setAudioEnabled(bool enabled);
+
+    std::vector<Variable> getVariables();
+    void updateVariable(const Variable& variable);
     int availableDisks();
+
     int currentDisk();
     void changeDisk(unsigned int index);
 
@@ -126,25 +130,17 @@ public:
     bool isRumbleEnabled() const;
     void handleRumbleUpdates(const std::function<void(int, float, float)> &handler);
 
-    void setFrameSpeed(unsigned int speed);
-
-    void setAudioEnabled(bool enabled);
-
-    void setShaderConfig(ShaderManager::Config shaderConfig);
-
-    void setViewportAlignment(unsigned int viewportAlignment);
-
-    void resetGlobalVariables();
-
-    // Handle callbacks
     void handleVideoRefresh(const void *data, unsigned width, unsigned height, size_t pitch);
     size_t handleAudioCallback(const int16_t* data, size_t frames);
     int16_t handleSetInputState(unsigned port, unsigned device, unsigned index, unsigned id);
     uintptr_t handleGetCurrentFrameBuffer();
 
 private:
+    enum class InitializationStage { New, CoreInitialized, GameLoaded, GraphicsInitialized };
+
     void updateAudioSampleRateMultiplier();
     float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
+    void initializeCore(const std::string& soFilePath, const std::vector<Variable>& variables);
     void afterGameLoad();
 
 protected:
@@ -175,8 +171,7 @@ private:
     float defaultAspectRatio = 1.0;
     bool dirtyVideo = false;
     bool frameSubmitted = false;
-
-    std::mutex coreLock;
+    InitializationStage initializationStage = InitializationStage::New;
 
     std::unique_ptr<Core> core;
     std::unique_ptr<Audio> audio;

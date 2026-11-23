@@ -23,7 +23,6 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <mutex>
 #include <optional>
 
 #include "libretrodroid.h"
@@ -186,7 +185,6 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
 
     } catch (std::exception &exception) {
         LOGE("Error in unserializeState: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
 }
@@ -205,7 +203,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 
     } catch (std::exception &exception) {
         LOGE("Error in serializeState: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
     }
 
     return nullptr;
@@ -255,11 +252,9 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
 
     } catch (std::exception &exception) {
         LOGE("Error in unserializeSRAM: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
 
-    return JNI_TRUE;
 }
 
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(
@@ -276,7 +271,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 
     } catch (std::exception &exception) {
         LOGE("Error in serializeSRAM: %s", exception.what());
-        JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
     }
 
     return nullptr;
@@ -303,14 +297,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceC
     LibretroDroid::getInstance().onSurfaceChanged(width, height);
 }
 
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onContextCreated(
     JNIEnv* env,
     jclass obj
 ) {
     try {
-        LibretroDroid::getInstance().onSurfaceCreated();
+        LibretroDroid::getInstance().onContextCreated();
     } catch (const std::exception& exception) {
-        LOGE("Error creating surface: %s", exception.what());
+        LOGE("Error creating context: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
     }
 }
@@ -529,39 +523,29 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(
     }
 }
 
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     JNIEnv* env,
     jclass obj,
-    jobject glRetroView
+    jobject callbacks
 ) {
-    bool frameSubmitted;
     try {
-        frameSubmitted = LibretroDroid::getInstance().step();
+        bool frameSubmitted = LibretroDroid::getInstance().step();
+        if (LibretroDroid::getInstance().isRumbleEnabled()) {
+            jclass cls = env->GetObjectClass(callbacks);
+            jmethodID onRumbleEvent = env->GetMethodID(cls, "onRumbleEvent", "(IFF)V");
+            if (onRumbleEvent != nullptr) {
+                LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
+                    if (!env->ExceptionCheck()) env->CallVoidMethod(callbacks, onRumbleEvent, port, weak, strong);
+                });
+            }
+            env->DeleteLocalRef(cls);
+        }
+        return frameSubmitted ? JNI_TRUE : JNI_FALSE;
     } catch (const std::exception& exception) {
         LOGE("Error rendering frame: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_GENERIC);
-        return EGL_SUCCESS;
+        return JNI_FALSE;
     }
-
-    if (LibretroDroid::getInstance().requiresVideoRefresh()) {
-        LibretroDroid::getInstance().clearRequiresVideoRefresh();
-        jclass cls = env->GetObjectClass(glRetroView);
-        jmethodID requestAspectRatioUpdate = env->GetMethodID(cls, "refreshAspectRatio", "()V");
-        env->CallVoidMethod(glRetroView, requestAspectRatioUpdate);
-    }
-
-    if (LibretroDroid::getInstance().isRumbleEnabled()) {
-        LibretroDroid::getInstance().handleRumbleUpdates([&](int port, float weak, float strong) {
-            jclass cls = env->GetObjectClass(glRetroView);
-            jmethodID sendRumbleStrengthMethodID = env->GetMethodID(cls, "sendRumbleEvent", "(IFF)V");
-            env->CallVoidMethod(glRetroView, sendRumbleStrengthMethodID, port, weak, strong);
-        });
-    }
-
-    if (!frameSubmitted) return EGL_SUCCESS;
-    EGLDisplay display = eglGetCurrentDisplay();
-    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
-    return eglSwapBuffers(display, surface) ? EGL_SUCCESS : eglGetError();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setRumbleEnabled(

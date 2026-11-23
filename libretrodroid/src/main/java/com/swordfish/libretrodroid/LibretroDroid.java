@@ -19,6 +19,7 @@ package com.swordfish.libretrodroid;
 
 import java.util.List;
 
+/** JNI calls must run on the session's GL thread. */
 public class LibretroDroid {
 
     static {
@@ -99,13 +100,17 @@ public class LibretroDroid {
     public static native void loadGameFromVirtualFiles(List<DetachedVirtualFile> virtualFiles);
     public static native void resume();
 
-    public static native void onSurfaceCreated();
+    public static native void onContextCreated();
     public static native void onSurfaceChanged(int width, int height);
 
     public static native void pause();
     public static native void destroy();
 
-    public static native int step(GLRetroView retroView);
+    public interface NativeCallbacks {
+        void onRumbleEvent(int port, float strengthWeak, float strengthStrong);
+    }
+
+    public static native boolean step(NativeCallbacks callbacks);
 
     public static native void reset();
 

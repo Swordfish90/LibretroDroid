@@ -27,11 +27,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv* env, jclass obj, jbyteArray data);
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv* env, jclass obj);
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv* env, jclass obj, jbyteArray data);
-JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceCreated(JNIEnv* env, jclass obj);
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onContextCreated(JNIEnv* env, jclass obj);
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onSurfaceChanged(JNIEnv* env, jclass obj, jint width, jint height);
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(JNIEnv* env, jclass obj);
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_resume(JNIEnv* env, jclass obj);
-JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv* env, jclass obj, jobject glRetroView);
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(JNIEnv* env, jclass obj, jobject callbacks);
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_create(JNIEnv* env, jclass obj, jint GLESVersion, jstring coreFilePath, jstring systemDir, jstring savesDir, jobjectArray variables, jobject shaderConfig, jfloat refreshRate, jboolean preferLowLatencyAudio, jboolean enableVirtualFileSystem, jboolean enableMicrophone, jboolean skipDuplicateFrames, jobject immersiveMode, jstring language);
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromPath(JNIEnv* env, jclass obj, jstring gameFilePath);
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFromBytes(JNIEnv* env, jclass obj, jbyteArray gameFileBytes);

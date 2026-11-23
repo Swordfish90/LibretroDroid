@@ -17,8 +17,14 @@
 
 package com.swordfish.libretrodroid
 
+import android.app.ActivityManager
 import android.content.Context
+import android.view.WindowManager
+import com.swordfish.libretrodroid.session.GameSource
+import com.swordfish.libretrodroid.session.SessionConfig
+import java.util.Locale
 
+// TODO... We need to delete this and simply use the session config class
 class GLRetroViewData(context: Context) {
     var coreFilePath: String? = null
     var gameFilePath: String? = null
@@ -42,4 +48,29 @@ enum class ViewportAlignment(val value: Int) {
     CENTER(0),
     TOP(1),
     BOTTOM(2)
+}
+
+internal fun GLRetroViewData.toSessionConfig(context: Context): SessionConfig {
+    val corePath = requireNotNull(coreFilePath) { "A core is required" }
+    require(corePath.isNotBlank()) { "A core path cannot be blank" }
+    val game = GameSource.from(gameFilePath, gameFileBytes, gameVirtualFiles)
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    return SessionConfig(
+        coreFilePath = corePath,
+        game = game,
+        systemDirectory = systemDirectory,
+        savesDirectory = savesDirectory,
+        variables = variables.copyOf(),
+        saveRAMState = saveRAMState,
+        shader = shader,
+        viewportAlignment = viewportAlignment,
+        rumbleEventsEnabled = rumbleEventsEnabled,
+        preferLowLatencyAudio = preferLowLatencyAudio,
+        enableMicrophone = enableMicrophone,
+        immersiveMode = immersiveMode,
+        glesVersion = if (activityManager.deviceConfigurationInfo.reqGlEsVersion >= 0x30000) 3 else 2,
+        refreshRate = windowManager.defaultDisplay.refreshRate,
+        language = Locale.getDefault().language,
+    )
 }
